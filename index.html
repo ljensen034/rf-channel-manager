@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RF Channel Manager — Public Safety</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg-deep:     #0a0d12;
+    --bg-panel:    #111620;
+    --bg-card:     #161d2b;
+    --bg-hover:    #1c2540;
+    --border:      #1f2d44;
+    --border-lit:  #2b3f62;
+
+    --status-available: #00e676;
+    --status-active:    #ff5252;
+    --status-reserved:  #ffc400;
+    --status-tactical:  #40c4ff;
+    --status-interop:   #ce93d8;
+
+    --text-primary:  #e8edf5;
+    --text-secondary:#7a8fac;
+    --text-dim:      #3e5272;
+
+    --accent:        #1e88e5;
+    --accent-glow:   rgba(30,136,229,0.15);
+
+    --font-ui:   'IBM Plex Sans', sans-serif;
+    --font-data: 'IBM Plex Mono', monospace;
+
+    --radius: 4px;
+    --transition: 180ms ease;
+  }
+
+  /* ── THEME: HIGH CONTRAST DARK ── */
+  [data-theme="contrast"] {
+    --bg-deep:     #000000;
+    --bg-panel:    #0a0a0a;
+    --bg-card:     #111111;
+    --bg-hover:    #1a1a1a;
+    --border:      #2a2a2a;
+    --border-lit:  #444444;
+    --status-available: #00ff88;
+    --status-active:    #ff3333;
+    --status-reserved:  #ffcc00;
+    --status-tactical:  #00ccff;
+    --status-interop:   #dd88ff;
+    --text-primary:  #ffffff;
+    --text-secondary:#aaaaaa;
+    --text-dim:      #555555;
+    --accent:        #00aaff;
+    --accent-glow:   rgba(0,170,255,0.18);
+  }
+
+  /* ── THEME: DAY / LIGHT ── */
+  [data-theme="day"] {
+    --bg-deep:     #f0f2f5;
+    --bg-panel:    #ffffff;
+    --bg-card:     #f7f9fc;
+    --bg-hover:    #eef1f6;
+    --border:      #d0d8e4;
+    --border-lit:  #aab8cc;
+    --status-available: #00875a;
+    --status-active:    #d63031;
+    --status-reserved:  #b8860b;
+    --status-tactical:  #0066cc;
+    --status-interop:   #7b2fbe;
+    --text-primary:  #1a2332;
+    --text-secondary:#4a5f7a;
+    --text-dim:      #8fa0b8;
+    --accent:        #1565c0;
+    --accent-glow:   rgba(21,101,192,0.12);
+  }
+
+  /* ── THEME: AMBER TACTICAL ── */
+  [data-theme="amber"] {
+    --bg-deep:     #0d0900;
+    --bg-panel:    #161000;
+    --bg-card:     #1e1600;
+    --bg-hover:    #271d00;
+    --border:      #332600;
+    --border-lit:  #4d3900;
+    --status-available: #00e676;
+    --status-active:    #ff5252;
+    --status-reserved:  #ffc400;
+    --status-tactical:  #40c4ff;
+    --status-interop:   #ce93d8;
+    --text-primary:  #ffe082;
+    --text-secondary:#b8922a;
+    --text-dim:      #5c4400;
+    --accent:        #ffb300;
+    --accent-glow:   rgba(255,179,0,0.15);
+  }
+
+  /* ── THEME: FOREST OPS ── */
+  [data-theme="forest"] {
+    --bg-deep:     #060d06;
+    --bg-panel:    #0c160c;
+    --bg-card:     #111d11;
+    --bg-hover:    #172417;
+    --border:      #1e2e1e;
+    --border-lit:  #2e4a2e;
+    --status-available: #69ff47;
+    --status-active:    #ff5252;
+    --status-reserved:  #ffd740;
+    --status-tactical:  #40c4ff;
+    --status-interop:   #ce93d8;
+    --text-primary:  #c8e6c9;
+    --text-secondary:#6a9b6a;
+    --text-dim:      #2e4a2e;
+    --accent:        #4caf50;
+    --accent-glow:   rgba(76,175,80,0.15);
+  }
+
+  /* Day theme overrides for elements that need special light-mode handling */
+  [data-theme="day"] .topbar,
+  [data-theme="day"] .stats-bar,
+  [data-theme="day"] .stat-cell { box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  [data-theme="day"] .channel-row { box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  [data-theme="day"] .login-bg-grid { opacity: 0.15; }
+  [data-theme="day"] .modal { box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
+  [data-theme="day"] .topbar-clock { color: var(--accent); }
+
+  /* ── THEME SWITCHER UI ── */
+  .theme-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .theme-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-data);
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .theme-btn:hover { border-color: var(--border-lit); color: var(--text-primary); }
+
+  .theme-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    z-index: 300;
+    min-width: 210px;
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  .theme-dropdown.open { display: block; }
+
+  .theme-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .theme-option:hover { background: var(--bg-hover); }
+  .theme-option.active { background: var(--accent-glow); }
+
+  .theme-swatch {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .theme-swatch span {
+    width: 12px;
+    height: 24px;
+    border-radius: 2px;
+    display: block;
+  }
+
+  .theme-option-info { flex: 1; }
+  .theme-option-name { font-size: 12px; color: var(--text-primary); font-family: var(--font-data); font-weight: 500; }
+  .theme-option-desc { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .theme-check { font-size: 12px; color: var(--accent); }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 20px;
+    height: 52px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-data);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .topbar-logo .badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.12em;
+  }
+
+  .topbar-clock {
+    font-family: var(--font-data);
+    font-size: 13px;
+    color: var(--status-available);
+    letter-spacing: 0.06em;
+    margin-left: auto;
+  }
+
+  .topbar-incident {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--font-data);
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-cell {
+    flex: 1;
+    background: var(--bg-panel);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .stat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .stat-dot.available { background: var(--status-available); box-shadow: 0 0 6px var(--status-available); }
+  .stat-dot.active    { background: var(--status-active);    box-shadow: 0 0 6px var(--status-active); }
+  .stat-dot.reserved  { background: var(--status-reserved);  box-shadow: 0 0 6px var(--status-reserved); }
+  .stat-dot.tactical  { background: var(--status-tactical);  box-shadow: 0 0 6px var(--status-tactical); }
+  .stat-dot.interop   { background: var(--status-interop);   box-shadow: 0 0 6px var(--status-interop); }
+
+  .stat-label { font-size: 11px; color: var(--text-secondary); font-family: var(--font-data); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-count { font-size: 22px; font-weight: 700; font-family: var(--font-data); }
+  .stat-count.available { color: var(--status-available); }
+  .stat-count.active    { color: var(--status-active); }
+  .stat-count.reserved  { color: var(--status-reserved); }
+  .stat-count.tactical  { color: var(--status-tactical); }
+  .stat-count.interop   { color: var(--status-interop); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    height: calc(100vh - 52px - 52px);
+    overflow: hidden;
+  }
+
+  .main-panel {
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .side-panel {
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-left { display: flex; gap: 8px; align-items: center; flex: 1; }
+
+  .filter-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .filter-btn:hover { border-color: var(--border-lit); color: var(--text-primary); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+  .filter-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .filter-dot.available { background: var(--status-available); }
+  .filter-dot.active    { background: var(--status-active); }
+  .filter-dot.reserved  { background: var(--status-reserved); }
+  .filter-dot.tactical  { background: var(--status-tactical); }
+  .filter-dot.interop   { background: var(--status-interop); }
+
+  .search-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-data);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    width: 220px;
+    outline: none;
+    transition: var(--transition);
+  }
+
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { background: #2196f3; }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-lit);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── CHANNEL GRID ── */
+  .section-header {
+    font-family: var(--font-data);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0 2px 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .channel-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .channel-row {
+    display: grid;
+    grid-template-columns: 28px 90px 88px 1fr 120px 100px 90px 100px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 0;
+  }
+
+  .channel-row:hover {
+    border-color: var(--border-lit);
+    background: var(--bg-hover);
+  }
+
+  .channel-row.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .channel-row .status-bar {
+    width: 3px;
+    height: 28px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .status-bar.available { background: var(--status-available); }
+  .status-bar.active    { background: var(--status-active); }
+  .status-bar.reserved  { background: var(--status-reserved); }
+  .status-bar.tactical  { background: var(--status-tactical); }
+  .status-bar.interop   { background: var(--status-interop); }
+
+  .ch-designator {
+    font-family: var(--font-data);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .ch-freq {
+    font-family: var(--font-data);
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .ch-function {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ch-assignment {
+    font-size: 12px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .status-pill.available { background: rgba(0,230,118,0.12); color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
+  .status-pill.active    { background: rgba(255,82,82,0.12);  color: var(--status-active);    border: 1px solid rgba(255,82,82,0.25); }
+  .status-pill.reserved  { background: rgba(255,196,0,0.12);  color: var(--status-reserved);  border: 1px solid rgba(255,196,0,0.25); }
+  .status-pill.tactical  { background: rgba(64,196,255,0.12); color: var(--status-tactical);  border: 1px solid rgba(64,196,255,0.25); }
+  .status-pill.interop   { background: rgba(206,147,216,0.12);color: var(--status-interop);   border: 1px solid rgba(206,147,216,0.25); }
+
+  .ch-tone {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .ch-mode {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* grid header */
+  .channel-grid-header {
+    display: grid;
+    grid-template-columns: 28px 90px 88px 1fr 120px 100px 90px 100px;
+    gap: 8px;
+    padding: 4px 12px 8px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── SIDE PANEL ── */
+  .side-title {
+    padding: 16px 16px 12px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .side-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .side-empty .icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .detail-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .detail-value {
+    font-family: var(--font-data);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .detail-value.freq {
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .side-actions {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid rgba(255,82,82,0.4);
+    color: var(--status-active);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-danger:hover { background: rgba(255,82,82,0.1); }
+
+  .btn-warning {
+    background: transparent;
+    border: 1px solid rgba(255,196,0,0.4);
+    color: var(--status-reserved);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-warning:hover { background: rgba(255,196,0,0.1); }
+
+  .btn-success {
+    background: transparent;
+    border: 1px solid rgba(0,230,118,0.4);
+    color: var(--status-available);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-success:hover { background: rgba(0,230,118,0.1); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-title {
+    font-family: var(--font-data);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px;
+  }
+
+  .modal-close:hover { color: var(--text-primary); }
+
+  .modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.single { grid-template-columns: 1fr; }
+
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-data);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    outline: none;
+    transition: var(--transition);
+    width: 100%;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-select option { background: var(--bg-panel); }
+  .form-textarea { resize: vertical; min-height: 70px; font-family: var(--font-ui); }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  /* ── ICS 205 MODAL ── */
+  .ics205-wrapper {
+    background: #fff;
+    color: #000;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    padding: 16px;
+    border-radius: 4px;
+  }
+
+  .ics205-title {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .ics205-subtitle {
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+  }
+
+  .ics205-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    border: 1px solid #000;
+    margin-bottom: 0;
+  }
+
+  .ics205-meta-cell {
+    padding: 4px 6px;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+  }
+
+  .ics205-meta-cell:last-child { border-right: none; }
+
+  .ics205-meta-label { font-size: 9px; font-weight: bold; text-transform: uppercase; }
+  .ics205-meta-value { font-size: 11px; }
+
+  .ics205-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+  }
+
+  .ics205-table th {
+    background: #d0d0d0;
+    border: 1px solid #000;
+    padding: 4px 6px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .ics205-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .ics205-sig {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    border: 1px solid #000;
+    padding: 6px;
+  }
+
+  /* ── SCROLLBARS ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* ── Pulse animation for active channels ── */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .pulse { animation: pulse 2s infinite; }
+
+  /* ── Incident log in side panel ── */
+  .log-entry {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .log-entry .log-time {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .log-entry .log-text {
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .log-entry .log-ch {
+    color: var(--accent);
+    font-family: var(--font-data);
+  }
+
+  .no-data-row {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--font-data);
+  }
+
+  @media print {
+    .modal-overlay { position: static; background: none; padding: 0; }
+    .modal { max-height: none; border: none; box-shadow: none; }
+    .modal-header, .modal-footer { display: none; }
+    .ics205-wrapper { padding: 0; }
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-deep);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  #loginScreen.hidden { display: none; }
+
+  .login-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .login-bg-glow {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(30,136,229,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-card {
+    position: relative;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+
+  .login-card-header {
+    padding: 32px 32px 24px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .login-logo {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .login-title {
+    font-family: var(--font-data);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .login-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-data);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .login-body {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .login-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .login-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-data);
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    outline: none;
+    transition: var(--transition);
+    width: 100%;
+  }
+
+  .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .login-input::placeholder { color: var(--text-dim); }
+
+  .login-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    width: 100%;
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .login-btn:hover { background: #2196f3; }
+  .login-btn:active { transform: scale(0.99); }
+
+  .login-error {
+    background: rgba(255,82,82,0.1);
+    border: 1px solid rgba(255,82,82,0.3);
+    color: var(--status-active);
+    font-size: 12px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-family: var(--font-data);
+    display: none;
+  }
+
+  .login-error.visible { display: block; }
+
+  .login-demo-accounts {
+    padding: 16px 32px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .demo-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .demo-users {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .demo-user-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    width: 100%;
+  }
+
+  .demo-user-btn:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+
+  .demo-role-badge {
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .role-admin   { background: rgba(255,82,82,0.15);  color: var(--status-active);    border: 1px solid rgba(255,82,82,0.3); }
+  .role-comms   { background: rgba(30,136,229,0.15); color: var(--accent);           border: 1px solid rgba(30,136,229,0.3); }
+  .role-viewer  { background: rgba(0,230,118,0.1);   color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
+
+  .demo-user-info { flex: 1; }
+  .demo-user-name { font-size: 13px; color: var(--text-primary); font-family: var(--font-data); }
+  .demo-user-creds { font-size: 11px; color: var(--text-dim); font-family: var(--font-data); }
+
+  /* topbar user display */
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--font-data);
+  }
+
+  .topbar-user .avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: var(--font-data);
+    transition: var(--transition);
+  }
+
+  .logout-btn:hover { border-color: var(--status-active); color: var(--status-active); }
+
+  /* read-only state for viewers */
+  body.readonly .btn-primary,
+  body.readonly .btn-danger,
+  body.readonly .btn-warning,
+  body.readonly .btn-success,
+  body.readonly [onclick="openAddModal()"],
+  body.readonly [onclick="openIncidentModal()"] {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  .readonly-banner {
+    display: none;
+    background: rgba(255,196,0,0.08);
+    border-bottom: 1px solid rgba(255,196,0,0.2);
+    color: var(--status-reserved);
+    font-family: var(--font-data);
+    font-size: 11px;
+    text-align: center;
+    padding: 5px;
+    letter-spacing: 0.06em;
+  }
+
+  body.readonly .readonly-banner { display: block; }
+
+  /* ── USER ADMIN TABLE ── */
+  #userTableBody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+  }
+  #userTableBody tr:hover { background: var(--bg-hover); }
+  #userTableBody td { padding: 10px 8px; vertical-align: middle; }
+
+  /* ── BIG BOARD OVERLAY ── */
+  #bigBoardOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    flex-direction: column;
+  }
+
+  #bigBoardOverlay .bb-close-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 10000;
+    pointer-events: none;
+  }
+
+  #bigBoardCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-family: var(--font-data);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    pointer-events: all;
+    z-index: 10001;
+    letter-spacing: 0.06em;
+    transition: var(--transition);
+    opacity: 0.3;
+  }
+
+  #bigBoardCloseBtn:hover { opacity: 1; background: rgba(255,82,82,0.8); border-color: transparent; }
+
+  #bigBoardFrame {
+    width: 100%;
+    flex: 1;
+    border: none;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<!-- BIG BOARD OVERLAY -->
+<div id="bigBoardOverlay">
+  <div class="bb-close-bar">
+    <button id="bigBoardCloseBtn" onclick="closeBigBoard()" title="Close Big Board (Esc)">✕ Close Big Board</button>
+  </div>
+  <iframe id="bigBoardFrame" title="RF Big Board Wall Display"></iframe>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-bg-grid"></div>
+  <div class="login-bg-glow"></div>
+  <div class="login-card">
+    <div class="login-card-header">
+      <span class="login-logo">📡</span>
+      <div class="login-title">RF Channel Manager</div>
+      <div class="login-subtitle">Public Safety Operations</div>
+    </div>
+    <div class="login-body">
+      <div class="login-field">
+        <label class="login-label">Username</label>
+        <input class="login-input" id="loginUser" type="text" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+      </div>
+      <div class="login-field">
+        <label class="login-label">Password</label>
+        <input class="login-input" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-error" id="loginError">⚠ Invalid username or password</div>
+      <button class="login-btn" onclick="doLogin()">Sign In</button>
+    </div>
+    <div class="login-demo-accounts">
+      <div class="demo-label">Demo Accounts — Click to fill</div>
+      <div class="demo-users">
+        <button class="demo-user-btn" onclick="fillDemo('commsunit','comms123')">
+          <span class="demo-role-badge role-comms">Comms</span>
+          <div class="demo-user-info">
+            <div class="demo-user-name">commsunit</div>
+            <div class="demo-user-creds">Comms Unit Leader — full access</div>
+          </div>
+        </button>
+        <button class="demo-user-btn" onclick="fillDemo('dispatcher','dispatch1')">
+          <span class="demo-role-badge role-admin">Admin</span>
+          <div class="demo-user-info">
+            <div class="demo-user-name">dispatcher</div>
+            <div class="demo-user-creds">Dispatch Admin — full access</div>
+          </div>
+        </button>
+        <button class="demo-user-btn" onclick="fillDemo('observer','view1234')">
+          <span class="demo-role-badge role-viewer">Viewer</span>
+          <div class="demo-user-info">
+            <div class="demo-user-name">observer</div>
+            <div class="demo-user-creds">Read-only — view channels only</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- READ-ONLY BANNER -->
+<div class="readonly-banner">🔒 VIEW ONLY MODE — You do not have permission to make changes. Contact your Comms Unit Leader.</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <span>📡</span>
+    RF Channel Manager
+    <span class="badge">PUBLIC SAFETY</span>
+  </div>
+  <div style="display:flex;gap:8px;margin-left:auto;align-items:center;">
+    <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205 Export</button>
+    <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
+    <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
+    <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
+  </div>
+  <div class="theme-switcher" id="themeSwitcher">
+    <button class="theme-btn" onclick="toggleThemeDropdown(event)" title="Change theme">
+      <span id="themeIcon">🌑</span>
+      <span id="themeLabel">Midnight</span>
+      <span style="font-size:9px;opacity:0.5;">▾</span>
+    </button>
+    <div class="theme-dropdown" id="themeDropdown">
+      <div class="theme-option active" data-theme="midnight" onclick="setTheme('midnight',this)">
+        <div class="theme-swatch">
+          <span style="background:#0a0d12;border:1px solid #1f2d44;"></span>
+          <span style="background:#111620;border:1px solid #1f2d44;"></span>
+          <span style="background:#1e88e5;"></span>
+        </div>
+        <div class="theme-option-info">
+          <div class="theme-option-name">Midnight</div>
+          <div class="theme-option-desc">Dark navy — default</div>
+        </div>
+        <span class="theme-check" id="check-midnight">✓</span>
+      </div>
+      <div class="theme-option" data-theme="contrast" onclick="setTheme('contrast',this)">
+        <div class="theme-swatch">
+          <span style="background:#000000;border:1px solid #333;"></span>
+          <span style="background:#111111;border:1px solid #333;"></span>
+          <span style="background:#00aaff;"></span>
+        </div>
+        <div class="theme-option-info">
+          <div class="theme-option-name">High Contrast</div>
+          <div class="theme-option-desc">Max legibility, pure black</div>
+        </div>
+        <span class="theme-check" style="display:none;" id="check-contrast">✓</span>
+      </div>
+      <div class="theme-option" data-theme="day" onclick="setTheme('day',this)">
+        <div class="theme-swatch">
+          <span style="background:#f0f2f5;border:1px solid #d0d8e4;"></span>
+          <span style="background:#ffffff;border:1px solid #d0d8e4;"></span>
+          <span style="background:#1565c0;"></span>
+        </div>
+        <div class="theme-option-info">
+          <div class="theme-option-name">Day Mode</div>
+          <div class="theme-option-desc">Light — bright environments</div>
+        </div>
+        <span class="theme-check" style="display:none;" id="check-day">✓</span>
+      </div>
+      <div class="theme-option" data-theme="amber" onclick="setTheme('amber',this)">
+        <div class="theme-swatch">
+          <span style="background:#0d0900;border:1px solid #332600;"></span>
+          <span style="background:#1e1600;border:1px solid #332600;"></span>
+          <span style="background:#ffb300;"></span>
+        </div>
+        <div class="theme-option-info">
+          <div class="theme-option-name">Amber Tactical</div>
+          <div class="theme-option-desc">Night-vision safe, warm</div>
+        </div>
+        <span class="theme-check" style="display:none;" id="check-amber">✓</span>
+      </div>
+      <div class="theme-option" data-theme="forest" onclick="setTheme('forest',this)">
+        <div class="theme-swatch">
+          <span style="background:#060d06;border:1px solid #1e2e1e;"></span>
+          <span style="background:#111d11;border:1px solid #1e2e1e;"></span>
+          <span style="background:#4caf50;"></span>
+        </div>
+        <div class="theme-option-info">
+          <div class="theme-option-name">Forest Ops</div>
+          <div class="theme-option-desc">Green tactical display</div>
+        </div>
+        <span class="theme-check" style="display:none;" id="check-forest">✓</span>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-user" id="topbarUser" style="margin-left:4px;"></div>
+  <div id="dbStatus" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);display:flex;align-items:center;margin-left:8px;white-space:nowrap;">Connecting…</div>
+  <div class="topbar-clock" id="clock">--:--:-- UTC</div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-cell">
+    <div class="stat-dot available"></div>
+    <div>
+      <div class="stat-label">Available</div>
+      <div class="stat-count available" id="cnt-available">0</div>
+    </div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-dot active pulse"></div>
+    <div>
+      <div class="stat-label">Active / Deployed</div>
+      <div class="stat-count active" id="cnt-active">0</div>
+    </div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-dot reserved"></div>
+    <div>
+      <div class="stat-label">Reserved (Pre-planned)</div>
+      <div class="stat-count reserved" id="cnt-reserved">0</div>
+    </div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-dot tactical"></div>
+    <div>
+      <div class="stat-label">Tactical</div>
+      <div class="stat-count tactical" id="cnt-tactical">0</div>
+    </div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-dot interop"></div>
+    <div>
+      <div class="stat-label">Interop / Mutual Aid</div>
+      <div class="stat-count interop" id="cnt-interop">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input class="search-input" type="text" id="searchBox" placeholder="Search channel / frequency / assignment…" oninput="renderChannels()">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" data-filter="available" onclick="setFilter('available', this)">
+          <span class="filter-dot available"></span>Available
+        </button>
+        <button class="filter-btn" data-filter="active" onclick="setFilter('active', this)">
+          <span class="filter-dot active"></span>Active
+        </button>
+        <button class="filter-btn" data-filter="reserved" onclick="setFilter('reserved', this)">
+          <span class="filter-dot reserved"></span>Reserved
+        </button>
+        <button class="filter-btn" data-filter="tactical" onclick="setFilter('tactical', this)">
+          <span class="filter-dot tactical"></span>Tactical
+        </button>
+        <button class="filter-btn" data-filter="interop" onclick="setFilter('interop', this)">
+          <span class="filter-dot interop"></span>Interop
+        </button>
+      </div>
+    </div>
+
+    <!-- Channel table -->
+    <div>
+      <div class="section-header">
+        <span id="filterLabel">All Channels</span>
+        <span id="channelCount" style="font-size:10px;"></span>
+      </div>
+      <div class="channel-grid-header">
+        <span></span>
+        <span>Designator</span>
+        <span>Frequency</span>
+        <span>Function / Assignment</span>
+        <span>Status</span>
+        <span>Agency</span>
+        <span>Tone / NAC</span>
+        <span>Mode</span>
+      </div>
+      <div class="channel-grid" id="channelGrid"></div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel" id="sidePanel">
+    <div class="side-title">
+      <span>Channel Detail</span>
+      <span id="selectedBadge" style="display:none;"></span>
+    </div>
+    <div id="sideContent">
+      <div class="side-empty">
+        <span class="icon">📻</span>
+        Select a channel to view details and actions
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);flex:1;">
+      <div class="side-title">Activity Log</div>
+      <div id="activityLog"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT MODAL ── -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add Channel</div>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Channel Designator *</label>
+          <input class="form-input" id="f-designator" placeholder="e.g. FIRE-TAC-1">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Frequency (MHz) *</label>
+          <input class="form-input" id="f-freq" placeholder="154.4300">
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-field">
+          <label class="form-label">Status *</label>
+          <select class="form-select" id="f-status">
+            <option value="available">Available</option>
+            <option value="active">Active / Deployed</option>
+            <option value="reserved">Reserved (Pre-planned)</option>
+            <option value="tactical">Tactical</option>
+            <option value="interop">Interop / Mutual Aid</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Mode</label>
+          <select class="form-select" id="f-mode">
+            <option value="Analog FM">Analog FM</option>
+            <option value="P25 Phase I">P25 Phase I</option>
+            <option value="P25 Phase II">P25 Phase II</option>
+            <option value="DMR">DMR</option>
+            <option value="D-STAR">D-STAR</option>
+            <option value="NXDN">NXDN</option>
+            <option value="TETRA">TETRA</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Tone / NAC</label>
+          <input class="form-input" id="f-tone" placeholder="100.0 Hz / 0x293">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Function / Purpose</label>
+          <input class="form-input" id="f-function" placeholder="Command, Fire Attack, EMS, etc.">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Department / Agency</label>
+          <input class="form-input" id="f-agency" placeholder="LAFD, LAPD, CalFire…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Group / Category</label>
+          <input class="form-input" id="f-group" placeholder="Fire Ops, Law, EMS, Special Events…">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Rx / Repeater Output (if different)</label>
+          <input class="form-input" id="f-rxfreq" placeholder="154.4300">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="f-notes" placeholder="Special instructions, restrictions, contact info…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveChannel()">Save Channel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ICS 205 MODAL ── -->
+<div class="modal-overlay" id="ics205Modal">
+  <div class="modal" style="max-width:900px;">
+    <div class="modal-header">
+      <div class="modal-title">ICS 205 — Incident Radio Communications Plan</div>
+      <button class="modal-close" onclick="document.getElementById('ics205Modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="ics205Body" style="padding:0;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('ics205Modal').classList.remove('open')">Close</button>
+      <button class="btn-primary" onclick="printICS205()">🖨 Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ─────────────────────────────────────────────
+const SUPABASE_URL  = 'https://zjnhwmkkjgogtyidzrjm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpqbmh3bWtramdvZ3R5aWR6cmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDMyNzcsImV4cCI6MjA5NjYxOTI3N30.AFILeKWgnKQNV1igRsZIFKxqTpCW-PwNLtN6ct2NPFo';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ─────────────────────────────────────────────
+// DATA STORE
+// ─────────────────────────────────────────────
+let channels = [];
+let nextId = null; // unused — Supabase handles IDs
+let currentFilter = 'all';
+let selectedId = null;
+let editingId = null;
+let activityLog = [];
+
+// Map Supabase snake_case row → app camelCase object
+function rowToChannel(row) {
+  return {
+    id:          row.id,
+    designator:  row.designator,
+    freq:        row.freq,
+    rxFreq:      row.rx_freq || row.freq,
+    status:      row.status,
+    mode:        row.mode        || 'Analog FM',
+    tone:        row.tone        || '—',
+    function:    row.function    || '—',
+    agency:      row.agency      || '—',
+    group:       row.group       || '',
+    notes:       row.notes       || '',
+    updatedBy:   row.updated_by  || '',
+  };
+}
+
+// Map app object → Supabase row
+function channelToRow(ch, userName) {
+  return {
+    designator:  ch.designator,
+    freq:        ch.freq,
+    rx_freq:     ch.rxFreq || ch.freq,
+    status:      ch.status,
+    mode:        ch.mode,
+    tone:        ch.tone,
+    function:    ch.function,
+    agency:      ch.agency,
+    group:       ch.group,
+    notes:       ch.notes,
+    updated_by:  userName || '',
+    updated_at:  new Date().toISOString(),
+  };
+}
+
+// ─────────────────────────────────────────────
+// DB LOADING + SEEDING
+// ─────────────────────────────────────────────
+const SEED_CHANNELS = [
+  { designator:'FIRE-CMD-1',      freq:'154.4300', rx_freq:'154.4300', status:'active',    mode:'Analog FM',   tone:'100.0 Hz',  function:'Command',               agency:'Fire Dept',    group:'Fire Ops',        notes:'Primary command net' },
+  { designator:'FIRE-TAC-1',      freq:'154.2800', rx_freq:'154.2800', status:'active',    mode:'Analog FM',   tone:'127.3 Hz',  function:'Fire Attack',            agency:'Fire Dept',    group:'Fire Ops',        notes:'' },
+  { designator:'FIRE-TAC-2',      freq:'154.3100', rx_freq:'154.3100', status:'active',    mode:'Analog FM',   tone:'127.3 Hz',  function:'Fire Attack',            agency:'Fire Dept',    group:'Fire Ops',        notes:'' },
+  { designator:'EMS-OPS-1',       freq:'155.3400', rx_freq:'155.3400', status:'active',    mode:'Analog FM',   tone:'103.5 Hz',  function:'EMS Operations',         agency:'EMS / AMR',    group:'EMS',             notes:'Patch to hospital base' },
+  { designator:'LAW-CMD',         freq:'460.1250', rx_freq:'460.1250', status:'active',    mode:'P25 Phase I', tone:'0x293',     function:'Law Enforcement Command', agency:'Sheriff / PD', group:'Law Enforcement', notes:'Encrypted – Talkgroup 4201' },
+  { designator:'INTEROP-8CALL90', freq:'155.3400', rx_freq:'155.3400', status:'interop',   mode:'P25 Phase I', tone:'NAC 0x001', function:'National Calling',        agency:'Multi-Agency', group:'Interop',         notes:'FEMA NPSPAC – do not program out' },
+  { designator:'AIR-OPS-1',       freq:'168.6500', rx_freq:'168.6500', status:'active',    mode:'Analog FM',   tone:'None',      function:'Air Operations',         agency:'Air Attack',   group:'Fire Ops',        notes:'ATGS supervising' },
+  { designator:'MUTUAL-AID-1',    freq:'154.9200', rx_freq:'154.9200', status:'interop',   mode:'Analog FM',   tone:'110.9 Hz',  function:'Mutual Aid Coordination', agency:'State OES',    group:'Interop',         notes:'State mutual aid – available on request' },
+  { designator:'MARATHON-CMD',    freq:'453.2000', rx_freq:'453.2000', status:'reserved',  mode:'Analog FM',   tone:'136.5 Hz',  function:'Event Command',          agency:'Special Events',group:'Special Events',  notes:'Reserved Jun 15 – do not assign' },
+  { designator:'MARATHON-MED',    freq:'453.3500', rx_freq:'453.3500', status:'reserved',  mode:'Analog FM',   tone:'136.5 Hz',  function:'Event EMS',              agency:'EMS / AMR',    group:'Special Events',  notes:'Reserved Jun 15' },
+  { designator:'MNTC-TAC-1',      freq:'151.4450', rx_freq:'151.4450', status:'available', mode:'Analog FM',   tone:'100.0 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
+  { designator:'MNTC-TAC-2',      freq:'151.4600', rx_freq:'151.4600', status:'available', mode:'Analog FM',   tone:'100.0 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
+  { designator:'MNTC-TAC-3',      freq:'151.4750', rx_freq:'151.4750', status:'available', mode:'P25 Phase I', tone:'NAC 0x150', function:'—',                      agency:'—',            group:'Law Enforcement', notes:'' },
+  { designator:'FIRE-TAC-3',      freq:'154.3550', rx_freq:'154.3550', status:'available', mode:'Analog FM',   tone:'127.3 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
+  { designator:'SAR-TAC-1',       freq:'155.1600', rx_freq:'155.1600', status:'tactical',  mode:'Analog FM',   tone:'118.8 Hz',  function:'Search & Rescue Ops',    agency:'SAR Team',     group:'SAR',             notes:'Helicopter 7 monitoring' },
+];
+
+async function loadChannels() {
+  setDbStatus('loading');
+  const { data, error } = await sb.from('channels').select('*').order('id');
+  if (error) { setDbStatus('error', error.message); return; }
+
+  // Seed if empty
+  if (data.length === 0) {
+    const { error: seedErr } = await sb.from('channels').insert(SEED_CHANNELS);
+    if (seedErr) { setDbStatus('error', seedErr.message); return; }
+    const { data: seeded } = await sb.from('channels').select('*').order('id');
+    channels = (seeded || []).map(rowToChannel);
+  } else {
+    channels = data.map(rowToChannel);
+  }
+
+  setDbStatus('connected');
+  renderChannels();
+  renderLog();
+  logActivityLocal(`Connected — <span class="log-ch">${channels.length}</span> channels loaded from database`);
+}
+
+async function loadActivityLog() {
+  const { data } = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(50);
+  if (!data) return;
+  activityLog = data.map(r => {
+    const d = new Date(r.created_at);
+    const ts = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;
+    return { time: ts, text: r.message };
+  });
+  renderLog();
+}
+
+// ─────────────────────────────────────────────
+// REALTIME SUBSCRIPTIONS
+// ─────────────────────────────────────────────
+function subscribeRealtime() {
+  sb.channel('channels-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, async () => {
+      const { data } = await sb.from('channels').select('*').order('id');
+      if (data) channels = data.map(rowToChannel);
+      renderChannels();
+      if (selectedId) {
+        const still = channels.find(c => c.id === selectedId);
+        if (still) selectChannel(selectedId); else {
+          selectedId = null;
+          document.getElementById('sideContent').innerHTML = `<div class="side-empty"><span class="icon">📻</span>Select a channel to view details and actions</div>`;
+          document.getElementById('selectedBadge').style.display = 'none';
+        }
+      }
+    })
+    .subscribe();
+
+  sb.channel('log-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
+      const r = payload.new;
+      const d = new Date(r.created_at);
+      const ts = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;
+      activityLog.unshift({ time: ts, text: r.message });
+      if (activityLog.length > 50) activityLog.pop();
+      renderLog();
+    })
+    .subscribe();
+}
+
+// ─────────────────────────────────────────────
+// DB STATUS INDICATOR
+// ─────────────────────────────────────────────
+function setDbStatus(state, msg) {
+  const el = document.getElementById('dbStatus');
+  if (!el) return;
+  const states = {
+    loading:   { dot:'#ffc400', text:'Connecting…' },
+    connected: { dot:'#00e676', text:'Live' },
+    error:     { dot:'#ff5252', text: msg || 'Error' },
+  };
+  const s = states[state] || states.loading;
+  el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${s.dot};display:inline-block;margin-right:5px;${state==='connected'?'box-shadow:0 0 5px '+s.dot+';':''}"></span>${s.text}`;
+}
+
+
+
+// ─────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,'0');
+  const m = String(now.getUTCMinutes()).padStart(2,'0');
+  const s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+const statusLabels = {
+  available: 'Available',
+  active: 'Active',
+  reserved: 'Reserved',
+  tactical: 'Tactical',
+  interop: 'Interop'
+};
+
+function logActivityLocal(text) {
+  const now = new Date();
+  const ts = `${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
+  activityLog.unshift({ time: ts, text });
+  if (activityLog.length > 50) activityLog.pop();
+  renderLog();
+}
+
+async function logActivity(text) {
+  logActivityLocal(text);
+  try {
+    await sb.from('activity_log').insert({ message: text });
+  } catch(e) { /* non-critical */ }
+}
+
+function renderLog() {
+  const el = document.getElementById('activityLog');
+  if (!activityLog.length) {
+    el.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">No activity yet</div>';
+    return;
+  }
+  el.innerHTML = activityLog.slice(0, 15).map(e => `
+    <div class="log-entry">
+      <div class="log-time">${e.time}</div>
+      <div class="log-text">${e.text}</div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  const counts = { available: 0, active: 0, reserved: 0, tactical: 0, interop: 0 };
+  channels.forEach(c => counts[c.status]++);
+  Object.keys(counts).forEach(k => {
+    document.getElementById(`cnt-${k}`).textContent = counts[k];
+  });
+}
+
+// ─────────────────────────────────────────────
+// FILTER + RENDER
+// ─────────────────────────────────────────────
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = { all: 'All Channels', available: 'Available Channels', active: 'Active / Deployed Channels', reserved: 'Reserved (Pre-planned)', tactical: 'Tactical Channels', interop: 'Interop / Mutual Aid' };
+  document.getElementById('filterLabel').textContent = labels[filter];
+  renderChannels();
+}
+
+function renderChannels() {
+  const query = document.getElementById('searchBox').value.toLowerCase();
+  let filtered = channels.filter(c => {
+    if (currentFilter !== 'all' && c.status !== currentFilter) return false;
+    if (query) {
+      return c.designator.toLowerCase().includes(query)
+        || c.freq.includes(query)
+        || c.function.toLowerCase().includes(query)
+        || c.agency.toLowerCase().includes(query)
+        || c.incident.toLowerCase().includes(query);
+    }
+    return true;
+  });
+
+  document.getElementById('channelCount').textContent = `${filtered.length} channel${filtered.length !== 1 ? 's' : ''}`;
+
+  const grid = document.getElementById('channelGrid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="no-data-row">No channels match current filter</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(ch => `
+    <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
+      <div class="status-bar ${ch.status}"></div>
+      <div class="ch-designator">${ch.designator}</div>
+      <div class="ch-freq">${ch.freq} MHz</div>
+      <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
+      <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
+      <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
+      <div class="ch-tone">${ch.tone || '—'}</div>
+      <div class="ch-mode">${ch.mode}</div>
+    </div>
+  `).join('');
+
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+// CHANNEL SELECTION + DETAIL
+// ─────────────────────────────────────────────
+function selectChannel(id) {
+  selectedId = id;
+  const ch = channels.find(c => c.id === id);
+  renderChannels();
+
+  const badge = document.getElementById('selectedBadge');
+  badge.style.display = 'inline-block';
+  badge.innerHTML = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
+
+  const rxNote = (ch.rxFreq && ch.rxFreq !== ch.freq) ? ch.rxFreq + ' MHz' : 'Same as TX';
+
+  document.getElementById('sideContent').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-label">Designator</div>
+      <div class="detail-value" style="font-size:18px;letter-spacing:0.04em;">${ch.designator}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Frequency</div>
+      <div class="detail-value freq">${ch.freq} MHz</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">RX: ${rxNote}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-grid">
+        <div>
+          <div class="detail-label">Mode</div>
+          <div class="detail-value" style="font-size:13px;">${ch.mode}</div>
+        </div>
+        <div>
+          <div class="detail-label">Tone / NAC</div>
+          <div class="detail-value" style="font-size:13px;">${ch.tone || '—'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Function</div>
+      <div class="detail-value" style="font-size:13px;">${ch.function || '—'}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Agency</div>
+      <div class="detail-value" style="font-size:13px;">${ch.agency || '—'}</div>
+    </div>
+    ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
+    <div class="side-actions">
+      <button class="btn-primary" onclick="openEditModal(${ch.id})">✏ Edit Channel</button>
+      ${ch.status !== 'available' ? `<button class="btn-success" onclick="releaseChannel(${ch.id})">✓ Mark Available</button>` : ''}
+      ${ch.status === 'available' ? `<button class="btn-warning" onclick="quickDeploy(${ch.id})">⚡ Quick Deploy</button>` : ''}
+      <button class="btn-danger" onclick="deleteChannel(${ch.id})">✕ Remove Channel</button>
+    </div>
+  `;
+}
+
+async function releaseChannel(id) {
+  const ch = channels.find(c => c.id === id);
+  const old = ch.status;
+  const who = currentUser ? currentUser.name : 'Unknown';
+  const { error } = await sb.from('channels').update({
+    status: 'available', function: '—', agency: '—', updated_by: who, updated_at: new Date().toISOString()
+  }).eq('id', id);
+  if (error) { alert('Error releasing channel: ' + error.message); return; }
+  logActivity(`<span class="log-ch">${ch.designator}</span> released by ${who} — ${statusLabels[old]} → Available`);
+}
+
+function quickDeploy(id) {
+  const ch = channels.find(c => c.id === id);
+  openAddModal();
+  setTimeout(() => {
+    document.getElementById('f-designator').value = ch.designator;
+    document.getElementById('f-freq').value        = ch.freq;
+    document.getElementById('f-tone').value        = ch.tone !== '—' ? ch.tone : '';
+    document.getElementById('f-mode').value        = ch.mode;
+    document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
+    document.getElementById('f-group').value       = ch.group || '';
+    document.getElementById('f-status').value      = 'active';
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Deploy Channel';
+  }, 50);
+}
+
+async function deleteChannel(id) {
+  const ch = channels.find(c => c.id === id);
+  if (!confirm(`Remove ${ch.designator} from the channel plan?`)) return;
+  const who = currentUser ? currentUser.name : 'Unknown';
+  const { error } = await sb.from('channels').delete().eq('id', id);
+  if (error) { alert('Error deleting channel: ' + error.message); return; }
+  logActivity(`<span class="log-ch">${ch.designator}</span> removed by ${who}`);
+  selectedId = null;
+  document.getElementById('sideContent').innerHTML = `<div class="side-empty"><span class="icon">📻</span>Select a channel to view details and actions</div>`;
+  document.getElementById('selectedBadge').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// ADD / EDIT MODAL
+// ─────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add Channel';
+  ['designator','freq','function','agency','tone','group','rxfreq','notes'].forEach(f => {
+    const el = document.getElementById(`f-${f}`);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-status').value = 'available';
+  document.getElementById('f-mode').value = 'Analog FM';
+  document.getElementById('addModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  editingId = id;
+  const ch = channels.find(c => c.id === id);
+  document.getElementById('modalTitle').textContent = 'Edit Channel';
+  document.getElementById('f-designator').value = ch.designator;
+  document.getElementById('f-freq').value        = ch.freq;
+  document.getElementById('f-status').value      = ch.status;
+  document.getElementById('f-mode').value        = ch.mode;
+  document.getElementById('f-tone').value        = ch.tone !== '—' ? ch.tone : '';
+  document.getElementById('f-function').value    = ch.function !== '—' ? ch.function : '';
+  document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
+  document.getElementById('f-group').value       = ch.group || '';
+  document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
+  document.getElementById('f-notes').value       = ch.notes || '';
+  document.getElementById('addModal').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveChannel() {
+  const designator = document.getElementById('f-designator').value.trim();
+  const freq       = document.getElementById('f-freq').value.trim();
+  if (!designator || !freq) { alert('Channel Designator and Frequency are required.'); return; }
+
+  const who = currentUser ? currentUser.name : 'Unknown';
+  const row = {
+    designator,
+    freq,
+    rx_freq:    document.getElementById('f-rxfreq').value.trim()    || freq,
+    status:     document.getElementById('f-status').value,
+    mode:       document.getElementById('f-mode').value,
+    tone:       document.getElementById('f-tone').value.trim()      || '—',
+    function:   document.getElementById('f-function').value.trim()  || '—',
+    agency:     document.getElementById('f-agency').value.trim()    || '—',
+    group:      document.getElementById('f-group').value.trim()     || '',
+    notes:      document.getElementById('f-notes').value.trim()     || '',
+    updated_by: who,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (editingId) {
+    const { error } = await sb.from('channels').update(row).eq('id', editingId);
+    if (error) { alert('Error saving channel: ' + error.message); return; }
+    logActivity(`<span class="log-ch">${designator}</span> updated by ${who} — ${statusLabels[row.status]}`);
+  } else {
+    const { error } = await sb.from('channels').insert(row);
+    if (error) { alert('Error adding channel: ' + error.message); return; }
+    logActivity(`<span class="log-ch">${designator}</span> added by ${who} — ${statusLabels[row.status]}`);
+  }
+
+  closeAddModal();
+}
+
+
+// ─────────────────────────────────────────────
+// ICS 205
+// ─────────────────────────────────────────────
+function openICS205() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  const timeStr = `${String(now.getUTCHours()).padStart(2,'0')}${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
+
+  const rows = channels.map((ch, i) => `
+    <tr>
+      <td style="text-align:center">${i + 1}</td>
+      <td><strong>${ch.designator}</strong></td>
+      <td>${ch.function}</td>
+      <td>${ch.freq} MHz</td>
+      <td>${ch.rxFreq && ch.rxFreq !== ch.freq ? ch.rxFreq + ' MHz' : ch.freq + ' MHz'}</td>
+      <td>${ch.mode}</td>
+      <td>${ch.tone}</td>
+      <td>${ch.agency}</td>
+      <td>
+        <span style="font-weight:bold;color:${
+          ch.status === 'active' ? '#c00' :
+          ch.status === 'available' ? '#006400' :
+          ch.status === 'reserved' ? '#996600' :
+          ch.status === 'tactical' ? '#003399' : '#550055'
+        };">${statusLabels[ch.status].toUpperCase()}</span>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('ics205Body').innerHTML = `
+    <div style="padding:16px;">
+    <div class="ics205-wrapper" id="ics205Print">
+      <div class="ics205-title">ICS 205</div>
+      <div class="ics205-subtitle">INCIDENT RADIO COMMUNICATIONS PLAN</div>
+      <div class="ics205-meta">
+        <div class="ics205-meta-cell"><div class="ics205-meta-label">1. Incident Name</div><div class="ics205-meta-value">${incident.name || '—'}</div></div>
+        <div class="ics205-meta-cell"><div class="ics205-meta-label">2. Incident Number</div><div class="ics205-meta-value">${incident.number || '—'}</div></div>
+        <div class="ics205-meta-cell" style="border-right:none"><div class="ics205-meta-label">3. Date/Time Prepared</div><div class="ics205-meta-value">${dateStr} / ${timeStr}</div></div>
+        <div class="ics205-meta-cell" style="border-bottom:none"><div class="ics205-meta-label">4. Operational Period</div><div class="ics205-meta-value">${incident.period || '—'}</div></div>
+        <div class="ics205-meta-cell" style="border-bottom:none"><div class="ics205-meta-label">5. Incident Commander</div><div class="ics205-meta-value">${incident.ic || '—'}</div></div>
+        <div class="ics205-meta-cell" style="border-bottom:none;border-right:none"><div class="ics205-meta-label">6. Prepared By (Comms Unit Ldr)</div><div class="ics205-meta-value">${incident.prepared || '—'}</div></div>
+      </div>
+      <br>
+      <table class="ics205-table">
+        <thead>
+          <tr>
+            <th style="width:24px;">#</th>
+            <th>Channel Name / Talkgroup</th>
+            <th>Function</th>
+            <th>TX Freq / Talkgroup</th>
+            <th>RX Freq / Talkgroup</th>
+            <th>Mode / System</th>
+            <th>Tone / NAC</th>
+            <th>Assignment</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="ics205-sig">
+        <div>
+          <div style="font-weight:bold;font-size:10px;text-transform:uppercase;">Signature (Comms Unit Leader)</div>
+          <div style="margin-top:20px;border-top:1px solid #000;padding-top:2px;font-size:10px;">Name / Signature / Date</div>
+        </div>
+        <div>
+          <div style="font-weight:bold;font-size:10px;text-transform:uppercase;">Approved By (Safety Officer)</div>
+          <div style="margin-top:20px;border-top:1px solid #000;padding-top:2px;font-size:10px;">Name / Signature / Date</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:9px;color:#555;">
+        ICS 205 — Page 1 of 1 &nbsp;|&nbsp; Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; RF Channel Manager — Public Safety Operations
+      </div>
+    </div>
+    </div>
+  `;
+  document.getElementById('ics205Modal').classList.add('open');
+}
+
+function printICS205() {
+  const content = document.getElementById('ics205Print').outerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html><html><head><title>ICS 205</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 16px; }
+      .ics205-title { text-align:center; font-size:14px; font-weight:bold; margin-bottom:4px; }
+      .ics205-subtitle { text-align:center; font-size:12px; font-weight:bold; margin-bottom:10px; border-bottom:2px solid #000; padding-bottom:6px; }
+      .ics205-meta { display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #000; }
+      .ics205-meta-cell { padding:4px 6px; border-right:1px solid #000; border-bottom:1px solid #000; }
+      .ics205-meta-label { font-size:9px; font-weight:bold; text-transform:uppercase; }
+      .ics205-table { width:100%; border-collapse:collapse; border:1px solid #000; margin-top:10px; }
+      .ics205-table th { background:#d0d0d0; border:1px solid #000; padding:4px 6px; text-align:left; font-size:10px; text-transform:uppercase; }
+      .ics205-table td { border:1px solid #000; padding:4px 6px; font-size:11px; }
+      .ics205-sig { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:20px; border:1px solid #000; padding:6px; }
+    </style></head><body>${content}</body></html>`);
+  win.document.close();
+  win.print();
+}
+
+// ─────────────────────────────────────────────
+// THEME SWITCHER
+// ─────────────────────────────────────────────
+const THEMES = {
+  midnight: { icon: '🌑', label: 'Midnight' },
+  contrast: { icon: '⬛', label: 'Hi-Contrast' },
+  day:      { icon: '☀️',  label: 'Day Mode' },
+  amber:    { icon: '🟡', label: 'Amber' },
+  forest:   { icon: '🌿', label: 'Forest' },
+};
+
+let currentTheme = 'midnight';
+
+function setTheme(name, el) {
+  // Remove old theme attr
+  document.documentElement.removeAttribute('data-theme');
+  if (name !== 'midnight') document.documentElement.setAttribute('data-theme', name);
+
+  // Update checkmarks
+  Object.keys(THEMES).forEach(t => {
+    const chk = document.getElementById(`check-${t}`);
+    if (chk) chk.style.display = (t === name) ? 'block' : 'none';
+  });
+
+  // Update active class on options
+  document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  // Update button label/icon
+  document.getElementById('themeIcon').textContent = THEMES[name].icon;
+  document.getElementById('themeLabel').textContent = THEMES[name].label;
+
+  currentTheme = name;
+  closeThemeDropdown();
+
+  // Persist preference
+  try { localStorage.setItem('rfTheme', name); } catch(e) {}
+}
+
+function toggleThemeDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('themeDropdown').classList.toggle('open');
+}
+
+function closeThemeDropdown() {
+  document.getElementById('themeDropdown').classList.remove('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('themeSwitcher').contains(e.target)) {
+    closeThemeDropdown();
+  }
+});
+
+// Load saved theme
+(function() {
+  try {
+    const saved = localStorage.getItem('rfTheme');
+    if (saved && THEMES[saved]) {
+      const opt = document.querySelector(`.theme-option[data-theme="${saved}"]`);
+      setTheme(saved, opt);
+    }
+  } catch(e) {}
+})();
+
+// ─────────────────────────────────────────────
+// AUTH & USER MANAGEMENT
+// ─────────────────────────────────────────────
+const DEFAULT_USERS = [
+  { id:'u1', username:'commsunit',  password:'comms123',  name:'K. Ito',    role:'comms',  roleLabel:'Comms Unit Leader', color:'#1e88e5', active:true },
+  { id:'u2', username:'dispatcher', password:'dispatch1', name:'M. Rivera', role:'admin',  roleLabel:'Dispatch Admin',    color:'#ff5252', active:true },
+  { id:'u3', username:'observer',   password:'view1234',  name:'Observer',  role:'viewer', roleLabel:'View Only',         color:'#00e676', active:true },
+];
+
+function loadUsers() {
+  try {
+    const saved = localStorage.getItem('rfUsers');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_USERS));
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_USERS)); }
+}
+
+function saveUsers() {
+  try { localStorage.setItem('rfUsers', JSON.stringify(USERS)); } catch(e) {}
+}
+
+let USERS = loadUsers();
+let currentUser = null;
+let userEditingId = null;
+
+const ROLE_DEFS = {
+  admin:  { label:'Dispatch Admin',     color:'#ff5252', desc:'Full access — manage users, channels, incidents' },
+  comms:  { label:'Comms Unit Leader',  color:'#1e88e5', desc:'Full access — manage channels and incidents' },
+  viewer: { label:'View Only',          color:'#00e676', desc:'Read-only — view channels, no edits' },
+};
+
+function fillDemo(user, pass) {
+  document.getElementById('loginUser').value = user;
+  document.getElementById('loginPass').value = pass;
+  document.getElementById('loginError').classList.remove('visible');
+  document.getElementById('loginPass').focus();
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  const match = USERS.find(x => x.username === u && x.password === p && x.active !== false);
+
+  if (!match) {
+    document.getElementById('loginError').classList.add('visible');
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+    return;
+  }
+
+  currentUser = match;
+  document.getElementById('loginScreen').classList.add('hidden');
+
+  // Apply readonly mode for viewer role
+  if (match.role === 'viewer') {
+    document.body.classList.add('readonly');
+  }
+
+  // Show/hide admin button
+  const adminBtn = document.getElementById('adminMenuBtn');
+  if (adminBtn) adminBtn.style.display = match.role === 'admin' ? 'flex' : 'none';
+
+  // Render user chip in topbar
+  const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  document.getElementById('topbarUser').innerHTML = `
+    <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
+    <div>
+      <div style="color:var(--text-primary);font-size:12px;">${match.name}</div>
+      <div style="font-size:10px;color:var(--text-dim);">${match.roleLabel}</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+  `;
+
+  logActivity(`<span class="log-ch">${match.name}</span> signed in as ${match.roleLabel}`);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.body.classList.remove('readonly');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('visible');
+  document.getElementById('topbarUser').innerHTML = '';
+  const adminBtn = document.getElementById('adminMenuBtn');
+  if (adminBtn) adminBtn.style.display = 'none';
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────
+// USER ADMINISTRATION
+// ─────────────────────────────────────────────
+function openUserAdmin() {
+  renderUserTable();
+  document.getElementById('userAdminModal').classList.add('open');
+}
+
+function closeUserAdmin() {
+  document.getElementById('userAdminModal').classList.remove('open');
+  closeUserForm();
+}
+
+function renderUserTable() {
+  const tbody = document.getElementById('userTableBody');
+  tbody.innerHTML = USERS.map(u => {
+    const rd = ROLE_DEFS[u.role] || ROLE_DEFS.viewer;
+    const isMe = currentUser && currentUser.id === u.id;
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:${u.color}22;color:${u.color};border:1px solid ${u.color}44;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--font-data);">${u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+            <div>
+              <div style="font-size:13px;color:var(--text-primary);">${u.name}</div>
+              ${isMe ? `<div style="font-size:10px;color:var(--accent);font-family:var(--font-data);">— you</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td style="font-family:var(--font-data);font-size:12px;color:var(--text-secondary);">${u.username}</td>
+        <td><span class="status-pill" style="background:${rd.color}18;color:${rd.color};border:1px solid ${rd.color}33;">${rd.label}</span></td>
+        <td>
+          <span style="font-family:var(--font-data);font-size:11px;padding:2px 8px;border-radius:2px;${u.active!==false ? 'background:rgba(0,230,118,0.1);color:var(--status-available);border:1px solid rgba(0,230,118,0.25);' : 'background:rgba(255,82,82,0.1);color:var(--status-active);border:1px solid rgba(255,82,82,0.25);'}">
+            ${u.active!==false ? 'Active' : 'Disabled'}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openUserForm('${u.id}')">Edit</button>
+            ${!isMe ? `<button class="btn-secondary" style="font-size:11px;padding:4px 10px;${u.active!==false?'border-color:rgba(255,196,0,0.4);color:var(--status-reserved);':'border-color:rgba(0,230,118,0.4);color:var(--status-available);'}" onclick="toggleUserActive('${u.id}')">${u.active!==false?'Disable':'Enable'}</button>` : ''}
+            ${!isMe ? `<button class="btn-danger" style="font-size:11px;padding:4px 10px;" onclick="deleteUser('${u.id}')">Remove</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);font-family:var(--font-data);">No users found</td></tr>`;
+}
+
+function openUserForm(userId) {
+  userEditingId = userId || null;
+  const form = document.getElementById('userFormSection');
+  form.style.display = 'block';
+
+  if (userId) {
+    const u = USERS.find(x => x.id === userId);
+    if (!u) return;
+    document.getElementById('uf-name').value     = u.name;
+    document.getElementById('uf-username').value = u.username;
+    document.getElementById('uf-role').value     = u.role;
+    document.getElementById('uf-color').value    = u.color;
+    document.getElementById('uf-password').value = '';
+    document.getElementById('uf-password').placeholder = 'Leave blank to keep current';
+    document.getElementById('userFormTitle').textContent = 'Edit User';
+  } else {
+    document.getElementById('uf-name').value     = '';
+    document.getElementById('uf-username').value = '';
+    document.getElementById('uf-role').value     = 'viewer';
+    document.getElementById('uf-color').value    = '#1e88e5';
+    document.getElementById('uf-password').value = '';
+    document.getElementById('uf-password').placeholder = 'Set password';
+    document.getElementById('userFormTitle').textContent = 'Add New User';
+  }
+  document.getElementById('uf-error').textContent = '';
+  document.getElementById('uf-name').focus();
+}
+
+function closeUserForm() {
+  document.getElementById('userFormSection').style.display = 'none';
+  userEditingId = null;
+}
+
+function saveUserForm() {
+  const name     = document.getElementById('uf-name').value.trim();
+  const username = document.getElementById('uf-username').value.trim().toLowerCase();
+  const role     = document.getElementById('uf-role').value;
+  const color    = document.getElementById('uf-color').value;
+  const password = document.getElementById('uf-password').value;
+  const errEl    = document.getElementById('uf-error');
+
+  if (!name || !username) { errEl.textContent = 'Name and username are required.'; return; }
+  if (!/^[a-z0-9_]+$/.test(username)) { errEl.textContent = 'Username: lowercase letters, numbers, underscores only.'; return; }
+
+  const duplicate = USERS.find(u => u.username === username && u.id !== userEditingId);
+  if (duplicate) { errEl.textContent = 'Username already exists.'; return; }
+
+  if (userEditingId) {
+    const u = USERS.find(x => x.id === userEditingId);
+    u.name  = name;
+    u.username = username;
+    u.role  = role;
+    u.roleLabel = ROLE_DEFS[role].label;
+    u.color = color;
+    if (password) u.password = password;
+    logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser.name}`);
+  } else {
+    if (!password) { errEl.textContent = 'Password is required for new users.'; return; }
+    USERS.push({
+      id: 'u' + Date.now(),
+      username, password, name, role,
+      roleLabel: ROLE_DEFS[role].label,
+      color, active: true
+    });
+    logActivity(`User <span class="log-ch">${name}</span> created by ${currentUser.name}`);
+  }
+
+  saveUsers();
+  renderUserTable();
+  closeUserForm();
+}
+
+function toggleUserActive(userId) {
+  const u = USERS.find(x => x.id === userId);
+  if (!u) return;
+  u.active = u.active === false ? true : false;
+  saveUsers();
+  logActivity(`User <span class="log-ch">${u.name}</span> ${u.active ? 'enabled' : 'disabled'} by ${currentUser.name}`);
+  renderUserTable();
+}
+
+function deleteUser(userId) {
+  const u = USERS.find(x => x.id === userId);
+  if (!u) return;
+  if (!confirm(`Remove user "${u.name}" (${u.username})? This cannot be undone.`)) return;
+  USERS.splice(USERS.indexOf(u), 1);
+  saveUsers();
+  logActivity(`User <span class="log-ch">${u.name}</span> removed by ${currentUser.name}`);
+  renderUserTable();
+  if (userEditingId === userId) closeUserForm();
+}
+
+// ─────────────────────────────────────────────
+// BIG BOARD — WALL DISPLAY
+// ─────────────────────────────────────────────
+function openBigBoard() {
+  const theme = currentTheme || 'midnight';
+
+  const themeVars = {
+    midnight: {
+      bgDeep:'#0a0d12', bgPanel:'#111620', bgCard:'#161d2b', bgHover:'#1c2540',
+      border:'#1f2d44', borderLit:'#2b3f62',
+      textPrimary:'#e8edf5', textSecondary:'#7a8fac', textDim:'#3e5272',
+      accent:'#1e88e5',
+    },
+    contrast: {
+      bgDeep:'#000000', bgPanel:'#0a0a0a', bgCard:'#111111', bgHover:'#1a1a1a',
+      border:'#2a2a2a', borderLit:'#444444',
+      textPrimary:'#ffffff', textSecondary:'#aaaaaa', textDim:'#555555',
+      accent:'#00aaff',
+    },
+    day: {
+      bgDeep:'#f0f2f5', bgPanel:'#ffffff', bgCard:'#f7f9fc', bgHover:'#eef1f6',
+      border:'#d0d8e4', borderLit:'#aab8cc',
+      textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8',
+      accent:'#1565c0',
+    },
+    amber: {
+      bgDeep:'#0d0900', bgPanel:'#161000', bgCard:'#1e1600', bgHover:'#271d00',
+      border:'#332600', borderLit:'#4d3900',
+      textPrimary:'#ffe082', textSecondary:'#b8922a', textDim:'#5c4400',
+      accent:'#ffb300',
+    },
+    forest: {
+      bgDeep:'#060d06', bgPanel:'#0c160c', bgCard:'#111d11', bgHover:'#172417',
+      border:'#1e2e1e', borderLit:'#2e4a2e',
+      textPrimary:'#c8e6c9', textSecondary:'#6a9b6a', textDim:'#2e4a2e',
+      accent:'#4caf50',
+    },
+  };
+
+  const t = themeVars[theme] || themeVars.midnight;
+
+  // Status colour sets — same for all themes
+  const SC = {
+    available: { color:'#00e676', bg:'rgba(0,230,118,0.10)', border:'rgba(0,230,118,0.28)', label:'AVAILABLE' },
+    active:    { color:'#ff5252', bg:'rgba(255,82,82,0.10)',  border:'rgba(255,82,82,0.28)',  label:'ACTIVE' },
+    reserved:  { color:'#ffc400', bg:'rgba(255,196,0,0.10)',  border:'rgba(255,196,0,0.28)',  label:'RESERVED' },
+    tactical:  { color:'#40c4ff', bg:'rgba(64,196,255,0.10)', border:'rgba(64,196,255,0.28)', label:'TACTICAL' },
+    interop:   { color:'#ce93d8', bg:'rgba(206,147,216,0.10)',border:'rgba(206,147,216,0.28)',label:'INTEROP' },
+  };
+  if (theme === 'contrast') {
+    SC.available.color='#00ff88'; SC.active.color='#ff3333';
+    SC.reserved.color='#ffcc00'; SC.tactical.color='#00ccff'; SC.interop.color='#dd88ff';
+  }
+  if (theme === 'day') {
+    SC.available.color='#00875a'; SC.available.bg='rgba(0,135,90,0.08)'; SC.available.border='rgba(0,135,90,0.25)';
+    SC.active.color='#d63031';   SC.active.bg='rgba(214,48,49,0.08)';   SC.active.border='rgba(214,48,49,0.25)';
+    SC.reserved.color='#b8860b'; SC.reserved.bg='rgba(184,134,11,0.08)';SC.reserved.border='rgba(184,134,11,0.25)';
+    SC.tactical.color='#0066cc'; SC.tactical.bg='rgba(0,102,204,0.08)'; SC.tactical.border='rgba(0,102,204,0.25)';
+    SC.interop.color='#7b2fbe';  SC.interop.bg='rgba(123,47,190,0.08)'; SC.interop.border='rgba(123,47,190,0.25)';
+  }
+
+  const incName   = '';
+  const incNumber = '';
+  const incPeriod = '';
+  const incIC     = '';
+
+  // Group channels
+  const groups = { active:[], reserved:[], tactical:[], interop:[], available:[] };
+  channels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
+
+  const now = new Date();
+  const utcTime = `${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
+  const utcDate = now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  function buildTile(ch) {
+    const s = SC[ch.status];
+    return `
+      <div style="
+        background:${s.bg};
+        border:2px solid ${s.border};
+        border-left:6px solid ${s.color};
+        border-radius:6px;
+        padding:18px 20px;
+        display:flex;flex-direction:column;gap:6px;
+        position:relative;
+        min-width:0;
+      ">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${t.textPrimary};line-height:1;word-break:break-all;">${ch.designator}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:${s.bg};color:${s.color};border:1px solid ${s.border};white-space:nowrap;flex-shrink:0;">${s.label}</div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:400;color:${s.color};letter-spacing:0.04em;line-height:1;">${ch.freq} <span style="font-size:14px;opacity:0.7;">MHz</span></div>
+        <div style="font-size:15px;color:${t.textSecondary};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.function !== '—' ? ch.function : ''}</div>
+        <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;">
+          ${ch.agency && ch.agency !== '—' ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">${ch.agency}</span>` : ''}
+          ${ch.mode ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">${ch.mode}</span>` : ''}
+          ${ch.tone && ch.tone !== '—' ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">T: ${ch.tone}</span>` : ''}
+        </div>
+        ${ch.incident ? `<div style="font-size:12px;color:${SC.reserved.color};font-family:'IBM Plex Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📋 ${ch.incident}</div>` : ''}
+        ${ch.notes ? `<div style="font-size:12px;color:${t.textDim};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">💬 ${ch.notes}</div>` : ''}
+      </div>`;
+  }
+
+  function buildSection(statusKey, chList) {
+    if (!chList.length) return '';
+    const s = SC[statusKey];
+    const pulse = statusKey === 'active' ? `animation:pulse 2s infinite;` : '';
+    return `
+      <div style="margin-bottom:36px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid ${s.border};">
+          <div style="width:14px;height:14px;border-radius:50%;background:${s.color};box-shadow:0 0 10px ${s.color};flex-shrink:0;${pulse}"></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${s.color};">${s.label}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:${t.textDim};font-weight:400;">${chList.length} channel${chList.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+          ${chList.map(buildTile).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Build summary strip counts
+  const counts = {};
+  Object.keys(groups).forEach(k => counts[k] = groups[k].length);
+
+  const summaryStrip = Object.entries(SC).map(([k, s]) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:0 24px;border-right:1px solid ${t.border};">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:700;color:${s.color};line-height:1;">${counts[k] || 0}</div>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.1em;">${s.label}</div>
+        <div style="width:28px;height:3px;border-radius:2px;background:${s.color};margin-top:3px;"></div>
+      </div>
+    </div>`).join('');
+
+  const sectionsHTML = ['active','reserved','tactical','interop','available']
+    .map(k => buildSection(k, groups[k])).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RF BIG BOARD — ${incName}</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  body {
+    background:${t.bgDeep};
+    color:${t.textPrimary};
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-thumb { background:${t.borderLit}; border-radius:3px; }
+
+  /* subtle scanline overlay for tactical feel */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.015) 2px,
+      rgba(0,0,0,0.015) 4px
+    );
+    pointer-events:none;
+    z-index:999;
+  }
+
+  .bb-header {
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:${t.bgPanel};
+    border-bottom:2px solid ${t.borderLit};
+    padding:0 32px;
+    height:80px;
+    display:flex;
+    align-items:center;
+    gap:0;
+  }
+  .bb-logo {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding-right:28px;
+    border-right:1px solid ${t.border};
+    margin-right:0;
+    flex-shrink:0;
+  }
+  .bb-logo-icon { font-size:28px; }
+  .bb-logo-text {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:${t.textPrimary};
+    line-height:1.3;
+  }
+  .bb-logo-sub {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:${t.accent};
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+  }
+  .bb-incident {
+    padding:0 28px;
+    border-right:1px solid ${t.border};
+    flex-shrink:0;
+  }
+  .bb-incident-label {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:${t.textDim};
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    margin-bottom:2px;
+  }
+  .bb-incident-name {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:${t.textPrimary};
+    line-height:1;
+  }
+  .bb-incident-meta {
+    font-size:11px;
+    color:${t.textDim};
+    font-family:'IBM Plex Mono',monospace;
+    margin-top:3px;
+  }
+  .bb-counts { display:flex; flex:1; align-items:center; }
+  .bb-right {
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:3px;
+    flex-shrink:0;
+    padding-left:24px;
+    border-left:1px solid ${t.border};
+  }
+  .bb-clock {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:28px;
+    font-weight:700;
+    color:${SC.available.color};
+    letter-spacing:0.06em;
+    line-height:1;
+  }
+  .bb-date {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:${t.textDim};
+    letter-spacing:0.06em;
+  }
+  .bb-refresh-badge {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    color:${t.textDim};
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  .bb-body { padding:28px 32px 48px; }
+
+  /* bottom status bar */
+  .bb-footer {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    height:36px;
+    background:${t.bgPanel};
+    border-top:1px solid ${t.border};
+    display:flex;
+    align-items:center;
+    gap:0;
+    padding:0 24px;
+    z-index:100;
+  }
+  .bb-footer-item {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:${t.textDim};
+    padding:0 16px;
+    border-right:1px solid ${t.border};
+    white-space:nowrap;
+  }
+  .bb-footer-item:last-child { border-right:none; }
+  .bb-footer-item span { color:${t.textSecondary}; }
+  .bb-footer-spacer { flex:1; }
+</style>
+</head>
+<body>
+
+<header class="bb-header">
+  <div class="bb-logo">
+    <div class="bb-logo-icon">📡</div>
+    <div>
+      <div class="bb-logo-text">RF Channel Board</div>
+      <div class="bb-logo-sub">Public Safety Ops</div>
+    </div>
+  </div>
+  <div class="bb-incident" style="padding-left:28px;">
+    <div class="bb-incident-label">Channel Plan</div>
+    <div class="bb-incident-name" style="font-size:16px;">Organization-Wide</div>
+    <div class="bb-incident-meta">${channels.length} channels · Generated ${utcDate}</div>
+  </div>
+  <div class="bb-counts">${summaryStrip}</div>
+  <div class="bb-right">
+    <div class="bb-clock" id="bbClock">--:--:--</div>
+    <div class="bb-date" id="bbDate">${utcDate}</div>
+    <div class="bb-refresh-badge">Auto-refresh: <span id="bbCountdown">30</span>s</div>
+  </div>
+</header>
+
+<div class="bb-body">
+  ${sectionsHTML || `<div style="text-align:center;padding:80px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:${t.textDim};">No channels in plan</div>`}
+  <div style="height:40px;"></div>
+</div>
+
+<footer class="bb-footer">
+  <div class="bb-footer-item">RF Channel Manager</div>
+  <div class="bb-footer-item">Organization-Wide Channel Plan</div>
+  <div class="bb-footer-spacer"></div>
+  <div class="bb-footer-item">Total Channels: <span>${channels.length}</span></div>
+  <div class="bb-footer-item">Generated: <span>${utcDate} ${utcTime}</span></div>
+</footer>
+
+<script>
+  // Live clock
+  function updateClock(){
+    const n=new Date();
+    const s=t=>String(t).padStart(2,'0');
+    document.getElementById('bbClock').textContent=s(n.getUTCHours())+':'+s(n.getUTCMinutes())+':'+s(n.getUTCSeconds())+' UTC';
+    document.getElementById('bbDate').textContent=n.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  setInterval(updateClock,1000);
+  updateClock();
+
+  // Countdown to auto-refresh
+  let countdown=30;
+  const countEl=document.getElementById('bbCountdown');
+  setInterval(()=>{
+    countdown--;
+    if(countEl) countEl.textContent=countdown;
+    if(countdown<=0){ window.location.reload(); }
+  },1000);
+<\/script>
+</body>
+</html>`;
+
+  // Render into the in-page fullscreen overlay (no popup needed)
+  const overlay = document.getElementById('bigBoardOverlay');
+  const frame   = document.getElementById('bigBoardFrame');
+  frame.srcdoc  = html;
+  overlay.style.display = 'flex';
+  // Attempt true fullscreen on the overlay
+  if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+}
+
+function closeBigBoard() {
+  const overlay = document.getElementById('bigBoardOverlay');
+  overlay.style.display = 'none';
+  // Clear iframe to stop its clock intervals
+  document.getElementById('bigBoardFrame').srcdoc = '';
+  // Exit fullscreen if active
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+// Close Big Board on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('bigBoardOverlay').style.display !== 'none') {
+    closeBigBoard();
+  }
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+async function init() {
+  setDbStatus('loading');
+  await loadChannels();
+  await loadActivityLog();
+  subscribeRealtime();
+}
+
+init();
+</script>
+
+<!-- ── USER ADMINISTRATION MODAL ── -->
+<div class="modal-overlay" id="userAdminModal">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <div class="modal-title">👥 User Administration</div>
+      <button class="modal-close" onclick="closeUserAdmin()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;gap:0;">
+
+      <!-- User table -->
+      <div style="padding:16px 20px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">System Users</div>
+          <button class="btn-primary" style="font-size:12px;padding:5px 14px;" onclick="openUserForm(null)">+ Add User</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;font-weight:500;">Name</th>
+              <th style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;font-weight:500;">Username</th>
+              <th style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;font-weight:500;">Role</th>
+              <th style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;font-weight:500;">Status</th>
+              <th style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;font-weight:500;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Add / Edit form (hidden by default) -->
+      <div id="userFormSection" style="display:none;border-top:1px solid var(--border);margin-top:16px;padding:16px 20px;background:var(--bg-card);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div id="userFormTitle" style="font-family:var(--font-data);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-primary);">Add New User</div>
+          <button class="modal-close" onclick="closeUserForm()" style="font-size:16px;">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-field">
+            <label class="form-label">Full Name *</label>
+            <input class="form-input" id="uf-name" placeholder="First Last">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Username * (lowercase, no spaces)</label>
+            <input class="form-input" id="uf-username" placeholder="jsmith">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Role *</label>
+            <select class="form-select" id="uf-role">
+              <option value="admin">Dispatch Admin — full access + user mgmt</option>
+              <option value="comms">Comms Unit Leader — full channel access</option>
+              <option value="viewer">View Only — read-only</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Password *</label>
+            <input class="form-input" id="uf-password" type="password" placeholder="Set password">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Avatar Color</label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="color" id="uf-color" value="#1e88e5" style="width:40px;height:34px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);cursor:pointer;padding:2px;">
+              <span style="font-size:11px;color:var(--text-dim);">Shown on avatar badge in topbar</span>
+            </div>
+          </div>
+        </div>
+        <div id="uf-error" style="color:var(--status-active);font-size:12px;font-family:var(--font-data);margin-top:8px;min-height:18px;"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn-primary" onclick="saveUserForm()">Save User</button>
+          <button class="btn-secondary" onclick="closeUserForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Role legend -->
+      <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff5252;display:inline-block;"></span><span style="font-family:var(--font-data);font-size:11px;color:var(--text-secondary);">Dispatch Admin</span><span style="font-size:11px;color:var(--text-dim);">— Full access + user management</span></div>
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:#1e88e5;display:inline-block;"></span><span style="font-family:var(--font-data);font-size:11px;color:var(--text-secondary);">Comms Unit Leader</span><span style="font-size:11px;color:var(--text-dim);">— Full channel & incident access</span></div>
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:#00e676;display:inline-block;"></span><span style="font-family:var(--font-data);font-size:11px;color:var(--text-secondary);">View Only</span><span style="font-size:11px;color:var(--text-dim);">— Read-only, no edits</span></div>
+      </div>
+
+      <!-- Security notice -->
+      <div style="padding:10px 20px;background:rgba(255,196,0,0.06);border-top:1px solid rgba(255,196,0,0.15);">
+        <div style="font-size:11px;color:var(--status-reserved);font-family:var(--font-data);">⚠ Passwords are stored in browser localStorage. For production use, connect a secure backend (Supabase Auth, Firebase Auth, etc.).</div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeUserAdmin()">Close</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
