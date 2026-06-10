@@ -1711,6 +1711,126 @@
     #userTableBody td:nth-child(4) { display: none; }
   }
 
+  /* ── MAIN VIEW TABS ── */
+  .main-view-tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font-data);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .main-view-tab:hover { color: var(--text-secondary); }
+  .main-view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── CONFLICT BADGE ── */
+  .conflict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(255,196,0,0.15);
+    color: var(--status-reserved);
+    border: 1px solid rgba(255,196,0,0.3);
+    white-space: nowrap;
+    cursor: help;
+  }
+
+  /* ── LOW AVAILABILITY BANNER ── */
+  .low-avail-banner {
+    display: none;
+    background: rgba(255,82,82,0.1);
+    border: 1px solid rgba(255,82,82,0.3);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--status-active);
+    font-family: var(--font-data);
+  }
+  .low-avail-banner.hidden { display: none !important; }
+  .low-avail-banner .lav-icon { font-size: 16px; flex-shrink: 0; }
+  .low-avail-banner .lav-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--status-active);
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+  }
+  .low-avail-banner .lav-dismiss:hover { opacity: 1; }
+
+  /* ── TALKGROUP GRID ── */
+  .tg-row {
+    display: grid;
+    grid-template-columns: 28px 80px 80px 1fr 120px 100px 100px 80px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .tg-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .tg-row.selected { border-color: var(--accent); background: var(--accent-glow); }
+
+  /* ── LIBRARY GRID ── */
+  .lib-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 100px 80px 100px auto;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    transition: var(--transition);
+  }
+  .lib-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .lib-import-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .lib-import-btn:hover { background: var(--accent-glow); }
+  .lib-category-tag {
+    font-family: var(--font-data);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--border-lit);
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
   /* ── RELEASE NOTES ── */
   .rn-version-block {
     padding: 14px 16px;
@@ -1999,6 +2119,7 @@
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
     <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
     <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
+    <button class="btn-secondary" onclick="openLowAvailSettings()" title="Low Availability Alert Settings">⚠ Alerts</button>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
     <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
     <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
@@ -2131,6 +2252,22 @@
 <div class="layout">
   <!-- MAIN PANEL -->
   <div class="main-panel">
+
+    <!-- Main view tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;">
+      <button class="main-view-tab active" id="mvtab-channels" onclick="switchMainTab('channels')">📻 Channels</button>
+      <button class="main-view-tab" id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
+      <button class="main-view-tab" id="mvtab-library" onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
+    </div>
+
+    <!-- ── CHANNELS VIEW ── -->
+    <div id="view-channels">
+    <!-- Low availability alert banner -->
+    <div class="low-avail-banner hidden" id="lowAvailBanner">
+      <span class="lav-icon">⚠</span>
+      <span id="lowAvailText"></span>
+      <button class="lav-dismiss" onclick="dismissLowAvailBanner()" title="Dismiss">✕</button>
+    </div>
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="toolbar-left">
@@ -2173,7 +2310,54 @@
       </div>
       <div class="channel-grid" id="channelGrid"></div>
     </div>
-  </div>
+    </div><!-- end view-channels -->
+
+    <!-- ── TALKGROUPS VIEW ── -->
+    <div id="view-talkgroups" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <input class="search-input" type="text" id="tgSearchBox" placeholder="Search talkgroups…" oninput="renderTalkgroups()" style="width:240px;">
+        </div>
+        <button class="btn-primary" onclick="openTalkgroupModal(null)">+ Add Talkgroup</button>
+      </div>
+      <div class="channel-grid-header" style="grid-template-columns:28px 80px 80px 1fr 120px 100px 100px 80px;">
+        <span></span>
+        <span>TG ID</span>
+        <span>System</span>
+        <span>Name / Function</span>
+        <span>Status</span>
+        <span>Agency</span>
+        <span>Encryption</span>
+        <span>Priority</span>
+      </div>
+      <div id="talkgroupGrid" class="channel-grid"></div>
+    </div>
+
+    <!-- ── MUTUAL AID LIBRARY VIEW ── -->
+    <div id="view-library" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input class="search-input" type="text" id="libSearchBox" placeholder="Search library…" oninput="renderLibrary()" style="width:220px;">
+          <select class="form-select" id="libCategoryFilter" onchange="renderLibrary()" style="width:180px;font-size:12px;padding:6px 10px;">
+            <option value="all">All Categories</option>
+            <option value="NPSPAC">NPSPAC</option>
+            <option value="VCALL">VCALL / VTAC</option>
+            <option value="State">State Mutual Aid</option>
+            <option value="Federal">Federal / FEMA</option>
+            <option value="Fire">Fire Mutual Aid</option>
+            <option value="Law">Law Enforcement</option>
+            <option value="EMS">EMS / Medical</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary" onclick="openLibraryAddModal()">+ Add Custom</button>
+        </div>
+      </div>
+      <div id="libraryGrid" class="channel-grid"></div>
+    </div>
+
+  </div><!-- end main-panel -->
 
   <!-- SIDE PANEL -->
   <div class="side-panel" id="sidePanel">
@@ -2227,7 +2411,7 @@
         </div>
         <div class="form-field">
           <label class="form-label">Frequency (MHz) *</label>
-          <input class="form-input" id="f-freq" placeholder="154.4300">
+          <input class="form-input" id="f-freq" placeholder="154.4300" oninput="onFreqInput()">
         </div>
       </div>
       <div class="form-row triple">
@@ -2275,7 +2459,7 @@
         </div>
         <div class="form-field">
           <label class="form-label">Rx / Repeater Output (if different)</label>
-          <input class="form-input" id="f-rxfreq" placeholder="154.4300">
+          <input class="form-input" id="f-rxfreq" placeholder="154.4300" oninput="onFreqInput()">
         </div>
       </div>
       <div class="form-row single">
@@ -2283,6 +2467,16 @@
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="f-notes" placeholder="Special instructions, restrictions, contact info…"></textarea>
         </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 2px;border-top:1px solid var(--border);margin-top:4px;">
+        <div>
+          <div style="font-size:13px;color:var(--text-primary);">Enable Conflict Detection</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Warn if this frequency is already in use</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="f-conflict-check" checked>
+          <span class="toggle-slider"></span>
+        </label>
       </div>
     </div>
     <div class="modal-footer">
@@ -2330,18 +2524,19 @@ let activityLog = [];
 // Map Supabase snake_case row → app camelCase object
 function rowToChannel(row) {
   return {
-    id:          row.id,
-    designator:  row.designator,
-    freq:        row.freq,
-    rxFreq:      row.rx_freq || row.freq,
-    status:      row.status,
-    mode:        row.mode        || 'Analog FM',
-    tone:        row.tone        || '—',
-    function:    row.function    || '—',
-    agency:      row.agency      || '—',
-    group:       row.group       || '',
-    notes:       row.notes       || '',
-    updatedBy:   row.updated_by  || '',
+    id:            row.id,
+    designator:    row.designator,
+    freq:          row.freq,
+    rxFreq:        row.rx_freq || row.freq,
+    status:        row.status,
+    mode:          row.mode        || 'Analog FM',
+    tone:          row.tone        || '—',
+    function:      row.function    || '—',
+    agency:        row.agency      || '—',
+    group:         row.group       || '',
+    notes:         row.notes       || '',
+    updatedBy:     row.updated_by  || '',
+    conflictCheck: row.conflict_check !== false,
   };
 }
 
@@ -2581,6 +2776,8 @@ function updateStats() {
   Object.keys(counts).forEach(k => {
     document.getElementById(`cnt-${k}`).textContent = counts[k];
   });
+  // Check low availability after every stats update
+  checkLowAvailability();
 }
 
 // ─────────────────────────────────────────────
@@ -2636,18 +2833,24 @@ function renderChannels() {
     `).join('');
   } else {
     // Desktop table layout
-    grid.innerHTML = filtered.map(ch => `
+    grid.innerHTML = filtered.map(ch => {
+      const conflicts = ch.status !== 'available' && ch.conflictCheck !== false
+        ? checkFrequencyConflict(ch.freq, ch.rxFreq, ch.id) : [];
+      return `
       <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
         <div class="status-bar ${ch.status}"></div>
-        <div class="ch-designator">${ch.designator}</div>
+        <div class="ch-designator" style="display:flex;align-items:center;gap:5px;">
+          ${ch.designator}
+          ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
+        </div>
         <div class="ch-freq">${ch.freq} MHz</div>
         <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
         <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
         <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
         <div class="ch-tone">${ch.tone || '—'}</div>
         <div class="ch-mode">${ch.mode}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
   updateStats();
@@ -2795,6 +2998,9 @@ function openAddModal() {
   });
   document.getElementById('f-status').value = 'available';
   document.getElementById('f-mode').value = 'Analog FM';
+  const cc = document.getElementById('f-conflict-check');
+  if (cc) cc.checked = true;
+  document.getElementById('conflictWarning')?.remove();
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -2812,6 +3018,9 @@ function openEditModal(id) {
   document.getElementById('f-group').value       = ch.group || '';
   document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
   document.getElementById('f-notes').value       = ch.notes || '';
+  const cc = document.getElementById('f-conflict-check');
+  if (cc) cc.checked = ch.conflictCheck !== false;
+  document.getElementById('conflictWarning')?.remove();
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -2826,19 +3035,22 @@ async function saveChannel() {
   if (!designator || !freq) { alert('Channel Designator and Frequency are required.'); return; }
 
   const who = currentUser ? currentUser.name : 'Unknown';
+  const conflictCheck = document.getElementById('f-conflict-check')?.checked !== false;
+
   const row = {
     designator,
     freq,
-    rx_freq:    document.getElementById('f-rxfreq').value.trim()    || freq,
-    status:     document.getElementById('f-status').value,
-    mode:       document.getElementById('f-mode').value,
-    tone:       document.getElementById('f-tone').value.trim()      || '—',
-    function:   document.getElementById('f-function').value.trim()  || '—',
-    agency:     document.getElementById('f-agency').value.trim()    || '—',
-    group:      document.getElementById('f-group').value.trim()     || '',
-    notes:      document.getElementById('f-notes').value.trim()     || '',
-    updated_by: who,
-    updated_at: new Date().toISOString(),
+    rx_freq:         document.getElementById('f-rxfreq').value.trim()    || freq,
+    status:          document.getElementById('f-status').value,
+    mode:            document.getElementById('f-mode').value,
+    tone:            document.getElementById('f-tone').value.trim()      || '—',
+    function:        document.getElementById('f-function').value.trim()  || '—',
+    agency:          document.getElementById('f-agency').value.trim()    || '—',
+    group:           document.getElementById('f-group').value.trim()     || '',
+    notes:           document.getElementById('f-notes').value.trim()     || '',
+    conflict_check:  conflictCheck,
+    updated_by:      who,
+    updated_at:      new Date().toISOString(),
   };
 
   if (editingId) {
@@ -2851,6 +3063,7 @@ async function saveChannel() {
     logActivity(`<span class="log-ch">${designator}</span> added by ${who} — ${statusLabels[row.status]}`);
   }
 
+  document.getElementById('conflictWarning')?.remove();
   closeAddModal();
 }
 
@@ -4213,6 +4426,403 @@ function deleteReleaseNote(id) {
 }
 
 // ─────────────────────────────────────────────
+// MAIN VIEW TABS
+// ─────────────────────────────────────────────
+let activeMainTab = 'channels';
+
+function switchMainTab(tab) {
+  activeMainTab = tab;
+  ['channels','talkgroups','library'].forEach(t => {
+    document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
+    const v = document.getElementById(`view-${t}`);
+    if (v) v.style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'talkgroups') renderTalkgroups();
+  if (tab === 'library')    renderLibrary();
+}
+
+// ─────────────────────────────────────────────
+// TALKGROUP MANAGEMENT
+// ─────────────────────────────────────────────
+let talkgroups = loadTalkgroups();
+let tgEditingId = null;
+
+const TG_PRIORITY_COLOR = { Normal:'var(--text-dim)', High:'var(--status-reserved)', Emergency:'var(--status-active)' };
+
+function loadTalkgroups() {
+  try { const s = localStorage.getItem('rfTalkgroups'); return s ? JSON.parse(s) : getDefaultTalkgroups(); }
+  catch(e) { return getDefaultTalkgroups(); }
+}
+
+function getDefaultTalkgroups() {
+  return [
+    { id:'tg1', tgId:'4201', system:'LACRO P25', name:'Fire Command', agency:'LAFD', status:'active', encryption:'AES-256', priority:'High', notes:'Primary fire command talkgroup' },
+    { id:'tg2', tgId:'4202', system:'LACRO P25', name:'Fire Attack', agency:'LAFD', status:'active', encryption:'AES-256', priority:'Normal', notes:'' },
+    { id:'tg3', tgId:'5101', system:'LACRO P25', name:'Law Dispatch', agency:'LAPD', status:'active', encryption:'AES-256', priority:'High', notes:'Encrypted — monitor only' },
+    { id:'tg4', tgId:'6001', system:'LACRO P25', name:'EMS Operations', agency:'AMR', status:'active', encryption:'None', priority:'Normal', notes:'' },
+    { id:'tg5', tgId:'9001', system:'LACRO P25', name:'Interop Calling', agency:'Multi', status:'interop', encryption:'None', priority:'Normal', notes:'VCALL equivalent on P25' },
+    { id:'tg6', tgId:'TG-SAR-1', system:'DMR Site 3', name:'SAR Operations', agency:'SAR Team', status:'tactical', encryption:'None', priority:'High', notes:'' },
+  ];
+}
+
+function saveTalkgroups() {
+  try { localStorage.setItem('rfTalkgroups', JSON.stringify(talkgroups)); } catch(e) {}
+}
+
+function renderTalkgroups() {
+  const query = (document.getElementById('tgSearchBox')?.value || '').toLowerCase();
+  const grid = document.getElementById('talkgroupGrid');
+  if (!grid) return;
+  let filtered = talkgroups.filter(tg =>
+    !query || tg.tgId.toLowerCase().includes(query) || tg.name.toLowerCase().includes(query) ||
+    tg.system.toLowerCase().includes(query) || (tg.agency||'').toLowerCase().includes(query)
+  );
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="no-data-row">No talkgroups found</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(tg => {
+    const pc = TG_PRIORITY_COLOR[tg.priority] || 'var(--text-dim)';
+    return `<div class="tg-row" onclick="openTalkgroupModal('${tg.id}')">
+      <div class="status-bar ${tg.status}" style="width:3px;height:28px;border-radius:2px;flex-shrink:0;"></div>
+      <div style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(tg.tgId)}</div>
+      <div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(tg.system)}</div>
+      <div style="font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(tg.name)}</div>
+      <div><span class="status-pill ${tg.status}">${statusLabels[tg.status]||tg.status}</span></div>
+      <div style="font-size:12px;color:var(--text-secondary);">${escHtml(tg.agency||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${tg.encryption||'None'}</div>
+      <div style="font-family:var(--font-data);font-size:11px;font-weight:600;color:${pc};">${tg.priority||'Normal'}</div>
+    </div>`;
+  }).join('');
+}
+
+function openTalkgroupModal(id) {
+  tgEditingId = id;
+  if (id) {
+    const tg = talkgroups.find(x => x.id === id);
+    if (!tg) return;
+    document.getElementById('tgModalTitle').textContent = 'Edit Talkgroup';
+    document.getElementById('tg-id').value         = tg.tgId || '';
+    document.getElementById('tg-system').value     = tg.system || '';
+    document.getElementById('tg-name').value       = tg.name || '';
+    document.getElementById('tg-agency').value     = tg.agency || '';
+    document.getElementById('tg-status').value     = tg.status || 'available';
+    document.getElementById('tg-encryption').value = tg.encryption || 'None';
+    document.getElementById('tg-priority').value   = tg.priority || 'Normal';
+    document.getElementById('tg-notes').value      = tg.notes || '';
+  } else {
+    document.getElementById('tgModalTitle').textContent = 'Add Talkgroup';
+    ['tg-id','tg-system','tg-name','tg-agency','tg-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('tg-status').value     = 'available';
+    document.getElementById('tg-encryption').value = 'None';
+    document.getElementById('tg-priority').value   = 'Normal';
+  }
+  document.getElementById('talkgroupModal').classList.add('open');
+}
+
+function closeTalkgroupModal() {
+  document.getElementById('talkgroupModal').classList.remove('open');
+  tgEditingId = null;
+}
+
+function saveTalkgroup() {
+  const tgId   = document.getElementById('tg-id').value.trim();
+  const system = document.getElementById('tg-system').value.trim();
+  const name   = document.getElementById('tg-name').value.trim();
+  if (!tgId || !name) { alert('Talkgroup ID and Name are required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+  const data = {
+    tgId, system, name,
+    agency:     document.getElementById('tg-agency').value.trim(),
+    status:     document.getElementById('tg-status').value,
+    encryption: document.getElementById('tg-encryption').value,
+    priority:   document.getElementById('tg-priority').value,
+    notes:      document.getElementById('tg-notes').value.trim(),
+  };
+  if (tgEditingId) {
+    const idx = talkgroups.findIndex(x => x.id === tgEditingId);
+    talkgroups[idx] = { ...talkgroups[idx], ...data };
+    logActivity(`Talkgroup <span class="log-ch">${name}</span> updated by ${who}`);
+  } else {
+    talkgroups.push({ id: 'tg' + Date.now(), ...data });
+    logActivity(`Talkgroup <span class="log-ch">${name}</span> added by ${who}`);
+  }
+  saveTalkgroups();
+  closeTalkgroupModal();
+  renderTalkgroups();
+}
+
+// ─────────────────────────────────────────────
+// MUTUAL AID LIBRARY
+// ─────────────────────────────────────────────
+const BUILTIN_LIBRARY = [
+  // NPSPAC
+  { id:'lib-np1',  designator:'8CALL90',   freq:'155.3400', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Calling — NPSPAC Ch 1',      builtin:true },
+  { id:'lib-np2',  designator:'8TAC91',    freq:'155.3475', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 2',    builtin:true },
+  { id:'lib-np3',  designator:'8TAC92',    freq:'155.3550', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 3',    builtin:true },
+  { id:'lib-np4',  designator:'8TAC93',    freq:'155.3625', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 4',    builtin:true },
+  { id:'lib-np5',  designator:'8TAC94',    freq:'155.3700', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 5',    builtin:true },
+  // VCALL / VTAC
+  { id:'lib-vc1',  designator:'VCALL10',   freq:'155.7525', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Calling — National Interop',     builtin:true },
+  { id:'lib-vc2',  designator:'VTAC11',    freq:'151.1375', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 1',                     builtin:true },
+  { id:'lib-vc3',  designator:'VTAC12',    freq:'154.4525', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 2',                     builtin:true },
+  { id:'lib-vc4',  designator:'VTAC13',    freq:'158.7375', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 3',                     builtin:true },
+  { id:'lib-vc5',  designator:'UCALL40',   freq:'453.2125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Calling — National Interop',     builtin:true },
+  { id:'lib-vc6',  designator:'UTAC41',    freq:'453.4625', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 1',                     builtin:true },
+  { id:'lib-vc7',  designator:'UTAC42',    freq:'453.7125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 2',                     builtin:true },
+  { id:'lib-vc8',  designator:'UTAC43',    freq:'458.2125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 3',                     builtin:true },
+  // Federal / FEMA
+  { id:'lib-fe1',  designator:'FEMA-OPS',  freq:'164.8500', category:'Federal', mode:'Analog FM',  tone:'None',     desc:'FEMA Operations Primary',            builtin:true },
+  { id:'lib-fe2',  designator:'NWS-162',   freq:'162.4000', category:'Federal', mode:'Analog FM',  tone:'None',     desc:'NOAA Weather Radio',                 builtin:true },
+  // Fire Mutual Aid
+  { id:'lib-fi1',  designator:'FIRE-MA-1', freq:'154.2800', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Fire Mutual Aid Primary',            builtin:true },
+  { id:'lib-fi2',  designator:'FIRE-MA-2', freq:'154.2950', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Fire Mutual Aid Secondary',          builtin:true },
+  { id:'lib-fi3',  designator:'AIR-GRND',  freq:'168.6250', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Air-to-Ground Coordination',         builtin:true },
+  // Law Enforcement
+  { id:'lib-la1',  designator:'LAW-MA-1',  freq:'460.1250', category:'Law',    mode:'P25 Phase I', tone:'None',     desc:'Law Enforcement Mutual Aid 1',       builtin:true },
+  { id:'lib-la2',  designator:'LAW-MA-2',  freq:'460.3750', category:'Law',    mode:'P25 Phase I', tone:'None',     desc:'Law Enforcement Mutual Aid 2',       builtin:true },
+  // EMS
+  { id:'lib-em1',  designator:'MED-9',     freq:'462.9500', category:'EMS',    mode:'Analog FM',   tone:'None',     desc:'MED-9 Hospital Notification',        builtin:true },
+  { id:'lib-em2',  designator:'MED-10',    freq:'463.0000', category:'EMS',    mode:'Analog FM',   tone:'None',     desc:'MED-10 EMS Coordination',            builtin:true },
+];
+
+let customLibrary = loadCustomLibrary();
+
+function loadCustomLibrary() {
+  try { const s = localStorage.getItem('rfCustomLibrary'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+
+function saveCustomLibrary() {
+  try { localStorage.setItem('rfCustomLibrary', JSON.stringify(customLibrary)); } catch(e) {}
+}
+
+function getAllLibraryEntries() {
+  return [...BUILTIN_LIBRARY, ...customLibrary];
+}
+
+function renderLibrary() {
+  const query    = (document.getElementById('libSearchBox')?.value || '').toLowerCase();
+  const catFilter = document.getElementById('libCategoryFilter')?.value || 'all';
+  const grid = document.getElementById('libraryGrid');
+  if (!grid) return;
+
+  // Library column header
+  grid.previousElementSibling?.previousElementSibling && null; // no-op
+
+  let entries = getAllLibraryEntries().filter(e => {
+    const matchCat = catFilter === 'all' || e.category === catFilter;
+    const matchQ   = !query || e.designator.toLowerCase().includes(query) ||
+                     e.desc.toLowerCase().includes(query) || e.freq.includes(query) ||
+                     e.category.toLowerCase().includes(query);
+    return matchCat && matchQ;
+  });
+
+  if (!entries.length) { grid.innerHTML = `<div class="no-data-row">No library entries found</div>`; return; }
+
+  // Check which freqs are already in the channel plan
+  const usedFreqs = new Set(channels.map(c => c.freq));
+
+  grid.innerHTML = entries.map(e => {
+    const alreadyAdded = usedFreqs.has(e.freq);
+    return `<div class="lib-row">
+      <div style="width:3px;height:28px;border-radius:2px;background:var(--accent);flex-shrink:0;opacity:0.5;"></div>
+      <div>
+        <div style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(e.designator)}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escHtml(e.desc)}</div>
+      </div>
+      <div style="font-family:var(--font-data);font-size:12px;color:var(--accent);">${e.freq} MHz</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${e.mode}</div>
+      <span class="lib-category-tag">${e.category}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        ${alreadyAdded
+          ? `<span style="font-family:var(--font-data);font-size:10px;color:var(--status-available);padding:3px 8px;border:1px solid rgba(0,230,118,0.3);border-radius:2px;">✓ In Plan</span>`
+          : `<button class="lib-import-btn" onclick="importLibraryEntry('${e.id}')">+ Add to Plan</button>`}
+        ${!e.builtin ? `<button class="rn-edit-btn rn-delete-btn" onclick="deleteLibraryEntry('${e.id}')" title="Delete">✕</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function importLibraryEntry(id) {
+  const e = getAllLibraryEntries().find(x => x.id === id);
+  if (!e) return;
+  // Pre-fill the add channel modal
+  openAddModal();
+  setTimeout(() => {
+    document.getElementById('f-designator').value = e.designator;
+    document.getElementById('f-freq').value        = e.freq;
+    document.getElementById('f-mode').value        = e.mode;
+    document.getElementById('f-tone').value        = e.tone || '';
+    document.getElementById('f-notes').value       = e.desc || '';
+    document.getElementById('f-status').value      = 'available';
+    document.getElementById('f-group').value       = e.category;
+    // Switch back to channels tab after modal opens
+    switchMainTab('channels');
+  }, 50);
+}
+
+function openLibraryAddModal() {
+  ['lib-designator','lib-freq','lib-tone','lib-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('lib-category').value = 'Custom';
+  document.getElementById('lib-mode').value = 'Analog FM';
+  document.getElementById('libraryAddModal').classList.add('open');
+}
+
+function saveLibraryEntry() {
+  const designator = document.getElementById('lib-designator').value.trim();
+  const freq       = document.getElementById('lib-freq').value.trim();
+  if (!designator || !freq) { alert('Designator and Frequency are required.'); return; }
+  customLibrary.push({
+    id:          'clib' + Date.now(),
+    designator,
+    freq,
+    category:    document.getElementById('lib-category').value,
+    mode:        document.getElementById('lib-mode').value,
+    tone:        document.getElementById('lib-tone').value.trim() || 'None',
+    desc:        document.getElementById('lib-desc').value.trim(),
+    builtin:     false,
+  });
+  saveCustomLibrary();
+  document.getElementById('libraryAddModal').classList.remove('open');
+  renderLibrary();
+}
+
+function deleteLibraryEntry(id) {
+  const e = customLibrary.find(x => x.id === id);
+  if (!e || !confirm(`Remove "${e.designator}" from the library?`)) return;
+  customLibrary = customLibrary.filter(x => x.id !== id);
+  saveCustomLibrary();
+  renderLibrary();
+}
+
+// ─────────────────────────────────────────────
+// CONFLICT DETECTOR
+// ─────────────────────────────────────────────
+function checkFrequencyConflict(freq, rxFreq, excludeId) {
+  if (!freq) return [];
+  const conflicts = [];
+  channels.forEach(ch => {
+    if (ch.id === excludeId) return;
+    if (ch.conflictCheck === false) return; // per-channel opt-out
+    if (ch.status === 'available') return;  // available channels don't conflict
+    const chFreq = parseFloat(ch.freq);
+    const chRx   = parseFloat(ch.rxFreq || ch.freq);
+    const newFreq = parseFloat(freq);
+    const newRx   = parseFloat(rxFreq || freq);
+    // Check within 5kHz tolerance
+    const match = (a, b) => Math.abs(a - b) < 0.005;
+    if (match(newFreq, chFreq) || match(newFreq, chRx) ||
+        match(newRx, chFreq)   || match(newRx, chRx)) {
+      conflicts.push(ch);
+    }
+  });
+  return conflicts;
+}
+
+function showConflictWarning(conflicts) {
+  if (!conflicts.length) {
+    document.getElementById('conflictWarning')?.remove();
+    return;
+  }
+  let el = document.getElementById('conflictWarning');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'conflictWarning';
+    el.style.cssText = 'background:rgba(255,196,0,0.1);border:1px solid rgba(255,196,0,0.35);border-radius:4px;padding:10px 14px;font-size:12px;color:var(--status-reserved);font-family:var(--font-data);margin-top:8px;';
+    const footer = document.querySelector('#addModal .modal-footer');
+    if (footer) footer.parentElement.insertBefore(el, footer);
+  }
+  el.innerHTML = `⚠ Frequency conflict with: ${conflicts.map(c =>
+    `<strong>${c.designator}</strong> (${c.freq} MHz — ${statusLabels[c.status]})`
+  ).join(', ')}. You can still save, but verify this is intentional.`;
+}
+
+// Hook into freq/rxfreq inputs for live conflict checking
+function onFreqInput() {
+  const freq   = document.getElementById('f-freq')?.value.trim();
+  const rxFreq = document.getElementById('f-rxfreq')?.value.trim();
+  const checkEnabled = document.getElementById('f-conflict-check')?.checked;
+  if (!checkEnabled) { document.getElementById('conflictWarning')?.remove(); return; }
+  const conflicts = checkFrequencyConflict(freq, rxFreq, editingId);
+  showConflictWarning(conflicts);
+}
+
+// ─────────────────────────────────────────────
+// LOW AVAILABILITY ALERTS
+// ─────────────────────────────────────────────
+let lowAvailSettings = loadLowAvailSettings();
+let lowAvailDismissed = false;
+
+function loadLowAvailSettings() {
+  try {
+    const s = localStorage.getItem('rfLowAvail');
+    return s ? JSON.parse(s) : { enabled: true, available:2, active:0, reserved:0, tactical:0, interop:0 };
+  } catch(e) { return { enabled: true, available:2, active:0, reserved:0, tactical:0, interop:0 }; }
+}
+
+function saveLowAvailSettings() {
+  lowAvailSettings = {
+    enabled:   document.getElementById('lav-enabled')?.checked ?? true,
+    available: parseInt(document.getElementById('lav-available')?.value || 2),
+    active:    parseInt(document.getElementById('lav-active')?.value    || 0),
+    reserved:  parseInt(document.getElementById('lav-reserved')?.value  || 0),
+    tactical:  parseInt(document.getElementById('lav-tactical')?.value  || 0),
+    interop:   parseInt(document.getElementById('lav-interop')?.value   || 0),
+  };
+  try { localStorage.setItem('rfLowAvail', JSON.stringify(lowAvailSettings)); } catch(e) {}
+  checkLowAvailability();
+}
+
+function openLowAvailSettings() {
+  document.getElementById('lav-enabled').checked         = lowAvailSettings.enabled !== false;
+  document.getElementById('lav-available').value = lowAvailSettings.available ?? 2;
+  document.getElementById('lav-active').value    = lowAvailSettings.active    ?? 0;
+  document.getElementById('lav-reserved').value  = lowAvailSettings.reserved  ?? 0;
+  document.getElementById('lav-tactical').value  = lowAvailSettings.tactical  ?? 0;
+  document.getElementById('lav-interop').value   = lowAvailSettings.interop   ?? 0;
+  document.getElementById('lowAvailSettingsModal').classList.add('open');
+}
+
+function closeLowAvailSettings() {
+  document.getElementById('lowAvailSettingsModal').classList.remove('open');
+}
+
+function checkLowAvailability() {
+  const banner = document.getElementById('lowAvailBanner');
+  if (!banner || !lowAvailSettings.enabled || lowAvailDismissed) {
+    if (banner) banner.classList.add('hidden');
+    return;
+  }
+  const counts = { available:0, active:0, reserved:0, tactical:0, interop:0 };
+  channels.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+
+  const alerts = [];
+  ['available','active','reserved','tactical','interop'].forEach(s => {
+    const threshold = lowAvailSettings[s] ?? 0;
+    if (threshold > 0 && counts[s] <= threshold) {
+      alerts.push(`${statusLabels[s]}: ${counts[s]} channel${counts[s]!==1?'s':''} (threshold: ${threshold})`);
+    }
+  });
+
+  if (alerts.length) {
+    banner.classList.remove('hidden');
+    document.getElementById('lowAvailText').textContent = '⚠ Low channel availability — ' + alerts.join(' · ');
+    // Also push a notification
+    pushNotification('active', `Low availability: ${alerts[0]}`);
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+function dismissLowAvailBanner() {
+  lowAvailDismissed = true;
+  document.getElementById('lowAvailBanner')?.classList.add('hidden');
+  // Re-enable after 10 minutes
+  setTimeout(() => { lowAvailDismissed = false; checkLowAvailability(); }, 600000);
+}
+
+// ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 async function sendPasswordReset() {
@@ -4233,13 +4843,13 @@ async function sendPasswordReset() {
 
 async function init() {
   setDbStatus('loading');
-  // Check for existing Supabase session first (auto-login if token still valid)
   const hasSession = await checkExistingSession();
   await loadChannels();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
   scheduleMorningReport();
+  checkLowAvailability();
 }
 
 // Re-render on resize/orientation change
@@ -4436,6 +5046,207 @@ init();
         <button class="btn-secondary" onclick="closeMorningReport()">Close</button>
         <button class="btn-primary" onclick="saveMorningReportConfig()">Save Settings</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TALKGROUP MODAL ── -->
+<div class="modal-overlay" id="talkgroupModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="tgModalTitle">Add Talkgroup</div>
+      <button class="modal-close" onclick="closeTalkgroupModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Talkgroup ID *</label>
+          <input class="form-input" id="tg-id" placeholder="e.g. 4201 or TG-FIRE-CMD">
+        </div>
+        <div class="form-field">
+          <label class="form-label">System / Network *</label>
+          <input class="form-input" id="tg-system" placeholder="e.g. LACRO P25, DMR Site 3">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Name / Function *</label>
+          <input class="form-input" id="tg-name" placeholder="Fire Command, Law Dispatch…">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Agency</label>
+          <input class="form-input" id="tg-agency" placeholder="LAFD, LAPD…">
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="tg-status">
+            <option value="available">Available</option>
+            <option value="active">Active</option>
+            <option value="reserved">Reserved</option>
+            <option value="tactical">Tactical</option>
+            <option value="interop">Interop</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Encryption</label>
+          <select class="form-select" id="tg-encryption">
+            <option value="None">None</option>
+            <option value="AES-256">AES-256</option>
+            <option value="DES-OFB">DES-OFB</option>
+            <option value="RC4">RC4</option>
+            <option value="DVP">DVP</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="tg-priority">
+            <option value="Normal">Normal</option>
+            <option value="High">High</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="tg-notes" placeholder="Patch info, scan lists, special instructions…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeTalkgroupModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTalkgroup()">Save Talkgroup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIBRARY ADD CUSTOM MODAL ── -->
+<div class="modal-overlay" id="libraryAddModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title">Add Custom Library Entry</div>
+      <button class="modal-close" onclick="document.getElementById('libraryAddModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Designator / Name *</label>
+          <input class="form-input" id="lib-designator" placeholder="e.g. VCALL10">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Frequency (MHz) *</label>
+          <input class="form-input" id="lib-freq" placeholder="155.3400">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="lib-category">
+            <option value="Custom">Custom</option>
+            <option value="NPSPAC">NPSPAC</option>
+            <option value="VCALL">VCALL / VTAC</option>
+            <option value="State">State Mutual Aid</option>
+            <option value="Federal">Federal / FEMA</option>
+            <option value="Fire">Fire Mutual Aid</option>
+            <option value="Law">Law Enforcement</option>
+            <option value="EMS">EMS / Medical</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Mode</label>
+          <select class="form-select" id="lib-mode">
+            <option value="Analog FM">Analog FM</option>
+            <option value="P25 Phase I">P25 Phase I</option>
+            <option value="P25 Phase II">P25 Phase II</option>
+            <option value="DMR">DMR</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Tone / NAC</label>
+          <input class="form-input" id="lib-tone" placeholder="100.0 Hz or NAC 0x001">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="lib-desc" placeholder="Brief description">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('libraryAddModal').classList.remove('open')">Cancel</button>
+      <button class="btn-primary" onclick="saveLibraryEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOW AVAILABILITY SETTINGS MODAL ── -->
+<div class="modal-overlay" id="lowAvailSettingsModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">⚠ Low Availability Alert Settings</div>
+      <button class="modal-close" onclick="closeLowAvailSettings()">✕</button>
+    </div>
+    <div class="modal-body" style="gap:0;padding:0;">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Alert when the count of channels in a given status drops to or below your threshold. Set to 0 to disable for that type.</div>
+      </div>
+      <div style="padding:14px 20px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:13px;color:var(--text-primary);font-weight:500;">Enable Low Availability Alerts</div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="lav-enabled" onchange="saveLowAvailSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span class="status-pill available">Available</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
+              <input type="number" min="0" max="99" class="form-input" id="lav-available" value="2" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
+              <span style="font-size:12px;color:var(--text-dim);">channels</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span class="status-pill active">Active</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
+              <input type="number" min="0" max="99" class="form-input" id="lav-active" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
+              <span style="font-size:12px;color:var(--text-dim);">channels</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span class="status-pill reserved">Reserved</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
+              <input type="number" min="0" max="99" class="form-input" id="lav-reserved" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
+              <span style="font-size:12px;color:var(--text-dim);">channels</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span class="status-pill tactical">Tactical</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
+              <input type="number" min="0" max="99" class="form-input" id="lav-tactical" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
+              <span style="font-size:12px;color:var(--text-dim);">channels</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span class="status-pill interop">Interop</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
+              <input type="number" min="0" max="99" class="form-input" id="lav-interop" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
+              <span style="font-size:12px;color:var(--text-dim);">channels</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="closeLowAvailSettings()">Done</button>
     </div>
   </div>
 </div>
