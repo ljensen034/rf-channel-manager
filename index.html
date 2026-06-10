@@ -1489,8 +1489,11 @@
   /* Always-present defaults for mobile elements */
   #mobileMenuBtn    { display: none; }
   #mobileNavBar     { display: none; }
-  #mobileDetailSheet{ display: none; }
   #mobileMenu       { display: none; }
+  /* Sheet hidden on desktop — on mobile it stays in DOM, hidden via transform */
+  @media (min-width: 769px) {
+    #mobileDetailSheet { display: none !important; }
+  }
 
   /* ── MOBILE MENU BUTTON ── */
   #mobileMenuBtn {
@@ -1578,11 +1581,11 @@
     max-height: 78vh;
     overflow-y: auto;
     box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
-    transform: translateY(100%);
+    transform: translateY(110%);
     transition: transform 280ms cubic-bezier(0.32,0.72,0,1);
+    /* Always in DOM on mobile, hidden via transform only */
   }
   #mobileDetailSheet.open {
-    display: block;
     transform: translateY(0);
   }
   .sheet-handle {
@@ -3832,14 +3835,14 @@ function mobileNav(tab) {
 
 function openMobileSheet() {
   const sheet = document.getElementById('mobileDetailSheet');
-  sheet.style.display = 'block';
-  requestAnimationFrame(() => sheet.classList.add('open'));
+  // Force reflow so transition fires
+  sheet.classList.remove('open');
+  void sheet.offsetHeight;
+  sheet.classList.add('open');
 }
 
 function closeMobileSheet() {
-  const sheet = document.getElementById('mobileDetailSheet');
-  sheet.classList.remove('open');
-  setTimeout(() => { if (!sheet.classList.contains('open')) sheet.style.display = 'none'; }, 300);
+  document.getElementById('mobileDetailSheet')?.classList.remove('open');
 }
 
 // Override selectChannel to show bottom sheet on mobile
@@ -3870,9 +3873,9 @@ function selectChannel(id) {
         ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
         ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
         <div style="padding:12px 0;display:flex;flex-direction:column;gap:8px;">
-          <button class="btn-primary" style="padding:12px;" onclick="closeMobileSheet();setTimeout(()=>openEditModal(${ch.id}),320);">✏ Edit Channel</button>
+          <button class="btn-primary" style="padding:12px;" onclick="closeMobileSheet();openEditModal(${ch.id});">✏ Edit Channel</button>
           ${ch.status!=='available' ? `<button class="btn-success" style="padding:12px;" onclick="releaseChannel(${ch.id});closeMobileSheet();">✓ Mark Available</button>` : ''}
-          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="closeMobileSheet();setTimeout(()=>quickDeploy(${ch.id}),320);">⚡ Quick Deploy</button>` : ''}
+          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="closeMobileSheet();quickDeploy(${ch.id});">⚡ Quick Deploy</button>` : ''}
           <button class="btn-danger" style="padding:12px;" onclick="deleteChannel(${ch.id});closeMobileSheet();">✕ Remove Channel</button>
         </div>
       </div>`;
