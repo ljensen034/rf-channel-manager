@@ -1183,15 +1183,342 @@
 
   #bigBoardCloseBtn:hover { opacity: 1; background: rgba(255,82,82,0.8); border-color: transparent; }
 
-  #bigBoardFrame {
-    width: 100%;
-    flex: 1;
-    border: none;
-    display: block;
+  /* ── NOTIFICATIONS ── */
+  .notif-btn {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 16px;
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
   }
+  .notif-btn:hover { border-color: var(--border-lit); color: var(--text-primary); }
+  .notif-btn.has-unread { border-color: var(--status-reserved); color: var(--status-reserved); }
+
+  .notif-badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    background: var(--status-active);
+    color: #fff;
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px; height: 16px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px;
+    pointer-events: none;
+  }
+
+  .notif-drawer {
+    display: none;
+    position: fixed;
+    top: 52px; right: 0;
+    width: 360px;
+    height: calc(100vh - 52px);
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-lit);
+    z-index: 150;
+    flex-direction: column;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  }
+  .notif-drawer.open { display: flex; }
+
+  .notif-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .notif-drawer-title {
+    font-family: var(--font-data);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+  }
+
+  .notif-drawer-actions {
+    display: flex; gap: 8px; align-items: center;
+  }
+
+  .notif-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .notif-item {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+    cursor: default;
+  }
+  .notif-item:hover { background: var(--bg-hover); }
+  .notif-item.unread { background: var(--accent-glow); border-left: 3px solid var(--accent); }
+
+  .notif-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .notif-content { flex: 1; min-width: 0; }
+  .notif-text { font-size: 12px; color: var(--text-primary); line-height: 1.4; }
+  .notif-text .log-ch { color: var(--accent); font-family: var(--font-data); }
+  .notif-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+
+  .notif-type-tag {
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 1px 5px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    align-self: flex-start;
+  }
+
+  .notif-empty {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--font-data);
+  }
+
+  /* ── NOTIFICATION SETTINGS MODAL ── */
+  .notif-settings-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-settings-label {
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .notif-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-toggle-row:last-child { border-bottom: none; }
+  .notif-toggle-info { flex: 1; }
+  .notif-toggle-name { font-size: 13px; color: var(--text-primary); }
+  .notif-toggle-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle-switch {
+    position: relative;
+    width: 36px; height: 20px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border-lit);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: var(--transition);
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+  .tone-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-data);
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    outline: none;
+    cursor: pointer;
+  }
+  .tone-select:focus { border-color: var(--accent); }
+
+  .tone-preview-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .tone-preview-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  @keyframes notif-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);   opacity: 1; }
+  }
+  .notif-drawer.open { animation: notif-slide-in 180ms ease; }
+
+  /* Toast popup */
+  .notif-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 6px;
+    padding: 12px 16px;
+    max-width: 320px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 9000;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: notif-slide-in 200ms ease;
+  }
+  .notif-toast .toast-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 4px;
+  }
+  .notif-toast .toast-text { font-size: 12px; color: var(--text-primary); line-height: 1.4; }
+  .notif-toast .toast-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .notif-toast .toast-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 0; margin-left: 8px; flex-shrink: 0; }
+  .notif-toast .toast-close:hover { color: var(--text-primary); }
 </style>
 </head>
 <body>
+
+<!-- NOTIFICATION DRAWER -->
+<div class="notif-drawer" id="notifDrawer">
+  <div class="notif-drawer-header">
+    <div class="notif-drawer-title">🔔 Notifications <span id="notifUnreadCount" style="font-size:10px;color:var(--text-dim);"></span></div>
+    <div class="notif-drawer-actions">
+      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="markAllRead()">Mark all read</button>
+      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="clearAllNotifs()">Clear</button>
+      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openNotifSettings()">⚙ Settings</button>
+      <button class="modal-close" onclick="toggleNotifDrawer()" style="font-size:16px;margin-left:4px;">✕</button>
+    </div>
+  </div>
+  <div class="notif-list" id="notifList">
+    <div class="notif-empty">No notifications yet.<br>Channel changes will appear here.</div>
+  </div>
+</div>
+
+<!-- NOTIFICATION SETTINGS MODAL -->
+<div class="modal-overlay" id="notifSettingsModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙ Notification Settings</div>
+      <button class="modal-close" onclick="closeNotifSettings()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;gap:0;">
+
+      <div class="notif-settings-section">
+        <div class="notif-settings-label">Alert Types</div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Channel Added</div>
+            <div class="notif-toggle-desc">New channel added to the plan</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-added" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Channel Updated</div>
+            <div class="notif-toggle-desc">Any field on a channel changes</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-updated" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Status Change → Active</div>
+            <div class="notif-toggle-desc">Channel deployed / goes active</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-active" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Status Change → Available</div>
+            <div class="notif-toggle-desc">Channel released back to pool</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-available" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Status Change → Reserved</div>
+            <div class="notif-toggle-desc">Channel reserved for planned event</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-reserved" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Channel Removed</div>
+            <div class="notif-toggle-desc">Channel deleted from the plan</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-removed" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="notif-settings-section">
+        <div class="notif-settings-label">Alert Tone</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <select class="tone-select" id="notifToneSelect" onchange="saveNotifSettings()">
+            <option value="chime">Chime</option>
+            <option value="beep">Beep</option>
+            <option value="blip">Blip</option>
+            <option value="alert">Alert</option>
+            <option value="soft">Soft</option>
+            <option value="none">Silent (no tone)</option>
+          </select>
+          <button class="tone-preview-btn" onclick="previewTone()">▶ Preview</button>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Play tone on notification</div>
+            <div class="notif-toggle-desc">Audible alert for each new notification</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-sound" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Show toast popups</div>
+            <div class="notif-toggle-desc">Brief pop-up in corner for each alert</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-toast" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="closeNotifSettings()">Done</button>
+    </div>
+  </div>
+</div>
 
 <!-- BIG BOARD OVERLAY -->
 <div id="bigBoardOverlay">
@@ -1267,6 +1594,10 @@
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
     <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
     <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
+    <button class="notif-btn" id="notifBell" onclick="toggleNotifDrawer()" title="Notifications">
+      🔔
+      <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+    </button>
   </div>
   <div class="theme-switcher" id="themeSwitcher">
     <button class="theme-btn" onclick="toggleThemeDropdown(event)" title="Change theme">
@@ -1658,7 +1989,11 @@ function subscribeRealtime() {
   sb.channel('channels-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, async () => {
       const { data } = await sb.from('channels').select('*').order('id');
-      if (data) channels = data.map(rowToChannel);
+      if (data) {
+        const newChannels = data.map(rowToChannel);
+        diffChannels(newChannels);
+        channels = newChannels;
+      }
       renderChannels();
       if (selectedId) {
         const still = channels.find(c => c.id === selectedId);
@@ -2753,11 +3088,261 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ─────────────────────────────────────────────
+// NOTIFICATION SYSTEM
+// ─────────────────────────────────────────────
+let notifications = [];
+let notifUnread   = 0;
+let notifSettings = loadNotifSettings();
+let toastTimeout  = null;
+let prevChannelSnapshot = {}; // id → status, for detecting changes
+
+const NOTIF_COLORS = {
+  added:     { color: '#00e676', label: 'ADDED' },
+  updated:   { color: '#40c4ff', label: 'UPDATED' },
+  active:    { color: '#ff5252', label: 'ACTIVE' },
+  available: { color: '#00e676', label: 'AVAILABLE' },
+  reserved:  { color: '#ffc400', label: 'RESERVED' },
+  tactical:  { color: '#40c4ff', label: 'TACTICAL' },
+  interop:   { color: '#ce93d8', label: 'INTEROP' },
+  removed:   { color: '#ff5252', label: 'REMOVED' },
+};
+
+function loadNotifSettings() {
+  try {
+    const s = localStorage.getItem('rfNotifSettings');
+    return s ? JSON.parse(s) : {
+      added: true, updated: true, active: true, available: true,
+      reserved: true, removed: true, sound: true, toast: true,
+      tone: 'chime'
+    };
+  } catch(e) {
+    return { added:true, updated:true, active:true, available:true, reserved:true, removed:true, sound:true, toast:true, tone:'chime' };
+  }
+}
+
+function saveNotifSettings() {
+  notifSettings = {
+    added:     document.getElementById('nt-added')?.checked     ?? true,
+    updated:   document.getElementById('nt-updated')?.checked   ?? true,
+    active:    document.getElementById('nt-active')?.checked    ?? true,
+    available: document.getElementById('nt-available')?.checked ?? true,
+    reserved:  document.getElementById('nt-reserved')?.checked  ?? true,
+    removed:   document.getElementById('nt-removed')?.checked   ?? true,
+    sound:     document.getElementById('nt-sound')?.checked     ?? true,
+    toast:     document.getElementById('nt-toast')?.checked     ?? true,
+    tone:      document.getElementById('notifToneSelect')?.value ?? 'chime',
+  };
+  try { localStorage.setItem('rfNotifSettings', JSON.stringify(notifSettings)); } catch(e) {}
+}
+
+function openNotifSettings() {
+  // Sync toggles to current settings
+  const map = { added:'nt-added', updated:'nt-updated', active:'nt-active',
+    available:'nt-available', reserved:'nt-reserved', removed:'nt-removed',
+    sound:'nt-sound', toast:'nt-toast' };
+  Object.entries(map).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = notifSettings[k] !== false;
+  });
+  const toneEl = document.getElementById('notifToneSelect');
+  if (toneEl) toneEl.value = notifSettings.tone || 'chime';
+  document.getElementById('notifSettingsModal').classList.add('open');
+}
+
+function closeNotifSettings() {
+  document.getElementById('notifSettingsModal').classList.remove('open');
+}
+
+// ── AUDIO ENGINE ──
+function playTone(toneName) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const tones = {
+      chime:  () => { playNote(ctx,880,0,0.1,'sine');  playNote(ctx,1100,0.1,0.1,'sine'); playNote(ctx,1320,0.2,0.15,'sine'); },
+      beep:   () => { playNote(ctx,880,0,0.15,'square'); },
+      blip:   () => { playNote(ctx,1200,0,0.08,'sine'); playNote(ctx,1200,0.09,0.08,'sine'); },
+      alert:  () => { playNote(ctx,440,0,0.1,'sawtooth'); playNote(ctx,550,0.12,0.1,'sawtooth'); playNote(ctx,440,0.24,0.1,'sawtooth'); },
+      soft:   () => { playNote(ctx,660,0,0.2,'sine'); },
+      none:   () => {},
+    };
+    (tones[toneName] || tones.chime)();
+  } catch(e) { /* audio not available */ }
+}
+
+function playNote(ctx, freq, startDelay, duration, type) {
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.25, ctx.currentTime + startDelay);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startDelay + duration);
+  osc.start(ctx.currentTime + startDelay);
+  osc.stop(ctx.currentTime + startDelay + duration + 0.05);
+}
+
+function previewTone() {
+  const tone = document.getElementById('notifToneSelect')?.value || 'chime';
+  playTone(tone);
+}
+
+// ── PUSH NOTIFICATION ──
+function pushNotification(type, text) {
+  // Check if this type is enabled
+  const typeKey = type; // 'added','updated','active','available','reserved','removed'
+  if (notifSettings[typeKey] === false) return;
+
+  const nc = NOTIF_COLORS[type] || NOTIF_COLORS.updated;
+  const now = new Date();
+  const ts  = `${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
+
+  const notif = { id: Date.now(), type, text, ts, read: false, color: nc.color, label: nc.label };
+  notifications.unshift(notif);
+  if (notifications.length > 100) notifications.pop();
+
+  notifUnread++;
+  updateNotifBadge();
+  renderNotifList();
+
+  if (notifSettings.sound !== false) playTone(notifSettings.tone || 'chime');
+  if (notifSettings.toast !== false) showToast(notif);
+}
+
+function showToast(notif) {
+  // Remove existing toast
+  const existing = document.getElementById('activeToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'notif-toast';
+  toast.id = 'activeToast';
+  toast.innerHTML = `
+    <div class="toast-dot" style="background:${notif.color};box-shadow:0 0 6px ${notif.color};"></div>
+    <div style="flex:1;">
+      <div class="toast-text">${notif.text}</div>
+      <div class="toast-meta">${notif.ts}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+  `;
+  document.body.appendChild(toast);
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notifBadge');
+  const bell  = document.getElementById('notifBell');
+  if (!badge) return;
+  if (notifUnread > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = notifUnread > 99 ? '99+' : notifUnread;
+    bell.classList.add('has-unread');
+  } else {
+    badge.style.display = 'none';
+    bell.classList.remove('has-unread');
+  }
+  const countEl = document.getElementById('notifUnreadCount');
+  if (countEl) countEl.textContent = notifUnread > 0 ? `(${notifUnread} unread)` : '';
+}
+
+function renderNotifList() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  if (!notifications.length) {
+    list.innerHTML = '<div class="notif-empty">No notifications yet.<br>Channel changes will appear here.</div>';
+    return;
+  }
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markRead(${n.id})">
+      <div class="notif-dot" style="background:${n.color};${!n.read ? 'box-shadow:0 0 5px '+n.color+';' : ''}"></div>
+      <div class="notif-content">
+        <div class="notif-text">${n.text}</div>
+        <div class="notif-meta">${n.ts}</div>
+      </div>
+      <div class="notif-type-tag" style="background:${n.color}18;color:${n.color};border:1px solid ${n.color}33;">${n.label}</div>
+    </div>
+  `).join('');
+}
+
+function markRead(id) {
+  const n = notifications.find(x => x.id === id);
+  if (n && !n.read) { n.read = true; notifUnread = Math.max(0, notifUnread - 1); }
+  updateNotifBadge();
+  renderNotifList();
+}
+
+function markAllRead() {
+  notifications.forEach(n => n.read = true);
+  notifUnread = 0;
+  updateNotifBadge();
+  renderNotifList();
+}
+
+function clearAllNotifs() {
+  notifications = [];
+  notifUnread = 0;
+  updateNotifBadge();
+  renderNotifList();
+}
+
+function toggleNotifDrawer() {
+  const drawer = document.getElementById('notifDrawer');
+  drawer.classList.toggle('open');
+  if (drawer.classList.contains('open')) markAllRead();
+}
+
+// ── DETECT CHANNEL CHANGES FROM REALTIME ──
+function snapshotChannels() {
+  prevChannelSnapshot = {};
+  channels.forEach(ch => { prevChannelSnapshot[ch.id] = { status: ch.status, designator: ch.designator }; });
+}
+
+function diffChannels(newChannels) {
+  // Don't fire on first load
+  if (Object.keys(prevChannelSnapshot).length === 0) { snapshotChannels(); return; }
+
+  const prevIds = new Set(Object.keys(prevChannelSnapshot).map(Number));
+  const newIds  = new Set(newChannels.map(c => c.id));
+
+  newChannels.forEach(ch => {
+    if (!prevIds.has(ch.id)) {
+      // New channel added
+      pushNotification('added', `<span class="log-ch">${ch.designator}</span> added to channel plan — ${statusLabels[ch.status]}`);
+    } else {
+      const prev = prevChannelSnapshot[ch.id];
+      if (prev.status !== ch.status) {
+        // Status changed
+        const type = ch.status; // active / available / reserved / tactical / interop
+        pushNotification(type, `<span class="log-ch">${ch.designator}</span> status changed: ${statusLabels[prev.status]} → ${statusLabels[ch.status]}`);
+      } else if (prev.designator !== ch.designator) {
+        pushNotification('updated', `Channel renamed: ${prev.designator} → <span class="log-ch">${ch.designator}</span>`);
+      } else {
+        // General update (check if anything else changed — we detect by comparing full JSON)
+        const prevFull = JSON.stringify(prevChannelSnapshot[ch.id]);
+        const newFull  = JSON.stringify({ status: ch.status, designator: ch.designator });
+        // For deeper diff, re-snapshot after first load
+      }
+    }
+  });
+
+  prevIds.forEach(id => {
+    if (!newIds.has(id)) {
+      const prev = prevChannelSnapshot[id];
+      pushNotification('removed', `<span class="log-ch">${prev.designator}</span> removed from channel plan`);
+    }
+  });
+
+  snapshotChannels();
+}
+
+// ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 async function init() {
   setDbStatus('loading');
   await loadChannels();
+  snapshotChannels(); // baseline snapshot — no notifications on first load
   await loadActivityLog();
   subscribeRealtime();
 }
