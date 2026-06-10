@@ -2825,11 +2825,15 @@ function doLogin() {
     document.body.classList.add('readonly');
   }
 
-  // Show/hide admin button
+  // Show/hide desktop admin button
   const adminBtn = document.getElementById('adminMenuBtn');
   if (adminBtn) adminBtn.style.display = match.role === 'admin' ? 'flex' : 'none';
 
-  // Render user chip in topbar
+  // Show/hide mobile admin button
+  const mAdminBtn = document.getElementById('mobileAdminBtn');
+  if (mAdminBtn) mAdminBtn.style.display = match.role === 'admin' ? 'block' : 'none';
+
+  // Render user chip in topbar (desktop)
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('topbarUser').innerHTML = `
     <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
@@ -2839,6 +2843,20 @@ function doLogin() {
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign Out</button>
   `;
+
+  // Mobile user row in hamburger menu
+  const mUserRow = document.getElementById('mobileUserRow');
+  if (mUserRow) {
+    mUserRow.style.display = 'flex';
+    mUserRow.innerHTML = `
+      <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${initials}</div>
+      <div style="font-size:13px;color:var(--text-primary);">${match.name} <span style="color:var(--text-dim);font-size:11px;">· ${match.roleLabel}</span></div>
+    `;
+  }
+
+  // Show mobile notification bell
+  const mobileBell = document.getElementById('notifBellMobile');
+  if (mobileBell) mobileBell.style.display = 'flex';
 
   logActivity(`<span class="log-ch">${match.name}</span> signed in as ${match.roleLabel}`);
 }
@@ -2852,6 +2870,14 @@ function doLogout() {
   document.getElementById('topbarUser').innerHTML = '';
   const adminBtn = document.getElementById('adminMenuBtn');
   if (adminBtn) adminBtn.style.display = 'none';
+  const mAdminBtn = document.getElementById('mobileAdminBtn');
+  if (mAdminBtn) mAdminBtn.style.display = 'none';
+  const mUserRow = document.getElementById('mobileUserRow');
+  if (mUserRow) { mUserRow.style.display = 'none'; mUserRow.innerHTML = ''; }
+  const mobileBell = document.getElementById('notifBellMobile');
+  if (mobileBell) mobileBell.style.display = 'none';
+  document.getElementById('mobileMenu')?.classList.remove('open');
+  closeMobileSheet();
   document.getElementById('loginScreen').classList.remove('hidden');
 }
 
@@ -3525,17 +3551,21 @@ function showToast(notif) {
 function updateNotifBadge() {
   const badge = document.getElementById('notifBadge');
   const bell  = document.getElementById('notifBell');
-  if (!badge) return;
-  if (notifUnread > 0) {
-    badge.style.display = 'flex';
-    badge.textContent = notifUnread > 99 ? '99+' : notifUnread;
-    bell.classList.add('has-unread');
-  } else {
-    badge.style.display = 'none';
-    bell.classList.remove('has-unread');
+  if (badge) {
+    if (notifUnread > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = notifUnread > 99 ? '99+' : notifUnread;
+      if (bell) bell.classList.add('has-unread');
+    } else {
+      badge.style.display = 'none';
+      if (bell) bell.classList.remove('has-unread');
+    }
   }
   const countEl = document.getElementById('notifUnreadCount');
   if (countEl) countEl.textContent = notifUnread > 0 ? `(${notifUnread} unread)` : '';
+  // Mobile nav dot
+  const dot = document.getElementById('mobileNotifDot');
+  if (dot) dot.style.display = notifUnread > 0 ? 'block' : 'none';
 }
 
 function renderNotifList() {
@@ -3743,32 +3773,6 @@ function selectChannel(id) {
       </div>`;
     openMobileSheet();
   }
-}
-
-// Update mobile admin button + user row visibility after login
-const _origDoLogin = doLogin;
-function doLogin() {
-  _origDoLogin();
-  if (currentUser) {
-    const mAdminBtn = document.getElementById('mobileAdminBtn');
-    if (mAdminBtn) mAdminBtn.style.display = currentUser.role === 'admin' ? 'block' : 'none';
-    const mUserRow = document.getElementById('mobileUserRow');
-    if (mUserRow) {
-      mUserRow.style.display = 'flex';
-      mUserRow.innerHTML = `<div class="avatar" style="background:${currentUser.color}22;color:${currentUser.color};border:1px solid ${currentUser.color}44;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">${currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div><div style="font-size:13px;">${currentUser.name} <span style="color:var(--text-dim);font-size:11px;">· ${currentUser.roleLabel}</span></div>`;
-    }
-    // Show mobile bell in topbar
-    const mobileBell = document.getElementById('notifBellMobile');
-    if (mobileBell) mobileBell.style.display = 'flex';
-  }
-}
-
-// Patch updateNotifBadge to also update mobile dot
-const _origUpdateBadge = updateNotifBadge;
-function updateNotifBadge() {
-  _origUpdateBadge();
-  const dot = document.getElementById('mobileNotifDot');
-  if (dot) dot.style.display = notifUnread > 0 ? 'block' : 'none';
 }
 
 // ─────────────────────────────────────────────
