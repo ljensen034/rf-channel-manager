@@ -2659,17 +2659,12 @@ function renderChannels() {
 function selectChannel(id) {
   selectedId = id;
   const ch = channels.find(c => c.id === id);
+  if (!ch) return;
   renderChannels();
-
-  const badge = document.getElementById('selectedBadge');
-  if (badge) {
-    badge.style.display = 'inline-block';
-    badge.innerHTML = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
-  }
 
   const rxNote = (ch.rxFreq && ch.rxFreq !== ch.freq) ? ch.rxFreq + ' MHz' : 'Same as TX';
 
-  document.getElementById('sideContent').innerHTML = `
+  const detailHTML = `
     <div class="detail-section">
       <div class="detail-label">Designator</div>
       <div class="detail-value" style="font-size:18px;letter-spacing:0.04em;">${ch.designator}</div>
@@ -2708,8 +2703,45 @@ function selectChannel(id) {
     </div>
   `;
 
-  // Auto-open panel to detail tab on desktop
-  if (!isMobile()) openSidePanelToDetail();
+  if (isMobile()) {
+    // Show in bottom sheet
+    document.getElementById('sheetTitle').innerHTML = `
+      <span style="font-family:var(--font-data);font-size:14px;font-weight:700;">${ch.designator}</span>
+      <span class="status-pill ${ch.status}" style="margin-left:8px;">${statusLabels[ch.status]}</span>`;
+    document.getElementById('sheetContent').innerHTML = `
+      <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:0;">
+        <div class="detail-section">
+          <div class="detail-label">Frequency</div>
+          <div class="detail-value freq">${ch.freq} MHz</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">RX: ${rxNote}</div>
+        </div>
+        <div class="detail-section">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><div class="detail-label">Mode</div><div style="font-size:13px;color:var(--text-primary);">${ch.mode}</div></div>
+            <div><div class="detail-label">Tone / NAC</div><div style="font-size:13px;color:var(--text-primary);">${ch.tone||'—'}</div></div>
+          </div>
+        </div>
+        ${ch.function && ch.function!=='—' ? `<div class="detail-section"><div class="detail-label">Function</div><div style="font-size:13px;color:var(--text-primary);">${ch.function}</div></div>` : ''}
+        ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
+        ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
+        <div style="padding:12px 0;display:flex;flex-direction:column;gap:8px;">
+          <button class="btn-primary" style="padding:12px;" onclick="closeMobileSheet();openEditModal(${ch.id});">✏ Edit Channel</button>
+          ${ch.status!=='available' ? `<button class="btn-success" style="padding:12px;" onclick="releaseChannel(${ch.id});closeMobileSheet();">✓ Mark Available</button>` : ''}
+          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="closeMobileSheet();quickDeploy(${ch.id});">⚡ Quick Deploy</button>` : ''}
+          <button class="btn-danger" style="padding:12px;" onclick="deleteChannel(${ch.id});closeMobileSheet();">✕ Remove Channel</button>
+        </div>
+      </div>`;
+    openMobileSheet();
+  } else {
+    // Show in desktop side panel
+    const badge = document.getElementById('selectedBadge');
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.innerHTML = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
+    }
+    document.getElementById('sideContent').innerHTML = detailHTML;
+    openSidePanelToDetail();
+  }
 }
 
 async function releaseChannel(id) {
@@ -3843,44 +3875,6 @@ function openMobileSheet() {
 
 function closeMobileSheet() {
   document.getElementById('mobileDetailSheet')?.classList.remove('open');
-}
-
-// Override selectChannel to show bottom sheet on mobile
-const _origSelectChannel = selectChannel;
-function selectChannel(id) {
-  _origSelectChannel(id);
-  if (isMobile()) {
-    const ch = channels.find(c => c.id === id);
-    if (!ch) return;
-    const rxNote = (ch.rxFreq && ch.rxFreq !== ch.freq) ? ch.rxFreq + ' MHz' : 'Same as TX';
-    document.getElementById('sheetTitle').innerHTML = `
-      <span style="font-family:var(--font-data);font-size:14px;font-weight:700;">${ch.designator}</span>
-      <span class="status-pill ${ch.status}" style="margin-left:8px;">${statusLabels[ch.status]}</span>`;
-    document.getElementById('sheetContent').innerHTML = `
-      <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:0;">
-        <div class="detail-section">
-          <div class="detail-label">Frequency</div>
-          <div class="detail-value freq">${ch.freq} MHz</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">RX: ${rxNote}</div>
-        </div>
-        <div class="detail-section">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div><div class="detail-label">Mode</div><div style="font-size:13px;color:var(--text-primary);">${ch.mode}</div></div>
-            <div><div class="detail-label">Tone / NAC</div><div style="font-size:13px;color:var(--text-primary);">${ch.tone||'—'}</div></div>
-          </div>
-        </div>
-        ${ch.function && ch.function!=='—' ? `<div class="detail-section"><div class="detail-label">Function</div><div style="font-size:13px;color:var(--text-primary);">${ch.function}</div></div>` : ''}
-        ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
-        ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
-        <div style="padding:12px 0;display:flex;flex-direction:column;gap:8px;">
-          <button class="btn-primary" style="padding:12px;" onclick="closeMobileSheet();openEditModal(${ch.id});">✏ Edit Channel</button>
-          ${ch.status!=='available' ? `<button class="btn-success" style="padding:12px;" onclick="releaseChannel(${ch.id});closeMobileSheet();">✓ Mark Available</button>` : ''}
-          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="closeMobileSheet();quickDeploy(${ch.id});">⚡ Quick Deploy</button>` : ''}
-          <button class="btn-danger" style="padding:12px;" onclick="deleteChannel(${ch.id});closeMobileSheet();">✕ Remove Channel</button>
-        </div>
-      </div>`;
-    openMobileSheet();
-  }
 }
 
 // ─────────────────────────────────────────────
