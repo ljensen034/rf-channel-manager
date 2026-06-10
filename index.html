@@ -1767,11 +1767,15 @@
     <div class="login-body">
       <div class="login-field">
         <label class="login-label">Username</label>
-        <input class="login-input" id="loginUser" type="text" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+        <input class="login-input" id="loginUser" type="text" placeholder="Enter username"
+          autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
       </div>
       <div class="login-field">
         <label class="login-label">Password</label>
-        <input class="login-input" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <input class="login-input" id="loginPass" type="password" placeholder="Enter password"
+          autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div class="login-error" id="loginError">⚠ Invalid username or password</div>
       <button class="login-btn" onclick="doLogin()">Sign In</button>
@@ -1840,11 +1844,8 @@
       <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
     </button>
   </div>
-  <!-- Mobile: just bell + hamburger -->
+  <!-- Mobile: hamburger only — bell is in desktop actions above -->
   <div style="display:flex;gap:6px;align-items:center;margin-left:auto;" class="mobile-topbar-right">
-    <button class="notif-btn" id="notifBellMobile" onclick="toggleNotifDrawer()" title="Notifications" style="display:none;">
-      🔔
-    </button>
     <button id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
   </div>
   <div class="theme-switcher" id="themeSwitcher">
@@ -2839,7 +2840,13 @@ function fillDemo(user, pass) {
 
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim().toLowerCase();
-  const p = document.getElementById('loginPass').value;
+  const p = document.getElementById('loginPass').value.trim(); // trim catches iOS trailing spaces
+
+  if (!u || !p) {
+    document.getElementById('loginError').classList.add('visible');
+    return;
+  }
+
   const match = USERS.find(x => x.username === u && x.password === p && x.active !== false);
 
   if (!match) {
@@ -2886,10 +2893,7 @@ function doLogin() {
     `;
   }
 
-  // Show mobile notification bell
-  const mobileBell = document.getElementById('notifBellMobile');
-  if (mobileBell) mobileBell.style.display = 'flex';
-
+  // Mobile notification bell is same as desktop bell — no separate element needed
   logActivity(`<span class="log-ch">${match.name}</span> signed in as ${match.roleLabel}`);
 }
 
@@ -2906,8 +2910,6 @@ function doLogout() {
   if (mAdminBtn) mAdminBtn.style.display = 'none';
   const mUserRow = document.getElementById('mobileUserRow');
   if (mUserRow) { mUserRow.style.display = 'none'; mUserRow.innerHTML = ''; }
-  const mobileBell = document.getElementById('notifBellMobile');
-  if (mobileBell) mobileBell.style.display = 'none';
   document.getElementById('mobileMenu')?.classList.remove('open');
   closeMobileSheet();
   document.getElementById('loginScreen').classList.remove('hidden');
