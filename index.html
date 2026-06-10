@@ -1776,32 +1776,6 @@
       <div class="login-error" id="loginError">⚠ Invalid username or password</div>
       <button class="login-btn" onclick="doLogin()">Sign In</button>
     </div>
-    <div class="login-demo-accounts">
-      <div class="demo-label">Demo Accounts — Click to fill</div>
-      <div class="demo-users">
-        <button class="demo-user-btn" onclick="fillDemo('commsunit','comms123')">
-          <span class="demo-role-badge role-comms">Comms</span>
-          <div class="demo-user-info">
-            <div class="demo-user-name">commsunit</div>
-            <div class="demo-user-creds">Comms Unit Leader — full access</div>
-          </div>
-        </button>
-        <button class="demo-user-btn" onclick="fillDemo('dispatcher','dispatch1')">
-          <span class="demo-role-badge role-admin">Admin</span>
-          <div class="demo-user-info">
-            <div class="demo-user-name">dispatcher</div>
-            <div class="demo-user-creds">Dispatch Admin — full access</div>
-          </div>
-        </button>
-        <button class="demo-user-btn" onclick="fillDemo('observer','view1234')">
-          <span class="demo-role-badge role-viewer">Viewer</span>
-          <div class="demo-user-info">
-            <div class="demo-user-name">observer</div>
-            <div class="demo-user-creds">Read-only — view channels only</div>
-          </div>
-        </button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1812,6 +1786,7 @@
 <div id="mobileMenu">
   <button class="btn-primary" onclick="openAddModal();toggleMobileMenu()">+ Add Channel</button>
   <button class="btn-secondary" onclick="openICS205();toggleMobileMenu()">⬇ ICS 205 Export</button>
+  <button class="btn-secondary" onclick="openMorningReport();toggleMobileMenu()">📋 Morning Report</button>
   <button class="btn-secondary" onclick="openBigBoard();toggleMobileMenu()">⛶ Big Board</button>
   <div class="menu-divider"></div>
   <button id="mobileAdminBtn" class="btn-secondary" onclick="openUserAdmin();toggleMobileMenu()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);">👥 User Administration</button>
@@ -1855,7 +1830,8 @@
     <span class="badge">PUBLIC SAFETY</span>
   </div>
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
-    <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205 Export</button>
+    <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
+    <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
     <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
     <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
@@ -1941,8 +1917,11 @@
     </div>
   </div>
   <div class="topbar-user" id="topbarUser" style="margin-left:4px;"></div>
-  <div id="dbStatus" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);display:flex;align-items:center;margin-left:8px;white-space:nowrap;">Connecting…</div>
-  <div class="topbar-clock" id="clock">--:--:-- UTC</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:8px;">
+    <div id="dbStatus" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);display:flex;align-items:center;white-space:nowrap;">Connecting…</div>
+    <div id="syncTimer" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);white-space:nowrap;display:none;">↻ <span id="syncSeconds">0</span>s ago</div>
+  </div>
+  <div class="topbar-clock" id="clock">--:--:-- PST</div>
 </header>
 
 <!-- STATS BAR -->
@@ -2238,6 +2217,7 @@ async function loadChannels() {
   }
 
   setDbStatus('connected');
+  resetSyncTimer();
   renderChannels();
   renderLog();
   logActivityLocal(`Connected — <span class="log-ch">${channels.length}</span> channels loaded from database`);
@@ -2248,7 +2228,8 @@ async function loadActivityLog() {
   if (!data) return;
   activityLog = data.map(r => {
     const d = new Date(r.created_at);
-    const ts = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;
+    const ts = d.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false }) + ' ' +
+               d.toLocaleString('en-US', { timeZone:'America/Los_Angeles', timeZoneName:'short' }).split(' ').pop();
     return { time: ts, text: r.message };
   });
   renderLog();
@@ -2266,6 +2247,7 @@ function subscribeRealtime() {
         diffChannels(newChannels);
         channels = newChannels;
       }
+      resetSyncTimer();
       renderChannels();
       if (selectedId) {
         const still = channels.find(c => c.id === selectedId);
@@ -2282,7 +2264,8 @@ function subscribeRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
       const r = payload.new;
       const d = new Date(r.created_at);
-      const ts = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;
+      const ts = d.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false }) + ' ' +
+                 d.toLocaleString('en-US', { timeZone:'America/Los_Angeles', timeZoneName:'short' }).split(' ').pop();
       activityLog.unshift({ time: ts, text: r.message });
       if (activityLog.length > 50) activityLog.pop();
       renderLog();
@@ -2308,17 +2291,67 @@ function setDbStatus(state, msg) {
 
 
 // ─────────────────────────────────────────────
-// CLOCK
+// CLOCK — Pacific Time
 // ─────────────────────────────────────────────
-function updateClock() {
+function getPacificTime() {
+  // Use Intl to always get correct PST/PDT regardless of user's local timezone
   const now = new Date();
-  const h = String(now.getUTCHours()).padStart(2,'0');
-  const m = String(now.getUTCMinutes()).padStart(2,'0');
-  const s = String(now.getUTCSeconds()).padStart(2,'0');
-  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+  const pacificStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+  return new Date(pacificStr);
+}
+
+function getPacificTimeStr(includeSeconds) {
+  const now = new Date();
+  const opts = {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit', minute: '2-digit',
+    hour12: false
+  };
+  if (includeSeconds) opts.second = '2-digit';
+  const timeStr = now.toLocaleTimeString('en-US', opts);
+  // Determine PST vs PDT
+  const tzAbbr = now.toLocaleString('en-US', { timeZone:'America/Los_Angeles', timeZoneName:'short' }).split(' ').pop();
+  return `${timeStr} ${tzAbbr}`;
+}
+
+function getPacificDateStr() {
+  return new Date().toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: '2-digit', day: '2-digit', year: 'numeric'
+  });
+}
+
+function updateClock() {
+  document.getElementById('clock').textContent = getPacificTimeStr(true);
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+// ─────────────────────────────────────────────
+// SYNC TIMER
+// ─────────────────────────────────────────────
+let lastSyncTime = null;
+let syncTimerInterval = null;
+
+function resetSyncTimer() {
+  lastSyncTime = Date.now();
+  const timerEl = document.getElementById('syncTimer');
+  const secEl   = document.getElementById('syncSeconds');
+  if (timerEl) timerEl.style.display = 'flex';
+  if (secEl)   secEl.textContent = '0';
+  clearInterval(syncTimerInterval);
+  syncTimerInterval = setInterval(() => {
+    if (!lastSyncTime) return;
+    const elapsed = Math.floor((Date.now() - lastSyncTime) / 1000);
+    if (secEl) secEl.textContent = elapsed;
+    // Colour shifts: green <30s, amber 30-60s, red >60s
+    if (timerEl) {
+      timerEl.style.color = elapsed < 30 ? 'var(--status-available)'
+                          : elapsed < 60 ? 'var(--status-reserved)'
+                          : 'var(--status-active)';
+    }
+  }, 1000);
+}
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -2332,8 +2365,7 @@ const statusLabels = {
 };
 
 function logActivityLocal(text) {
-  const now = new Date();
-  const ts = `${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
+  const ts = getPacificTimeStr(false);
   activityLog.unshift({ time: ts, text });
   if (activityLog.length > 50) activityLog.pop();
   renderLog();
@@ -3776,6 +3808,178 @@ function selectChannel(id) {
 }
 
 // ─────────────────────────────────────────────
+// MORNING REPORT
+// ─────────────────────────────────────────────
+let morningReportSettings = loadMorningReportSettings();
+let morningReportCheckInterval = null;
+
+function loadMorningReportSettings() {
+  try {
+    const s = localStorage.getItem('rfMorningReport');
+    return s ? JSON.parse(s) : { enabled: false, time: '07:00', lastSent: null };
+  } catch(e) { return { enabled: false, time: '07:00', lastSent: null }; }
+}
+
+function saveMorningReportSettings() {
+  try { localStorage.setItem('rfMorningReport', JSON.stringify(morningReportSettings)); } catch(e) {}
+}
+
+function openMorningReport() {
+  // Sync UI to settings
+  document.getElementById('mr-enabled').checked  = morningReportSettings.enabled;
+  document.getElementById('mr-time').value        = morningReportSettings.time || '07:00';
+  const lastEl = document.getElementById('mr-last-sent');
+  if (lastEl) lastEl.textContent = morningReportSettings.lastSent
+    ? 'Last sent: ' + morningReportSettings.lastSent
+    : 'Not yet sent this session';
+  document.getElementById('morningReportModal').classList.add('open');
+}
+
+function closeMorningReport() {
+  document.getElementById('morningReportModal').classList.remove('open');
+}
+
+function saveMorningReportConfig() {
+  morningReportSettings.enabled = document.getElementById('mr-enabled').checked;
+  morningReportSettings.time    = document.getElementById('mr-time').value;
+  saveMorningReportSettings();
+  scheduleMorningReport();
+  closeMorningReport();
+  if (morningReportSettings.enabled) {
+    logActivityLocal(`Morning report scheduled for ${morningReportSettings.time} PT daily`);
+  }
+}
+
+function scheduleMorningReport() {
+  clearInterval(morningReportCheckInterval);
+  if (!morningReportSettings.enabled) return;
+  // Check every 60 seconds if it's time to send
+  morningReportCheckInterval = setInterval(checkMorningReport, 60000);
+  checkMorningReport(); // run immediately too
+}
+
+function checkMorningReport() {
+  if (!morningReportSettings.enabled) return;
+  const now = new Date();
+  const ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+  const pt = new Date(ptStr);
+  const hh = String(pt.getHours()).padStart(2,'0');
+  const mm = String(pt.getMinutes()).padStart(2,'0');
+  const currentTime = `${hh}:${mm}`;
+  const todayKey = `${pt.getFullYear()}-${pt.getMonth()}-${pt.getDate()}`;
+
+  if (currentTime === morningReportSettings.time && morningReportSettings.lastSentKey !== todayKey) {
+    sendMorningReport();
+    morningReportSettings.lastSentKey = todayKey;
+    morningReportSettings.lastSent = getPacificTimeStr(false) + ' · ' + getPacificDateStr();
+    saveMorningReportSettings();
+    const lastEl = document.getElementById('mr-last-sent');
+    if (lastEl) lastEl.textContent = 'Last sent: ' + morningReportSettings.lastSent;
+  }
+}
+
+function generateReportHTML() {
+  const date = new Date().toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const time = getPacificTimeStr(false);
+
+  const active   = channels.filter(c => c.status === 'active');
+  const reserved = channels.filter(c => c.status === 'reserved');
+  const tactical = channels.filter(c => c.status === 'tactical');
+  const interop  = channels.filter(c => c.status === 'interop');
+  const available= channels.filter(c => c.status === 'available');
+
+  function tableRows(list) {
+    if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:8px;">None</td></tr>`;
+    return list.map(ch => `
+      <tr>
+        <td><strong>${ch.designator}</strong></td>
+        <td>${ch.freq} MHz</td>
+        <td>${ch.function !== '—' ? ch.function : '—'}</td>
+        <td>${ch.agency !== '—' ? ch.agency : '—'}</td>
+        <td>${ch.notes || '—'}</td>
+      </tr>`).join('');
+  }
+
+  function section(title, color, list) {
+    return `
+      <h3 style="margin:20px 0 8px;font-size:14px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">
+        ${title} (${list.length})
+      </h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#f0f0f0;">
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Channel</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Frequency</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Function</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Agency</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Notes</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows(list)}</tbody>
+      </table>`;
+  }
+
+  return `
+    <div style="font-family:Arial,sans-serif;color:#111;max-width:800px;margin:0 auto;padding:24px;">
+      <div style="text-align:center;border-bottom:3px solid #1e88e5;padding-bottom:16px;margin-bottom:20px;">
+        <div style="font-size:22px;font-weight:700;letter-spacing:0.04em;">📡 RF Channel Manager</div>
+        <div style="font-size:16px;font-weight:600;margin-top:4px;">Daily Morning Report</div>
+        <div style="font-size:13px;color:#555;margin-top:4px;">${date} · Generated ${time}</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;text-align:center;">
+        ${[
+          { label:'Active',    count:active.length,    color:'#d63031' },
+          { label:'Reserved',  count:reserved.length,  color:'#b8860b' },
+          { label:'Tactical',  count:tactical.length,  color:'#0066cc' },
+          { label:'Interop',   count:interop.length,   color:'#7b2fbe' },
+          { label:'Available', count:available.length, color:'#00875a' },
+        ].map(s => `
+          <div style="border:1px solid ${s.color};border-radius:6px;padding:10px 6px;">
+            <div style="font-size:28px;font-weight:700;color:${s.color};">${s.count}</div>
+            <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">${s.label}</div>
+          </div>`).join('')}
+      </div>
+
+      ${section('Active / Deployed', '#d63031', active)}
+      ${section('Reserved (Pre-planned)', '#b8860b', reserved)}
+      ${section('Tactical', '#0066cc', tactical)}
+      ${section('Interop / Mutual Aid', '#7b2fbe', interop)}
+      ${section('Available', '#00875a', available)}
+
+      <div style="margin-top:24px;font-size:11px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
+        RF Channel Manager — Public Safety Operations · Auto-generated ${time} PT
+      </div>
+    </div>`;
+}
+
+function sendMorningReport() {
+  // Display the report in a print-ready modal/window
+  const html = generateReportHTML();
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(`<!DOCTYPE html><html><head><title>Morning Report — ${getPacificDateStr()}</title>
+      <style>body{margin:0;padding:0;background:#fff;}td{border:1px solid #ccc;padding:5px 8px;}
+      @media print{button{display:none!important}}</style></head>
+      <body>${html}
+      <div style="text-align:center;margin:20px;">
+        <button onclick="window.print()" style="padding:10px 24px;background:#1e88e5;color:#fff;border:none;border-radius:4px;font-size:14px;cursor:pointer;">🖨 Print / Save PDF</button>
+        <button onclick="window.close()" style="padding:10px 24px;background:#eee;color:#333;border:none;border-radius:4px;font-size:14px;cursor:pointer;margin-left:10px;">Close</button>
+      </div></body></html>`);
+    win.document.close();
+  }
+  logActivity(`📋 Morning report generated for ${getPacificDateStr()}`);
+  pushNotification('updated', `📋 Morning report generated — ${getPacificDateStr()}`);
+}
+
+function previewMorningReport() {
+  sendMorningReport();
+}
+
+// ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 async function init() {
@@ -3784,6 +3988,7 @@ async function init() {
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
+  scheduleMorningReport();
 }
 
 // Re-render on resize/orientation change
@@ -3878,6 +4083,69 @@ init();
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeUserAdmin()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MORNING REPORT MODAL ── -->
+<div class="modal-overlay" id="morningReportModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">📋 Daily Morning Report</div>
+      <button class="modal-close" onclick="closeMorningReport()">✕</button>
+    </div>
+    <div class="modal-body" style="gap:0;padding:0;">
+
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          Automatically generates a daily channel status report at a set time each morning.
+          The report covers all <strong style="color:var(--status-active);">Active</strong>,
+          <strong style="color:var(--status-reserved);">Reserved</strong>, and
+          <strong style="color:var(--status-tactical);">Tactical</strong> channels.
+        </div>
+      </div>
+
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500;">Enable Daily Report</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Opens report automatically at scheduled time</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="mr-enabled" onchange="saveMorningReportConfig()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Report Time (Pacific Time)</label>
+          <input class="form-input" type="time" id="mr-time" value="07:00" onchange="saveMorningReportConfig()" style="width:160px;">
+        </div>
+        <div id="mr-last-sent" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">Not yet sent this session</div>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Report Includes</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span class="status-pill active">Active / Deployed</span>
+          <span class="status-pill reserved">Reserved</span>
+          <span class="status-pill tactical">Tactical</span>
+          <span class="status-pill interop">Interop</span>
+          <span class="status-pill available">Available</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">Report opens as a printable page — save as PDF from your browser.</div>
+      </div>
+
+      <div style="padding:10px 20px;background:rgba(255,196,0,0.06);border-top:1px solid rgba(255,196,0,0.15);">
+        <div style="font-size:11px;color:var(--status-reserved);font-family:var(--font-data);">⚠ Report runs while this tab is open. For automated email delivery, SendGrid or similar integration is required.</div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-secondary" onclick="previewMorningReport()">👁 Preview Now</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="closeMorningReport()">Close</button>
+        <button class="btn-primary" onclick="saveMorningReportConfig()">Save Settings</button>
+      </div>
     </div>
   </div>
 </div>
