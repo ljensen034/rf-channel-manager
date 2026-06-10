@@ -723,7 +723,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.7);
-    z-index: 200;
+    z-index: 500;
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -1907,7 +1907,7 @@
   <div class="bb-close-bar">
     <button id="bigBoardCloseBtn" onclick="closeBigBoard()" title="Close Big Board (Esc)">✕ Close Big Board</button>
   </div>
-  <iframe id="bigBoardFrame" title="RF Big Board Wall Display"></iframe>
+  <div id="bigBoardContent" style="width:100%;flex:1;overflow-y:auto;display:flex;flex-direction:column;"></div>
 </div>
 
 <!-- LOGIN SCREEN -->
@@ -3314,378 +3314,177 @@ async function deleteUser(userId) {
 // ─────────────────────────────────────────────
 // BIG BOARD — WALL DISPLAY
 // ─────────────────────────────────────────────
+let bigBoardInterval = null;
+let bigBoardCountdown = 30;
+
 function openBigBoard() {
+  renderBigBoard();
+  const overlay = document.getElementById('bigBoardOverlay');
+  overlay.style.display = 'flex';
+  if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+
+  // Auto-refresh every 30s
+  bigBoardCountdown = 30;
+  clearInterval(bigBoardInterval);
+  bigBoardInterval = setInterval(() => {
+    bigBoardCountdown--;
+    const el = document.getElementById('bbCountdown');
+    if (el) el.textContent = bigBoardCountdown;
+    if (bigBoardCountdown <= 0) {
+      bigBoardCountdown = 30;
+      renderBigBoard();
+    }
+  }, 1000);
+
+  // Live clock inside big board
+  clearInterval(window._bbClockInterval);
+  window._bbClockInterval = setInterval(updateBigBoardClock, 1000);
+  updateBigBoardClock();
+}
+
+function updateBigBoardClock() {
+  const el = document.getElementById('bbClock');
+  const de = document.getElementById('bbDate');
+  if (!el) return;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  const tzAbbr  = now.toLocaleString('en-US', { timeZone:'America/Los_Angeles', timeZoneName:'short' }).split(' ').pop();
+  el.textContent = timeStr + ' ' + tzAbbr;
+  if (de) de.textContent = now.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', year:'numeric' });
+}
+
+function renderBigBoard() {
   const theme = currentTheme || 'midnight';
-
   const themeVars = {
-    midnight: {
-      bgDeep:'#0a0d12', bgPanel:'#111620', bgCard:'#161d2b', bgHover:'#1c2540',
-      border:'#1f2d44', borderLit:'#2b3f62',
-      textPrimary:'#e8edf5', textSecondary:'#7a8fac', textDim:'#3e5272',
-      accent:'#1e88e5',
-    },
-    contrast: {
-      bgDeep:'#000000', bgPanel:'#0a0a0a', bgCard:'#111111', bgHover:'#1a1a1a',
-      border:'#2a2a2a', borderLit:'#444444',
-      textPrimary:'#ffffff', textSecondary:'#aaaaaa', textDim:'#555555',
-      accent:'#00aaff',
-    },
-    day: {
-      bgDeep:'#f0f2f5', bgPanel:'#ffffff', bgCard:'#f7f9fc', bgHover:'#eef1f6',
-      border:'#d0d8e4', borderLit:'#aab8cc',
-      textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8',
-      accent:'#1565c0',
-    },
-    amber: {
-      bgDeep:'#0d0900', bgPanel:'#161000', bgCard:'#1e1600', bgHover:'#271d00',
-      border:'#332600', borderLit:'#4d3900',
-      textPrimary:'#ffe082', textSecondary:'#b8922a', textDim:'#5c4400',
-      accent:'#ffb300',
-    },
-    forest: {
-      bgDeep:'#060d06', bgPanel:'#0c160c', bgCard:'#111d11', bgHover:'#172417',
-      border:'#1e2e1e', borderLit:'#2e4a2e',
-      textPrimary:'#c8e6c9', textSecondary:'#6a9b6a', textDim:'#2e4a2e',
-      accent:'#4caf50',
-    },
+    midnight: { bgDeep:'#0a0d12', bgPanel:'#111620', bgCard:'#161d2b', border:'#1f2d44', borderLit:'#2b3f62', textPrimary:'#e8edf5', textSecondary:'#7a8fac', textDim:'#3e5272', accent:'#1e88e5' },
+    contrast: { bgDeep:'#000000', bgPanel:'#0a0a0a', bgCard:'#111111', border:'#2a2a2a', borderLit:'#444444', textPrimary:'#ffffff', textSecondary:'#aaaaaa', textDim:'#555555', accent:'#00aaff' },
+    day:      { bgDeep:'#f0f2f5', bgPanel:'#ffffff',  bgCard:'#f7f9fc', border:'#d0d8e4', borderLit:'#aab8cc', textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8', accent:'#1565c0' },
+    amber:    { bgDeep:'#0d0900', bgPanel:'#161000',  bgCard:'#1e1600', border:'#332600', borderLit:'#4d3900', textPrimary:'#ffe082', textSecondary:'#b8922a', textDim:'#5c4400', accent:'#ffb300' },
+    forest:   { bgDeep:'#060d06', bgPanel:'#0c160c',  bgCard:'#111d11', border:'#1e2e1e', borderLit:'#2e4a2e', textPrimary:'#c8e6c9', textSecondary:'#6a9b6a', textDim:'#2e4a2e', accent:'#4caf50' },
   };
-
   const t = themeVars[theme] || themeVars.midnight;
 
-  // Status colour sets — same for all themes
   const SC = {
-    available: { color:'#00e676', bg:'rgba(0,230,118,0.10)', border:'rgba(0,230,118,0.28)', label:'AVAILABLE' },
-    active:    { color:'#ff5252', bg:'rgba(255,82,82,0.10)',  border:'rgba(255,82,82,0.28)',  label:'ACTIVE' },
-    reserved:  { color:'#ffc400', bg:'rgba(255,196,0,0.10)',  border:'rgba(255,196,0,0.28)',  label:'RESERVED' },
-    tactical:  { color:'#40c4ff', bg:'rgba(64,196,255,0.10)', border:'rgba(64,196,255,0.28)', label:'TACTICAL' },
-    interop:   { color:'#ce93d8', bg:'rgba(206,147,216,0.10)',border:'rgba(206,147,216,0.28)',label:'INTEROP' },
+    active:    { color:'#ff5252', bg:'rgba(255,82,82,0.10)',   border:'rgba(255,82,82,0.28)',   label:'ACTIVE' },
+    reserved:  { color:'#ffc400', bg:'rgba(255,196,0,0.10)',   border:'rgba(255,196,0,0.28)',   label:'RESERVED' },
+    tactical:  { color:'#40c4ff', bg:'rgba(64,196,255,0.10)',  border:'rgba(64,196,255,0.28)',  label:'TACTICAL' },
+    interop:   { color:'#ce93d8', bg:'rgba(206,147,216,0.10)', border:'rgba(206,147,216,0.28)', label:'INTEROP' },
+    available: { color:'#00e676', bg:'rgba(0,230,118,0.10)',   border:'rgba(0,230,118,0.28)',   label:'AVAILABLE' },
   };
-  if (theme === 'contrast') {
-    SC.available.color='#00ff88'; SC.active.color='#ff3333';
-    SC.reserved.color='#ffcc00'; SC.tactical.color='#00ccff'; SC.interop.color='#dd88ff';
-  }
   if (theme === 'day') {
-    SC.available.color='#00875a'; SC.available.bg='rgba(0,135,90,0.08)'; SC.available.border='rgba(0,135,90,0.25)';
-    SC.active.color='#d63031';   SC.active.bg='rgba(214,48,49,0.08)';   SC.active.border='rgba(214,48,49,0.25)';
-    SC.reserved.color='#b8860b'; SC.reserved.bg='rgba(184,134,11,0.08)';SC.reserved.border='rgba(184,134,11,0.25)';
-    SC.tactical.color='#0066cc'; SC.tactical.bg='rgba(0,102,204,0.08)'; SC.tactical.border='rgba(0,102,204,0.25)';
-    SC.interop.color='#7b2fbe';  SC.interop.bg='rgba(123,47,190,0.08)'; SC.interop.border='rgba(123,47,190,0.25)';
+    SC.active.color='#d63031';   SC.reserved.color='#b8860b';
+    SC.tactical.color='#0066cc'; SC.interop.color='#7b2fbe'; SC.available.color='#00875a';
   }
 
-  const incName   = '';
-  const incNumber = '';
-  const incPeriod = '';
-  const incIC     = '';
-
-  // Group channels
   const groups = { active:[], reserved:[], tactical:[], interop:[], available:[] };
   channels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
 
   const now = new Date();
-  const utcTime = `${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
-  const utcDate = now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const utcDate = now.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', year:'numeric' });
+  const utcTime = now.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false });
 
-  function buildTile(ch) {
-    const s = SC[ch.status];
-    return `
-      <div style="
-        background:${s.bg};
-        border:2px solid ${s.border};
-        border-left:6px solid ${s.color};
-        border-radius:6px;
-        padding:18px 20px;
-        display:flex;flex-direction:column;gap:6px;
-        position:relative;
-        min-width:0;
-      ">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${t.textPrimary};line-height:1;word-break:break-all;">${ch.designator}</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:${s.bg};color:${s.color};border:1px solid ${s.border};white-space:nowrap;flex-shrink:0;">${s.label}</div>
-        </div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:400;color:${s.color};letter-spacing:0.04em;line-height:1;">${ch.freq} <span style="font-size:14px;opacity:0.7;">MHz</span></div>
-        <div style="font-size:15px;color:${t.textSecondary};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.function !== '—' ? ch.function : ''}</div>
-        <div style="display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;">
-          ${ch.agency && ch.agency !== '—' ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">${ch.agency}</span>` : ''}
-          ${ch.mode ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">${ch.mode}</span>` : ''}
-          ${ch.tone && ch.tone !== '—' ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${t.textDim};background:${t.bgPanel};padding:2px 8px;border-radius:2px;border:1px solid ${t.border};">T: ${ch.tone}</span>` : ''}
-        </div>
-        ${ch.incident ? `<div style="font-size:12px;color:${SC.reserved.color};font-family:'IBM Plex Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📋 ${ch.incident}</div>` : ''}
-        ${ch.notes ? `<div style="font-size:12px;color:${t.textDim};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">💬 ${ch.notes}</div>` : ''}
-      </div>`;
+  function tile(ch) {
+    const s = SC[ch.status] || SC.available;
+    return `<div style="background:${s.bg};border:2px solid ${s.border};border-left:6px solid ${s.color};border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:5px;min-width:0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="font-family:var(--font-data);font-size:20px;font-weight:700;color:${t.textPrimary};line-height:1;word-break:break-all;">${ch.designator}</div>
+        <div style="font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:${s.bg};color:${s.color};border:1px solid ${s.border};white-space:nowrap;flex-shrink:0;">${s.label}</div>
+      </div>
+      <div style="font-family:var(--font-data);font-size:24px;font-weight:400;color:${s.color};letter-spacing:0.04em;line-height:1;">${ch.freq} <span style="font-size:13px;opacity:0.7;">MHz</span></div>
+      ${ch.function && ch.function!=='—' ? `<div style="font-size:14px;color:${t.textSecondary};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.function}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">
+        ${ch.agency && ch.agency!=='—' ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">${ch.agency}</span>` : ''}
+        ${ch.mode ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">${ch.mode}</span>` : ''}
+        ${ch.tone && ch.tone!=='—' ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">T: ${ch.tone}</span>` : ''}
+      </div>
+      ${ch.notes ? `<div style="font-size:11px;color:${t.textDim};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">💬 ${ch.notes}</div>` : ''}
+    </div>`;
   }
 
-  function buildSection(statusKey, chList) {
-    if (!chList.length) return '';
-    const s = SC[statusKey];
-    const pulse = statusKey === 'active' ? `animation:pulse 2s infinite;` : '';
-    return `
-      <div style="margin-bottom:36px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid ${s.border};">
-          <div style="width:14px;height:14px;border-radius:50%;background:${s.color};box-shadow:0 0 10px ${s.color};flex-shrink:0;${pulse}"></div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${s.color};">${s.label}</div>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:${t.textDim};font-weight:400;">${chList.length} channel${chList.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
-          ${chList.map(buildTile).join('')}
-        </div>
-      </div>`;
+  function section(key, list) {
+    if (!list.length) return '';
+    const s = SC[key];
+    const pulse = key==='active' ? 'animation:bbPulse 2s infinite;' : '';
+    return `<div style="margin-bottom:32px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid ${s.border};">
+        <div style="width:13px;height:13px;border-radius:50%;background:${s.color};box-shadow:0 0 8px ${s.color};flex-shrink:0;${pulse}"></div>
+        <div style="font-family:var(--font-data);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${s.color};">${s.label}</div>
+        <div style="font-family:var(--font-data);font-size:13px;color:${t.textDim};">${list.length} channel${list.length!==1?'s':''}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+        ${list.map(tile).join('')}
+      </div>
+    </div>`;
   }
 
-  // Build summary strip counts
-  const counts = {};
-  Object.keys(groups).forEach(k => counts[k] = groups[k].length);
-
-  const summaryStrip = Object.entries(SC).map(([k, s]) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:0 24px;border-right:1px solid ${t.border};">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:700;color:${s.color};line-height:1;">${counts[k] || 0}</div>
+  const summaryStrip = Object.entries(SC).map(([k,s]) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:0 20px;border-right:1px solid ${t.border};">
+      <div style="font-family:var(--font-data);font-size:32px;font-weight:700;color:${s.color};line-height:1;">${groups[k]?.length||0}</div>
       <div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.1em;">${s.label}</div>
-        <div style="width:28px;height:3px;border-radius:2px;background:${s.color};margin-top:3px;"></div>
+        <div style="font-family:var(--font-data);font-size:9px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.1em;">${s.label}</div>
+        <div style="width:24px;height:3px;border-radius:2px;background:${s.color};margin-top:3px;"></div>
       </div>
     </div>`).join('');
 
-  const sectionsHTML = ['active','reserved','tactical','interop','available']
-    .map(k => buildSection(k, groups[k])).join('');
+  const sectionsHTML = ['active','reserved','tactical','interop','available'].map(k => section(k, groups[k])).join('');
 
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RF BIG BOARD — ${incName}</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-  @keyframes scanline {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100vh); }
-  }
-  body {
-    background:${t.bgDeep};
-    color:${t.textPrimary};
-    font-family:'IBM Plex Sans',sans-serif;
-    min-height:100vh;
-    overflow-x:hidden;
-  }
-  ::-webkit-scrollbar { width:6px; }
-  ::-webkit-scrollbar-thumb { background:${t.borderLit}; border-radius:3px; }
+  const container = document.getElementById('bigBoardContent');
+  container.style.background = t.bgDeep;
+  container.style.color = t.textPrimary;
+  container.innerHTML = `
+    <style>
+      @keyframes bbPulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+      #bigBoardContent { font-family: var(--font-ui), sans-serif; }
+      #bigBoardContent ::-webkit-scrollbar { width:6px; }
+      #bigBoardContent ::-webkit-scrollbar-thumb { background:${t.borderLit}; border-radius:3px; }
+    </style>
 
-  /* subtle scanline overlay for tactical feel */
-  body::before {
-    content:'';
-    position:fixed;
-    inset:0;
-    background:repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.015) 2px,
-      rgba(0,0,0,0.015) 4px
-    );
-    pointer-events:none;
-    z-index:999;
-  }
-
-  .bb-header {
-    position:sticky;
-    top:0;
-    z-index:100;
-    background:${t.bgPanel};
-    border-bottom:2px solid ${t.borderLit};
-    padding:0 32px;
-    height:80px;
-    display:flex;
-    align-items:center;
-    gap:0;
-  }
-  .bb-logo {
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding-right:28px;
-    border-right:1px solid ${t.border};
-    margin-right:0;
-    flex-shrink:0;
-  }
-  .bb-logo-icon { font-size:28px; }
-  .bb-logo-text {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:0.12em;
-    color:${t.textPrimary};
-    line-height:1.3;
-  }
-  .bb-logo-sub {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10px;
-    color:${t.accent};
-    text-transform:uppercase;
-    letter-spacing:0.14em;
-  }
-  .bb-incident {
-    padding:0 28px;
-    border-right:1px solid ${t.border};
-    flex-shrink:0;
-  }
-  .bb-incident-label {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10px;
-    color:${t.textDim};
-    text-transform:uppercase;
-    letter-spacing:0.1em;
-    margin-bottom:2px;
-  }
-  .bb-incident-name {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:22px;
-    font-weight:700;
-    color:${t.textPrimary};
-    line-height:1;
-  }
-  .bb-incident-meta {
-    font-size:11px;
-    color:${t.textDim};
-    font-family:'IBM Plex Mono',monospace;
-    margin-top:3px;
-  }
-  .bb-counts { display:flex; flex:1; align-items:center; }
-  .bb-right {
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    gap:3px;
-    flex-shrink:0;
-    padding-left:24px;
-    border-left:1px solid ${t.border};
-  }
-  .bb-clock {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:28px;
-    font-weight:700;
-    color:${SC.available.color};
-    letter-spacing:0.06em;
-    line-height:1;
-  }
-  .bb-date {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12px;
-    color:${t.textDim};
-    letter-spacing:0.06em;
-  }
-  .bb-refresh-badge {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:9px;
-    color:${t.textDim};
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-  }
-  .bb-body { padding:28px 32px 48px; }
-
-  /* bottom status bar */
-  .bb-footer {
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    height:36px;
-    background:${t.bgPanel};
-    border-top:1px solid ${t.border};
-    display:flex;
-    align-items:center;
-    gap:0;
-    padding:0 24px;
-    z-index:100;
-  }
-  .bb-footer-item {
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    color:${t.textDim};
-    padding:0 16px;
-    border-right:1px solid ${t.border};
-    white-space:nowrap;
-  }
-  .bb-footer-item:last-child { border-right:none; }
-  .bb-footer-item span { color:${t.textSecondary}; }
-  .bb-footer-spacer { flex:1; }
-</style>
-</head>
-<body>
-
-<header class="bb-header">
-  <div class="bb-logo">
-    <div class="bb-logo-icon">📡</div>
-    <div>
-      <div class="bb-logo-text">RF Channel Board</div>
-      <div class="bb-logo-sub">Public Safety Ops</div>
+    <!-- Header -->
+    <div style="position:sticky;top:0;z-index:10;background:${t.bgPanel};border-bottom:2px solid ${t.borderLit};padding:0 28px;height:76px;display:flex;align-items:center;gap:0;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:12px;padding-right:24px;border-right:1px solid ${t.border};flex-shrink:0;">
+        <span style="font-size:26px;">📡</span>
+        <div>
+          <div style="font-family:var(--font-data);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:${t.textPrimary};">RF Channel Board</div>
+          <div style="font-family:var(--font-data);font-size:10px;color:${t.accent};text-transform:uppercase;letter-spacing:0.14em;">Public Safety Ops</div>
+        </div>
+      </div>
+      <div style="padding:0 24px;border-right:1px solid ${t.border};flex-shrink:0;">
+        <div style="font-family:var(--font-data);font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">Channel Plan</div>
+        <div style="font-family:var(--font-data);font-size:15px;font-weight:700;color:${t.textPrimary};line-height:1;">Organization-Wide</div>
+        <div style="font-size:11px;color:${t.textDim};margin-top:3px;">${channels.length} channels · ${utcDate}</div>
+      </div>
+      <div style="display:flex;flex:1;align-items:center;">${summaryStrip}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-left:20px;border-left:1px solid ${t.border};flex-shrink:0;">
+        <div id="bbClock" style="font-family:var(--font-data);font-size:26px;font-weight:700;color:${SC.available.color};line-height:1;letter-spacing:0.04em;">--:--:--</div>
+        <div id="bbDate" style="font-family:var(--font-data);font-size:11px;color:${t.textDim};">${utcDate}</div>
+        <div style="font-family:var(--font-data);font-size:9px;color:${t.textDim};text-transform:uppercase;">↻ <span id="bbCountdown">30</span>s</div>
+      </div>
     </div>
-  </div>
-  <div class="bb-incident" style="padding-left:28px;">
-    <div class="bb-incident-label">Channel Plan</div>
-    <div class="bb-incident-name" style="font-size:16px;">Organization-Wide</div>
-    <div class="bb-incident-meta">${channels.length} channels · Generated ${utcDate}</div>
-  </div>
-  <div class="bb-counts">${summaryStrip}</div>
-  <div class="bb-right">
-    <div class="bb-clock" id="bbClock">--:--:--</div>
-    <div class="bb-date" id="bbDate">${utcDate}</div>
-    <div class="bb-refresh-badge">Auto-refresh: <span id="bbCountdown">30</span>s</div>
-  </div>
-</header>
 
-<div class="bb-body">
-  ${sectionsHTML || `<div style="text-align:center;padding:80px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:${t.textDim};">No channels in plan</div>`}
-  <div style="height:40px;"></div>
-</div>
+    <!-- Body -->
+    <div style="padding:24px 28px 80px;overflow-y:auto;flex:1;">
+      ${sectionsHTML || `<div style="text-align:center;padding:80px;font-family:var(--font-data);font-size:18px;color:${t.textDim};">No channels in plan</div>`}
+    </div>
 
-<footer class="bb-footer">
-  <div class="bb-footer-item">RF Channel Manager</div>
-  <div class="bb-footer-item">Organization-Wide Channel Plan</div>
-  <div class="bb-footer-spacer"></div>
-  <div class="bb-footer-item">Total Channels: <span>${channels.length}</span></div>
-  <div class="bb-footer-item">Generated: <span>${utcDate} ${utcTime}</span></div>
-</footer>
+    <!-- Footer -->
+    <div style="position:sticky;bottom:0;left:0;right:0;height:34px;background:${t.bgPanel};border-top:1px solid ${t.border};display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0;">
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">RF Channel Manager</span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-right:1px solid ${t.border};">Organization-Wide Channel Plan</span>
+      <span style="flex:1;"></span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-left:1px solid ${t.border};">Total: <span style="color:${t.textSecondary};">${channels.length}</span></span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-left:16px;">Generated: <span style="color:${t.textSecondary};">${utcDate} ${utcTime}</span></span>
+    </div>
+  `;
 
-<script>
-  // Live clock
-  function updateClock(){
-    const n=new Date();
-    const s=t=>String(t).padStart(2,'0');
-    document.getElementById('bbClock').textContent=s(n.getUTCHours())+':'+s(n.getUTCMinutes())+':'+s(n.getUTCSeconds())+' UTC';
-    document.getElementById('bbDate').textContent=n.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  }
-  setInterval(updateClock,1000);
-  updateClock();
-
-  // Countdown to auto-refresh
-  let countdown=30;
-  const countEl=document.getElementById('bbCountdown');
-  setInterval(()=>{
-    countdown--;
-    if(countEl) countEl.textContent=countdown;
-    if(countdown<=0){ window.location.reload(); }
-  },1000);
-<\/script>
-</body>
-</html>`;
-
-  // Render into the in-page fullscreen overlay (no popup needed)
-  const overlay = document.getElementById('bigBoardOverlay');
-  const frame   = document.getElementById('bigBoardFrame');
-  frame.srcdoc  = html;
-  overlay.style.display = 'flex';
-  // Attempt true fullscreen on the overlay
-  if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+  updateBigBoardClock();
 }
 
 function closeBigBoard() {
+  clearInterval(bigBoardInterval);
+  clearInterval(window._bbClockInterval);
+  bigBoardInterval = null;
   const overlay = document.getElementById('bigBoardOverlay');
   overlay.style.display = 'none';
-  // Clear iframe to stop its clock intervals
-  document.getElementById('bigBoardFrame').srcdoc = '';
-  // Exit fullscreen if active
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
@@ -4071,9 +3870,9 @@ function selectChannel(id) {
         ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
         ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
         <div style="padding:12px 0;display:flex;flex-direction:column;gap:8px;">
-          <button class="btn-primary" style="padding:12px;" onclick="openEditModal(${ch.id});closeMobileSheet();">✏ Edit Channel</button>
+          <button class="btn-primary" style="padding:12px;" onclick="closeMobileSheet();setTimeout(()=>openEditModal(${ch.id}),320);">✏ Edit Channel</button>
           ${ch.status!=='available' ? `<button class="btn-success" style="padding:12px;" onclick="releaseChannel(${ch.id});closeMobileSheet();">✓ Mark Available</button>` : ''}
-          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="quickDeploy(${ch.id});closeMobileSheet();">⚡ Quick Deploy</button>` : ''}
+          ${ch.status==='available' ? `<button class="btn-warning" style="padding:12px;" onclick="closeMobileSheet();setTimeout(()=>quickDeploy(${ch.id}),320);">⚡ Quick Deploy</button>` : ''}
           <button class="btn-danger" style="padding:12px;" onclick="deleteChannel(${ch.id});closeMobileSheet();">✕ Remove Channel</button>
         </div>
       </div>`;
