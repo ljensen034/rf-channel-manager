@@ -2227,7 +2227,55 @@
   .module-card-stats { display: flex; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
   .module-stat       { font-family: var(--font-data); font-size: 11px; color: var(--text-dim); }
   .module-stat strong { color: var(--text-secondary); }
-  .module-card-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  /* ── OVERVIEW TAB ROWS ── */
+  .ov-grid-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 130px 120px 1fr;
+    gap: 8px;
+    padding: 3px 10px 6px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .ov-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 130px 120px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    margin-bottom: 2px;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 0;
+  }
+  .ov-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .ov-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+  .ov-type-badge.ch { background: rgba(30,136,229,0.15); color: var(--accent); border: 1px solid rgba(30,136,229,0.25); }
+  .ov-type-badge.tg { background: rgba(206,147,216,0.15); color: var(--status-interop); border: 1px solid rgba(206,147,216,0.25); }
+  .ov-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
+  .ov-sub  { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ov-freq, .ov-agency, .ov-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-agency { font-size: 12px; color: var(--text-secondary); }
+  @media (max-width: 768px) {
+    .ov-grid-header { display: none; }
+    .ov-row { grid-template-columns: 36px 1fr auto; }
+    .ov-row > *:nth-child(n+4) { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -2508,10 +2556,8 @@
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
     <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
     <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
-    <button class="btn-secondary" onclick="openAuditModal()" title="Channel Audit Trail">🕐 Audit</button>
     <button class="btn-secondary" onclick="openLowAvailSettings()" title="Low Availability Alert Settings">⚠ Alerts</button>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
-    <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
     <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
     <button class="notif-btn" id="notifBell" onclick="toggleNotifDrawer()" title="Notifications">
       🔔
@@ -4180,8 +4226,6 @@ async function doLogout() {
   document.getElementById('loginError').classList.remove('visible');
   document.getElementById('loginError').textContent = '⚠ Invalid email or password.';
   document.getElementById('topbarUser').innerHTML = '';
-  const adminBtn = document.getElementById('adminMenuBtn');
-  if (adminBtn) adminBtn.style.display = 'none';
   const mAdminBtn = document.getElementById('mobileAdminBtn');
   if (mAdminBtn) mAdminBtn.style.display = 'none';
   const mUserRow = document.getElementById('mobileUserRow');
@@ -4205,8 +4249,6 @@ function onLoginSuccess() {
 
   if (match.role === 'viewer') document.body.classList.add('readonly');
 
-  const adminBtn = document.getElementById('adminMenuBtn');
-  if (adminBtn) adminBtn.style.display = match.role === 'admin' ? 'flex' : 'none';
   const mAdminBtn = document.getElementById('mobileAdminBtn');
   if (mAdminBtn) mAdminBtn.style.display = match.role === 'admin' ? 'block' : 'none';
 
@@ -5656,71 +5698,82 @@ function switchMainTab(tab) {
 }
 
 // ─────────────────────────────────────────────
-// OVERVIEW TAB — Channels + Talkgroups combined
+// OVERVIEW TAB — Active + Reserved only, channels + talkgroups merged
 // ─────────────────────────────────────────────
 function renderOverview() {
   const el = document.getElementById('overviewContent');
   if (!el) return;
 
-  const statusOrder = ['active','reserved','interop','available'];
-  const grouped = {};
-  statusOrder.forEach(s => { grouped[s] = channels.filter(c => c.status === s); });
+  const activeChannels   = channels.filter(c => c.status === 'active');
+  const reservedChannels = channels.filter(c => c.status === 'reserved');
+  const activeTGs        = talkgroups.filter(t => t.status === 'active');
+  const reservedTGs      = talkgroups.filter(t => t.status === 'reserved');
 
-  // Summary bar
-  const summaryHTML = statusOrder.map(s => {
-    const cnt = grouped[s].length;
-    if (!cnt) return '';
-    const colors = { active:'var(--status-active)', reserved:'var(--status-reserved)', interop:'var(--status-interop)', available:'var(--status-available)' };
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);">
-      <span style="font-size:22px;font-weight:700;color:${colors[s]};font-family:var(--font-data);">${cnt}</span>
-      <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.07em;">${statusLabels[s]}</span>
+  const totalActive   = activeChannels.length   + activeTGs.length;
+  const totalReserved = reservedChannels.length  + reservedTGs.length;
+
+  if (!totalActive && !totalReserved) {
+    el.innerHTML = `<div style="text-align:center;padding:64px 24px;color:var(--text-dim);font-size:13px;line-height:1.8;">
+      No active or reserved channels or talkgroups.<br>
+      <span style="font-size:12px;">Assign channels or talkgroups to see them here.</span>
     </div>`;
-  }).join('');
+    return;
+  }
 
-  // Channel groups
-  const channelSections = statusOrder.map(s => {
-    if (!grouped[s].length) return '';
-    const colors = { active:'var(--status-active)', reserved:'var(--status-reserved)', interop:'var(--status-interop)', available:'var(--status-available)' };
-    const rows = grouped[s].map(ch => `
-      <div class="channel-row" onclick="switchMainTab('channels');setTimeout(()=>selectChannel(${ch.id}),80);" style="margin-bottom:2px;">
-        <div class="status-bar ${ch.status}"></div>
-        <div class="ch-designator-wrap"><span class="ch-designator">${ch.designator}</span></div>
-        <div class="ch-freq">${ch.freq} MHz</div>
-        <div class="ch-assignment">${ch.function || '—'}</div>
-        <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
-        <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
-        <div class="ch-tone">${ch.tone || '—'}</div>
-        <div class="ch-mode">${ch.mode}</div>
+  // ── Section renderer ──
+  function buildSection(statusKey, statusColor, chs, tgs) {
+    if (!chs.length && !tgs.length) return '';
+
+    const chRows = chs.map(ch => `
+      <div class="ov-row" onclick="switchMainTab('channels');setTimeout(()=>selectChannel(${ch.id}),80);">
+        <div class="ov-type-badge ch">CH</div>
+        <div class="ov-name">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--text-primary);">${ch.designator}</span>
+          ${ch.function && ch.function !== '—' ? `<span class="ov-sub">${ch.function}</span>` : ''}
+        </div>
+        <div class="ov-freq" style="font-family:var(--font-data);font-size:12px;color:var(--text-secondary);">${ch.freq} MHz</div>
+        <div class="ov-agency">${ch.agency && ch.agency !== '—' ? ch.agency : '—'}</div>
+        <div class="ov-detail">
+          <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${ch.tone || '—'}</span>
+          <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);margin-left:8px;">${ch.mode}</span>
+        </div>
       </div>`).join('');
-    return `<div style="margin-bottom:16px;">
-      <div style="font-family:var(--font-data);font-size:10px;color:${colors[s]};text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;border-bottom:1px solid ${colors[s]}22;margin-bottom:6px;">${statusLabels[s]} Channels (${grouped[s].length})</div>
-      <div class="channel-grid-header"><span></span><span>Channel</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Tone</span><span>Mode</span></div>
-      ${rows}
-    </div>`;
-  }).join('');
 
-  // Talkgroup section — active + reserved only
-  const tgShown = talkgroups.filter(t => t.status === 'active' || t.status === 'reserved');
-  const tgHTML = tgShown.length ? `
-    <div style="margin-top:8px;">
-      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">Active &amp; Reserved Talkgroups (${tgShown.length})</div>
-      ${tgShown.map(tg => {
-        const col = tg.status === 'active' ? 'var(--status-active)' : 'var(--status-reserved)';
-        return `<div style="display:grid;grid-template-columns:80px 1fr 140px 120px 100px;gap:8px;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:var(--radius);margin-bottom:2px;font-size:12px;">
-          <span style="font-family:var(--font-data);font-weight:700;color:var(--text-primary);">${tg.tgId}</span>
-          <span style="color:var(--text-primary);">${tg.name}</span>
-          <span style="color:var(--text-secondary);">${tg.system || '—'}</span>
-          <span style="color:var(--text-dim);">${tg.agency || '—'}</span>
-          <span class="status-pill ${tg.status}">${tg.status}</span>
-        </div>`;
-      }).join('')}
-    </div>` : '';
+    const tgRows = tgs.map(tg => `
+      <div class="ov-row" onclick="switchMainTab('talkgroups');">
+        <div class="ov-type-badge tg">TG</div>
+        <div class="ov-name">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--text-primary);">${tg.tgId}</span>
+          <span class="ov-sub">${tg.name}</span>
+        </div>
+        <div class="ov-freq" style="font-family:var(--font-data);font-size:12px;color:var(--text-secondary);">${tg.system || '—'}</div>
+        <div class="ov-agency">${tg.agency || '—'}</div>
+        <div class="ov-detail">
+          <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${tg.encryption !== 'None' ? '🔒 ' + tg.encryption : 'Clear'}</span>
+          <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);margin-left:8px;">${tg.priority || 'Normal'}</span>
+        </div>
+      </div>`).join('');
+
+    return `
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:2px solid ${statusColor};margin-bottom:6px;">
+          <span style="font-family:var(--font-data);font-size:11px;font-weight:700;color:${statusColor};text-transform:uppercase;letter-spacing:0.1em;">${statusLabels[statusKey]}</span>
+          <span style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${chs.length} channel${chs.length!==1?'s':''} · ${tgs.length} talkgroup${tgs.length!==1?'s':''}</span>
+        </div>
+        <div class="ov-grid-header">
+          <span></span><span>Designator / ID</span><span>Freq / System</span><span>Agency</span><span>Tone / Enc · Mode / Pri</span>
+        </div>
+        ${chRows}${tgRows}
+      </div>`;
+  }
 
   el.innerHTML = `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">${summaryHTML}</div>
-    ${channelSections}
-    ${tgHTML}
-    ${!channels.length ? '<div style="text-align:center;padding:48px;color:var(--text-dim);">No channels loaded yet.</div>' : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+      ${totalActive   ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);"><span style="font-size:22px;font-weight:700;color:var(--status-active);font-family:var(--font-data);">${totalActive}</span><span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.07em;">Active</span></div>` : ''}
+      ${totalReserved ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);"><span style="font-size:22px;font-weight:700;color:var(--status-reserved);font-family:var(--font-data);">${totalReserved}</span><span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.07em;">Reserved</span></div>` : ''}
+    </div>
+    ${buildSection('active',   'var(--status-active)',   activeChannels,   activeTGs)}
+    ${buildSection('reserved', 'var(--status-reserved)', reservedChannels, reservedTGs)}
   `;
 }
 
@@ -5817,7 +5870,6 @@ async function renderAdminView() {
 // ── SCHEDULE MONTH VIEW ──
 function renderSchedMonth() {
   const now = new Date();
-  // Apply offset in months from the week offset (repurpose schedWeekOffset as month offset when in month view)
   const targetDate = new Date(now.getFullYear(), now.getMonth() + schedWeekOffset, 1);
   const year  = targetDate.getFullYear();
   const month = targetDate.getMonth();
@@ -5829,43 +5881,89 @@ function renderSchedMonth() {
   const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
   const daysInMonth = new Date(year, month+1, 0).getDate();
 
-  const fmtT = dt => new Date(dt).toLocaleTimeString('en-US',{ timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
+  const fmtT = dt => new Date(dt).toLocaleTimeString('en-US',{
+    timeZone:'America/Los_Angeles', hour:'numeric', minute:'2-digit', hour12:true
+  });
 
-  // Build calendar grid
-  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const headerRow = dayNames.map(d => `<div style="text-align:center;font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;padding:6px 0;">${d}</div>`).join('');
+  // Day name headers
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const headerRow = dayNames.map(d => `
+    <div style="text-align:center;font-family:var(--font-data);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;padding:8px 0;background:var(--bg-panel);border-bottom:1px solid var(--border);">${d}</div>
+  `).join('');
 
   const cells = [];
+
   // Leading empty cells
-  for (let i = 0; i < firstDay; i++) cells.push(`<div style="min-height:80px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.3;"></div>`);
+  for (let i = 0; i < firstDay; i++) {
+    cells.push(`<div style="min-height:130px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.25;"></div>`);
+  }
 
   for (let d = 1; d <= daysInMonth; d++) {
     const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = ds === todayStr;
+
+    // Gather reservations overlapping this day
     const dayRes = reservations.filter(r => {
       const rs = new Date(r.start), re = new Date(r.end);
-      const ds2 = new Date(ds), de = new Date(ds); de.setDate(de.getDate()+1);
-      return rs < de && re > ds2;
-    });
-    const events = dayRes.slice(0,3).map(r => {
+      const ds2 = new Date(ds), de = new Date(ds + 'T23:59:59');
+      return rs <= de && re >= ds2;
+    }).sort((a,b) => new Date(a.start) - new Date(b.start));
+
+    const MAX_VISIBLE = 4;
+    const visible = dayRes.slice(0, MAX_VISIBLE);
+    const overflow = dayRes.length - MAX_VISIBLE;
+
+    const events = visible.map(r => {
       const col = SCHED_COLORS[r.priority] || SCHED_COLORS.Normal;
-      return `<div style="font-size:10px;padding:2px 4px;border-radius:2px;background:${col.bg};color:${col.text};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" onclick="openSchedModal('${r.id}')" title="${r.title} — ${fmtT(r.start)}">${r.title}</div>`;
+      const isNow = isActiveNow(r);
+      const startStr = fmtT(r.start);
+      const endStr   = fmtT(r.end);
+      const chLabel  = r.channelDesignator
+        ? `<span style="font-size:9px;opacity:0.85;display:block;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.channelDesignator}</span>`
+        : '';
+      const reqLabel = r.requestor
+        ? `<span style="font-size:9px;opacity:0.75;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.requestor}</span>`
+        : '';
+      return `
+        <div onclick="event.stopPropagation();openSchedModal('${r.id}')"
+          style="padding:4px 6px;border-radius:3px;background:${col.bg};color:${col.text};margin-bottom:3px;cursor:pointer;transition:opacity 0.15s;${isNow?'box-shadow:0 0 0 2px rgba(255,255,255,0.4);':''}"
+          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+          title="${r.title}\n${startStr} – ${endStr}${r.requestor?'\nReq: '+r.requestor:''}${r.coml?'\nCOML: '+r.coml:''}">
+          <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${r.title}</div>
+          <div style="font-size:10px;opacity:0.85;white-space:nowrap;line-height:1.3;">${startStr}–${endStr}</div>
+          ${chLabel}${reqLabel}
+        </div>`;
     }).join('');
-    const more = dayRes.length > 3 ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">+${dayRes.length-3} more</div>` : '';
+
+    const moreTag = overflow > 0
+      ? `<div onclick="event.stopPropagation();schedGoToDay('${ds}')" style="font-size:10px;color:var(--accent);cursor:pointer;padding:2px 0;font-family:var(--font-data);">+${overflow} more →</div>`
+      : '';
+
     cells.push(`
-      <div style="min-height:80px;background:${isToday?'var(--accent-glow)':'var(--bg-card)'};border:1px solid ${isToday?'var(--accent)':'var(--border)'};padding:4px 6px;cursor:pointer;" onclick="schedGoToDay('${ds}')">
-        <div style="font-family:var(--font-data);font-size:12px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--accent)':'var(--text-secondary)'};">${d}</div>
-        ${events}${more}
+      <div style="min-height:130px;background:${isToday?'var(--accent-glow)':'var(--bg-card)'};border:1px solid ${isToday?'var(--accent)':'var(--border)'};padding:6px 8px;vertical-align:top;cursor:pointer;"
+        onclick="schedGoToDay('${ds}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'var(--text-secondary)'};${isToday?'background:var(--accent);padding:1px 6px;border-radius:10px;':''}">${d}</span>
+          ${dayRes.length ? `<span style="font-family:var(--font-data);font-size:9px;color:var(--text-dim);">${dayRes.length} rsv</span>` : ''}
+        </div>
+        ${events}${moreTag}
       </div>`);
   }
 
-  // Trailing empty cells to fill row
+  // Trailing empty cells
   const total = firstDay + daysInMonth;
   const trailing = (7 - (total % 7)) % 7;
-  for (let i = 0; i < trailing; i++) cells.push(`<div style="min-height:80px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.3;"></div>`);
+  for (let i = 0; i < trailing; i++) {
+    cells.push(`<div style="min-height:130px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.25;"></div>`);
+  }
 
   document.getElementById('schedView').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${headerRow}${cells.join('')}</div>`;
+    <div style="overflow-y:auto;max-height:calc(100vh - 200px);">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        ${headerRow}
+        ${cells.join('')}
+      </div>
+    </div>`;
 }
 
 function schedGoToDay(ds) {
