@@ -2644,6 +2644,7 @@
       <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
       <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
       <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
+      <button class="main-view-tab"        id="mvtab-admin"      onclick="switchMainTab('admin')"     style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
     </div>
 
     <!-- ── OVERVIEW VIEW ── -->
@@ -2813,6 +2814,51 @@
       </div>
       <div id="resourceGrid"></div>
 
+    </div>
+
+    <!-- ── ADMIN VIEW ── -->
+    <div id="view-admin" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="adminViewGrid">
+
+        <!-- Users card -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">👥 Users</div>
+            <button class="btn-primary" style="font-size:11px;padding:4px 10px;" onclick="openUserAdmin()">Manage Users</button>
+          </div>
+          <div id="adminUserList" style="padding:12px 18px;max-height:280px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Audit Trail card -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">🕐 Audit Trail</div>
+            <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openAuditModal()">Full Trail</button>
+          </div>
+          <div id="adminAuditPreview" style="padding:12px 18px;max-height:280px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Notification Settings card -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">🔔 Notifications</div>
+            <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openNotifSettings()">Configure</button>
+          </div>
+          <div style="padding:14px 18px;">
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;" id="adminNotifSummary"></div>
+          </div>
+        </div>
+
+        <!-- Release Notes card -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📝 Release Notes</div>
+            <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="switchMainTab('channels');setTimeout(()=>switchSideTab('notes'),80);">View All</button>
+          </div>
+          <div id="adminReleasePreview" style="padding:12px 18px;max-height:280px;overflow-y:auto;"></div>
+        </div>
+
+      </div>
     </div>
 
   </div><!-- end main-panel -->
@@ -4168,6 +4214,10 @@ function onLoginSuccess() {
   const resTab = document.getElementById('mvtab-resources');
   if (resTab) resTab.style.display = match.canViewResources ? '' : 'none';
 
+  // Show Admin tab for admins only
+  const adminTab = document.getElementById('mvtab-admin');
+  if (adminTab) adminTab.style.display = match.role === 'admin' ? '' : 'none';
+
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('topbarUser').innerHTML = `
     <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
@@ -4253,9 +4303,8 @@ function showLandingPage() {
         const total  = channels.length;
         return `<span class="module-stat"><strong>${active}</strong> active</span><span class="module-stat"><strong>${total}</strong> total channels</span><span class="module-stat"><strong>${talkgroups.length}</strong> talkgroups</span>`;
       },
-      tab: null,  // custom open
     },
-    {
+    u.canViewResources ? {
       id: 'vehicles',
       icon: '🚒',
       title: 'Vehicles',
@@ -4264,34 +4313,28 @@ function showLandingPage() {
       stats: () => {
         const v = resources.filter(r=>r.category==='Vehicle');
         const deployed = v.filter(r=>r.status==='deployed'||r.status==='signed-out').length;
-        return `<span class="module-stat"><strong>${v.length}</strong> vehicles</span><span class="module-stat"><strong>${deployed}</strong> deployed / signed out</span>`;
+        return `<span class="module-stat"><strong>${v.length}</strong> vehicles</span><span class="module-stat"><strong>${deployed}</strong> deployed/out</span>`;
       },
-      tab: 'resources',
-      filter: 'Vehicle',
-    },
-    {
+    } : null,
+    u.canViewResources ? {
       id: 'equipment',
       icon: '📦',
       title: 'Equipment & Cache',
       desc: 'Cache units, portable radios, support equipment, and inventory status.',
       accent: '#4caf50',
       stats: () => {
-        const e = resources.filter(r=>r.category==='Cache'||r.category==='Other');
+        const e = resources.filter(r=>r.category==='Cache'||r.category==='Other'||r.category==='Personnel'||r.category==='Aircraft'||r.category==='Watercraft');
         const out = e.filter(r=>r.status==='signed-out').length;
         return `<span class="module-stat"><strong>${e.length}</strong> items</span><span class="module-stat"><strong>${out}</strong> signed out</span>`;
       },
-      tab: 'resources',
-      filter: 'Cache',
-    },
+    } : null,
     u.role === 'admin' ? {
       id: 'admin',
       icon: '⚙',
       title: 'Administration',
       desc: 'User management, audit trail, notification settings, and release notes.',
       accent: 'var(--status-active)',
-      stats: () => `<span class="module-stat"><strong>${allProfiles.length}</strong> users</span>`,
-      tab: null,
-      isAdmin: true,
+      stats: () => `<span class="module-stat"><strong>${allProfiles.length}</strong> users</span><span class="module-stat"><strong>${channels.length}</strong> channels tracked</span>`,
     } : null,
   ].filter(Boolean);
 
@@ -4333,8 +4376,7 @@ function openModule(id) {
       if (f) { f.value = 'Cache'; renderResources(); }
     }, 50);
   } else if (id === 'admin') {
-    switchMainTab('channels');
-    setTimeout(() => openUserAdmin(), 100);
+    switchMainTab('admin');
   }
 }
 
@@ -5600,7 +5642,7 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['overview','channels','talkgroups','library','schedule','resources'].forEach(t => {
+  ['overview','channels','talkgroups','library','schedule','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
@@ -5610,6 +5652,7 @@ function switchMainTab(tab) {
   if (tab === 'library')    renderLibrary();
   if (tab === 'schedule')   renderSchedule();
   if (tab === 'resources')  renderResources();
+  if (tab === 'admin')      renderAdminView();
 }
 
 // ─────────────────────────────────────────────
@@ -5679,6 +5722,96 @@ function renderOverview() {
     ${tgHTML}
     ${!channels.length ? '<div style="text-align:center;padding:48px;color:var(--text-dim);">No channels loaded yet.</div>' : ''}
   `;
+}
+
+// ─────────────────────────────────────────────
+// ADMIN VIEW
+// ─────────────────────────────────────────────
+async function renderAdminView() {
+  // Users panel
+  await loadAllProfiles();
+  const userListEl = document.getElementById('adminUserList');
+  if (userListEl) {
+    if (!allProfiles.length) {
+      userListEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">No users found.</div>';
+    } else {
+      userListEl.innerHTML = allProfiles.map(u => {
+        const initials = u.name ? u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : '??';
+        const roleColors = { admin:'var(--status-active)', comms:'var(--accent)', viewer:'var(--text-dim)' };
+        const roleColor  = roleColors[u.role] || 'var(--text-dim)';
+        const statusDot  = u.active === false
+          ? `<span style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;margin-left:6px;" title="Inactive"></span>`
+          : `<span style="width:7px;height:7px;border-radius:50%;background:var(--status-available);display:inline-block;margin-left:6px;" title="Active"></span>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="width:28px;height:28px;border-radius:50%;background:${(u.color||'#1e88e5')}22;color:${u.color||'#1e88e5'};border:1px solid ${(u.color||'#1e88e5')}44;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:var(--font-data);flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name||'—'}${statusDot}</div>
+            <div style="font-size:10px;color:var(--text-dim);">${u.email||'—'}</div>
+          </div>
+          <span style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:${roleColor};border:1px solid ${roleColor}44;padding:2px 6px;border-radius:2px;white-space:nowrap;">${u.role||'?'}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Audit preview panel — last 10 entries
+  const auditEl = document.getElementById('adminAuditPreview');
+  if (auditEl) {
+    try {
+      const { data } = await sb.from('channel_history').select('*').order('created_at', { ascending:false }).limit(10);
+      if (!data || !data.length) {
+        auditEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">No audit records yet.</div>';
+      } else {
+        auditEl.innerHTML = data.map(r => `
+          <div style="display:flex;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;">
+            <span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;white-space:nowrap;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.25);flex-shrink:0;">${r.action||'edit'}</span>
+            <div style="flex:1;min-width:0;">
+              <span style="font-family:var(--font-data);font-weight:700;color:var(--text-primary);">${r.designator||'—'}</span>
+              ${r.field ? `<span style="color:var(--text-dim);"> · ${r.field}</span>` : ''}
+              ${r.new_value ? `<span style="color:var(--status-available);"> → ${r.new_value}</span>` : ''}
+            </div>
+            <span style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;">${fmtAuditTS(r.created_at)}</span>
+          </div>`).join('');
+      }
+    } catch(e) {
+      auditEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Audit table not yet created. Run the SQL setup.</div>';
+    }
+  }
+
+  // Notification summary
+  const notifEl = document.getElementById('adminNotifSummary');
+  if (notifEl) {
+    const s = notifSettings;
+    const on  = '#00e676';
+    const off = 'var(--text-dim)';
+    const dot = v => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${v?on:off};margin-right:5px;vertical-align:middle;"></span>`;
+    notifEl.innerHTML = `
+      ${dot(s.sound)}Sound alerts &nbsp;·&nbsp; ${dot(s.toast)}Toast popups<br>
+      ${dot(s.added)}Added &nbsp;·&nbsp; ${dot(s.updated)}Updated &nbsp;·&nbsp; ${dot(s.active)}Active &nbsp;·&nbsp; ${dot(s.reserved)}Reserved &nbsp;·&nbsp; ${dot(s.removed)}Removed<br>
+      ${dot(s.emailAddress)}Email: <span style="color:var(--text-secondary);">${s.emailAddress || 'Not configured'}</span><br>
+      ${dot(s.emailActive)}Active alerts &nbsp;·&nbsp; ${dot(s.emailConflict)}Conflicts &nbsp;·&nbsp; ${dot(s.emailLowAvail)}Low availability<br>
+      ${dot(s.emailResSignout)}Resource sign-out &nbsp;·&nbsp; ${dot(s.emailResOverdue)}Resource overdue<br>
+      <button class="btn-secondary" style="font-size:11px;padding:4px 10px;margin-top:10px;" onclick="openNotifSettings()">⚙ Configure Notifications</button>
+    `;
+  }
+
+  // Release notes preview
+  const rnEl = document.getElementById('adminReleasePreview');
+  if (rnEl) {
+    const sorted = [...releaseNotes].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0,5);
+    if (!sorted.length) {
+      rnEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">No release notes yet.</div>';
+    } else {
+      rnEl.innerHTML = sorted.map(n => `
+        <div style="padding:7px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:2px;">
+            <span style="font-family:var(--font-data);font-size:10px;color:var(--accent);">${n.version||''}</span>
+            <span style="font-size:10px;color:var(--text-dim);">${n.date||''}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-primary);">${n.title||'—'}</div>
+        </div>`).join('');
+    }
+  }
 }
 
 // ── SCHEDULE MONTH VIEW ──
