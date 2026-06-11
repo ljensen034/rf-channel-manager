@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RF Channel Manager — Public Safety</title>
+<title>COMM CENTER — Public Safety</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
@@ -527,6 +527,16 @@
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .ch-designator-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .ch-freq {
@@ -2193,6 +2203,31 @@
     }
     .res-row > *:nth-child(n+5) { display: none; }
   }
+
+  /* ── MODULE LANDING PAGE ── */
+  .module-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    cursor: pointer;
+    transition: border-color 200ms, background 200ms, transform 150ms;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card:hover { border-color: var(--accent); background: var(--bg-card); transform: translateY(-2px); }
+  .module-card:active { transform: translateY(0); }
+  .module-card-icon  { font-size: 32px; line-height: 1; }
+  .module-card-title { font-family: var(--font-data); font-size: 15px; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary); text-transform: uppercase; }
+  .module-card-desc  { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .module-card-badge { position: absolute; top: 14px; right: 16px; font-family: var(--font-data); font-size: 20px; font-weight: 700; color: var(--accent); }
+  .module-card-stats { display: flex; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
+  .module-stat       { font-family: var(--font-data); font-size: 11px; color: var(--text-dim); }
+  .module-stat strong { color: var(--text-secondary); }
+  .module-card-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
 </style>
 </head>
 <body>
@@ -2367,8 +2402,8 @@
   <div class="login-card">
     <div class="login-card-header">
       <span class="login-logo">📡</span>
-      <div class="login-title">RF Channel Manager</div>
-      <div class="login-subtitle">Public Safety Operations</div>
+      <div class="login-title">COMM CENTER</div>
+      <div class="login-subtitle">Los Angeles County Fire Department</div>
     </div>
     <div class="login-body">
       <div class="login-field">
@@ -2389,6 +2424,33 @@
         <button onclick="sendPasswordReset()" style="background:none;border:none;color:var(--text-dim);font-size:12px;font-family:var(--font-data);cursor:pointer;text-decoration:underline;">Forgot password?</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODULE LANDING PAGE -->
+<div id="landingScreen" style="display:none;position:fixed;inset:0;background:var(--bg-deep);z-index:900;overflow-y:auto;">
+  <div class="login-bg-grid" style="position:fixed;"></div>
+  <div style="position:relative;z-index:1;max-width:960px;margin:0 auto;padding:40px 24px;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:16px;">
+      <div>
+        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary);">📡 COMM CENTER</div>
+        <div style="font-size:12px;color:var(--text-dim);font-family:var(--font-data);margin-top:4px;">Los Angeles County Fire Department — Public Safety Operations</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="landingUserBadge" style="font-size:12px;color:var(--text-secondary);"></div>
+        <button onclick="doLogout()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-data);font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Live status strip -->
+    <div id="landingStatusStrip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;"></div>
+
+    <!-- Module cards -->
+    <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:16px;">Select a Module</div>
+    <div id="landingModuleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:32px;"></div>
+
+    <div style="font-size:11px;color:var(--text-dim);text-align:center;font-family:var(--font-data);" id="landingFooter"></div>
   </div>
 </div>
 
@@ -2438,10 +2500,10 @@
 
 <!-- TOPBAR -->
 <header class="topbar">
-  <div class="topbar-logo">
+  <div class="topbar-logo" onclick="goHome()" title="Return to module home" style="cursor:pointer;">
     <span>📡</span>
-    RF Channel Manager
-    <span class="badge">PUBLIC SAFETY</span>
+    COMM CENTER
+    <span class="badge">LACoFD</span>
   </div>
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
     <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
@@ -2576,11 +2638,17 @@
 
     <!-- Main view tabs -->
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;overflow-x:auto;">
+      <button class="main-view-tab"        id="mvtab-overview"   onclick="switchMainTab('overview')">📊 Overview</button>
       <button class="main-view-tab active" id="mvtab-channels"   onclick="switchMainTab('channels')">📻 Channels</button>
       <button class="main-view-tab"        id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
       <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
       <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
       <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
+    </div>
+
+    <!-- ── OVERVIEW VIEW ── -->
+    <div id="view-overview" style="display:none;">
+      <div id="overviewContent"></div>
     </div>
 
     <!-- ── CHANNELS VIEW ── -->
@@ -2689,7 +2757,8 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
             <button class="sched-view-btn active" id="svbtn-week" onclick="setSchedView('week')">Week</button>
-            <button class="sched-view-btn"        id="svbtn-list" onclick="setSchedView('list')">List</button>
+            <button class="sched-view-btn"        id="svbtn-list"  onclick="setSchedView('list')">List</button>
+            <button class="sched-view-btn"        id="svbtn-month" onclick="setSchedView('month')">Month</button>
           </div>
           <button class="btn-primary" style="font-size:12px;padding:5px 14px;" onclick="openSchedModal(null)">+ New Reservation</button>
         </div>
@@ -3556,8 +3625,8 @@ function renderChannels() {
       return `
       <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
         <div class="status-bar ${ch.status}"></div>
-        <div class="ch-designator" style="display:flex;align-items:center;gap:5px;">
-          ${ch.designator}
+        <div class="ch-designator-wrap">
+          <span class="ch-designator">${ch.designator}</span>
           ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
         </div>
         <div class="ch-freq">${ch.freq} MHz</div>
@@ -3625,7 +3694,6 @@ function selectChannel(id) {
   `;
 
   if (isMobile()) {
-    // Show in bottom sheet
     document.getElementById('sheetTitle').innerHTML = `
       <span style="font-family:var(--font-data);font-size:14px;font-weight:700;">${ch.designator}</span>
       <span class="status-pill ${ch.status}" style="margin-left:8px;">${statusLabels[ch.status]}</span>`;
@@ -3654,14 +3722,26 @@ function selectChannel(id) {
       </div>`;
     openMobileSheet();
   } else {
-    // Show in desktop side panel
+    // Always write content first
+    const sideContent = document.getElementById('sideContent');
+    if (sideContent) sideContent.innerHTML = detailHTML;
     const badge = document.getElementById('selectedBadge');
     if (badge) {
       badge.style.display = 'inline-block';
       badge.innerHTML = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
     }
-    document.getElementById('sideContent').innerHTML = detailHTML;
-    openSidePanelToDetail();
+    // Force panel open and on detail tab unconditionally
+    const layout = document.querySelector('.layout');
+    const btn = document.getElementById('panelToggleBtn');
+    sidePanelOpen = true;
+    activeSideTab = 'detail';
+    if (layout) layout.classList.add('panel-open');
+    if (btn) btn.classList.add('active');
+    // Activate the detail tab content
+    document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.side-tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-detail')?.classList.add('active');
+    document.getElementById('tabcontent-detail')?.classList.add('active');
   }
 }
 
@@ -3889,7 +3969,7 @@ function openICS205() {
         </div>
       </div>
       <div style="margin-top:6px;font-size:9px;color:#555;">
-        ICS 205 — Page 1 of 1 &nbsp;|&nbsp; Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; RF Channel Manager — Public Safety Operations
+        ICS 205 — Page 1 of 1 &nbsp;|&nbsp; Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations
       </div>
     </div>
     </div>
@@ -4063,6 +4143,13 @@ async function doLogout() {
   document.getElementById('mobileMenu')?.classList.remove('open');
   closeMobileSheet();
   document.getElementById('loginScreen').classList.remove('hidden');
+  // Also hide landing page and ensure app layout is visible for next login
+  const landing = document.getElementById('landingScreen');
+  if (landing) landing.style.display = 'none';
+  const layout = document.querySelector('.layout');
+  if (layout) layout.style.display = '';
+  const topbar = document.querySelector('header.topbar');
+  if (topbar) topbar.style.display = '';
 }
 
 // ── POST-LOGIN UI UPDATE ──
@@ -4101,6 +4188,161 @@ function onLoginSuccess() {
   }
 
   logActivity(`<span class="log-ch">${match.name}</span> signed in as ${match.roleLabel}`);
+
+  // Show landing page module selector instead of going straight to app
+  showLandingPage();
+}
+
+// ─────────────────────────────────────────────
+// LANDING PAGE / MODULE SELECTOR
+// ─────────────────────────────────────────────
+function showLandingPage() {
+  document.getElementById('landingScreen').style.display = 'block';
+  // Hide the main app layout while on the landing page
+  document.querySelector('.layout')?.style && (document.querySelector('.layout').style.display = 'none');
+  document.querySelector('.topbar') && (document.querySelector('header.topbar').style.display = 'none');
+
+  const u = currentUser;
+  const initials = u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  const badgeEl = document.getElementById('landingUserBadge');
+  if (badgeEl) badgeEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:${u.color}22;color:${u.color};border:1px solid ${u.color}44;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--font-data);">${initials}</div>
+      <div>
+        <div style="font-size:12px;color:var(--text-primary);">${u.name}</div>
+        <div style="font-size:10px;color:var(--text-dim);">${u.roleLabel}</div>
+      </div>
+    </div>`;
+
+  // Live status strip
+  const statusStrip = document.getElementById('landingStatusStrip');
+  if (statusStrip) {
+    const counts = { active:0, reserved:0, interop:0, available:0 };
+    channels.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+    const overdueRes = resources.filter(r => r.expectedReturn && new Date(r.expectedReturn) < new Date() && r.status !== 'available').length;
+    const todayISO = new Date().toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    const todayRsv = reservations.filter(r => {
+      const rs = new Date(r.start).toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'});
+      const re = new Date(r.end).toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'});
+      return rs <= todayISO && re >= todayISO;
+    }).length;
+    statusStrip.innerHTML = [
+      { label:'Active Channels',    val: counts.active,    color:'var(--status-active)' },
+      { label:'Reserved Channels',  val: counts.reserved,  color:'var(--status-reserved)' },
+      { label:'Interop',            val: counts.interop,   color:'var(--status-interop)' },
+      { label:'Available',          val: counts.available, color:'var(--status-available)' },
+      { label:"Today's Reservations", val: todayRsv, color:'var(--accent)' },
+      overdueRes ? { label:'Overdue Resources', val: overdueRes, color:'var(--status-active)' } : null,
+    ].filter(Boolean).map(s => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;">
+        <span style="font-size:18px;font-weight:700;color:${s.color};font-family:var(--font-data);line-height:1;">${s.val}</span>
+        <span style="font-size:11px;color:var(--text-secondary);">${s.label}</span>
+      </div>`).join('');
+  }
+
+  // Module cards
+  const modules = [
+    {
+      id: 'freq',
+      icon: '📻',
+      title: 'Frequency Management',
+      desc: 'Channel plan, talkgroups, mutual aid library, scheduling, and ICS 205 export.',
+      accent: 'var(--accent)',
+      stats: () => {
+        const active = channels.filter(c=>c.status==='active').length;
+        const total  = channels.length;
+        return `<span class="module-stat"><strong>${active}</strong> active</span><span class="module-stat"><strong>${total}</strong> total channels</span><span class="module-stat"><strong>${talkgroups.length}</strong> talkgroups</span>`;
+      },
+      tab: null,  // custom open
+    },
+    {
+      id: 'vehicles',
+      icon: '🚒',
+      title: 'Vehicles',
+      desc: 'Track status, deployment, and expected return for all response vehicles.',
+      accent: 'var(--status-reserved)',
+      stats: () => {
+        const v = resources.filter(r=>r.category==='Vehicle');
+        const deployed = v.filter(r=>r.status==='deployed'||r.status==='signed-out').length;
+        return `<span class="module-stat"><strong>${v.length}</strong> vehicles</span><span class="module-stat"><strong>${deployed}</strong> deployed / signed out</span>`;
+      },
+      tab: 'resources',
+      filter: 'Vehicle',
+    },
+    {
+      id: 'equipment',
+      icon: '📦',
+      title: 'Equipment & Cache',
+      desc: 'Cache units, portable radios, support equipment, and inventory status.',
+      accent: '#4caf50',
+      stats: () => {
+        const e = resources.filter(r=>r.category==='Cache'||r.category==='Other');
+        const out = e.filter(r=>r.status==='signed-out').length;
+        return `<span class="module-stat"><strong>${e.length}</strong> items</span><span class="module-stat"><strong>${out}</strong> signed out</span>`;
+      },
+      tab: 'resources',
+      filter: 'Cache',
+    },
+    u.role === 'admin' ? {
+      id: 'admin',
+      icon: '⚙',
+      title: 'Administration',
+      desc: 'User management, audit trail, notification settings, and release notes.',
+      accent: 'var(--status-active)',
+      stats: () => `<span class="module-stat"><strong>${allProfiles.length}</strong> users</span>`,
+      tab: null,
+      isAdmin: true,
+    } : null,
+  ].filter(Boolean);
+
+  const grid = document.getElementById('landingModuleGrid');
+  if (grid) {
+    grid.innerHTML = modules.map(m => `
+      <div class="module-card" onclick="openModule('${m.id}')">
+        <div class="module-card-accent" style="background:${m.accent};"></div>
+        <div class="module-card-icon">${m.icon}</div>
+        <div class="module-card-title">${m.title}</div>
+        <div class="module-card-desc">${m.desc}</div>
+        <div class="module-card-stats">${m.stats()}</div>
+      </div>`).join('');
+  }
+
+  const footer = document.getElementById('landingFooter');
+  if (footer) footer.textContent = `COMM CENTER · ${new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',weekday:'long',month:'long',day:'numeric',year:'numeric'})} · ${getPacificTimeStr(false)}`;
+}
+
+function openModule(id) {
+  // Hide landing, show app
+  document.getElementById('landingScreen').style.display = 'none';
+  document.querySelector('.layout').style.display = '';
+  document.querySelector('header.topbar').style.display = '';
+
+  if (id === 'freq') {
+    switchMainTab('channels');
+  } else if (id === 'vehicles') {
+    // Switch to resources tab and pre-filter to Vehicle
+    switchMainTab('resources');
+    setTimeout(() => {
+      const f = document.getElementById('resCategoryFilter');
+      if (f) { f.value = 'Vehicle'; renderResources(); }
+    }, 50);
+  } else if (id === 'equipment') {
+    switchMainTab('resources');
+    setTimeout(() => {
+      const f = document.getElementById('resCategoryFilter');
+      if (f) { f.value = 'Cache'; renderResources(); }
+    }, 50);
+  } else if (id === 'admin') {
+    switchMainTab('channels');
+    setTimeout(() => openUserAdmin(), 100);
+  }
+}
+
+// Add Home button to topbar logo to return to landing page
+function goHome() {
+  document.querySelector('.layout').style.display = 'none';
+  document.querySelector('header.topbar').style.display = 'none';
+  showLandingPage();
 }
 
 // ── CHECK EXISTING SESSION ON LOAD ──
@@ -4509,7 +4751,7 @@ function renderBigBoard() {
 
     <!-- Footer -->
     <div style="position:sticky;bottom:0;left:0;right:0;height:34px;background:${t.bgPanel};border-top:1px solid ${t.border};display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0;">
-      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">RF Channel Manager</span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">COMM CENTER</span>
       <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-right:1px solid ${t.border};">Organization-Wide Channel Plan</span>
       <span style="flex:1;"></span>
       <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-left:1px solid ${t.border};">Total: <span style="color:${t.textSecondary};">${channels.length}</span></span>
@@ -4670,7 +4912,7 @@ async function sendEmailNotification(subject, body, type) {
       subject: subject,
       body: body,
       timestamp: new Date().toISOString(),
-      app: 'RF Channel Manager',
+      app: 'COMM CENTER',
       type: type
     };
     
@@ -4721,7 +4963,7 @@ function pushNotification(type, text) {
   if (type === 'active') {
     sendEmailNotification(
       '🚨 Channel Activated - RF Manager',
-      `${text}\n\nTime: ${getPacificTimeStr(true)}\nApp: RF Channel Manager`,
+      `${text}\n\nTime: ${getPacificTimeStr(true)}\nApp: COMM CENTER`,
       'active'
     );
   }
@@ -5149,7 +5391,7 @@ function generateReportHTML() {
         </div>` : ''}
 
       <div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
-        RF Channel Manager — LACoFD Public Safety Operations &nbsp;·&nbsp; ${channels.length} total channels &nbsp;·&nbsp; ${talkgroups.length} total talkgroups &nbsp;·&nbsp; Auto-generated ${time} PT
+        COMM CENTER — LACoFD Public Safety Operations &nbsp;·&nbsp; ${channels.length} total channels &nbsp;·&nbsp; ${talkgroups.length} total talkgroups &nbsp;·&nbsp; Auto-generated ${time} PT
       </div>
 
     </div>`;
@@ -5358,15 +5600,149 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['channels','talkgroups','library','schedule','resources'].forEach(t => {
+  ['overview','channels','talkgroups','library','schedule','resources'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
   });
+  if (tab === 'overview')   renderOverview();
   if (tab === 'talkgroups') renderTalkgroups();
   if (tab === 'library')    renderLibrary();
   if (tab === 'schedule')   renderSchedule();
   if (tab === 'resources')  renderResources();
+}
+
+// ─────────────────────────────────────────────
+// OVERVIEW TAB — Channels + Talkgroups combined
+// ─────────────────────────────────────────────
+function renderOverview() {
+  const el = document.getElementById('overviewContent');
+  if (!el) return;
+
+  const statusOrder = ['active','reserved','interop','available'];
+  const grouped = {};
+  statusOrder.forEach(s => { grouped[s] = channels.filter(c => c.status === s); });
+
+  // Summary bar
+  const summaryHTML = statusOrder.map(s => {
+    const cnt = grouped[s].length;
+    if (!cnt) return '';
+    const colors = { active:'var(--status-active)', reserved:'var(--status-reserved)', interop:'var(--status-interop)', available:'var(--status-available)' };
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);">
+      <span style="font-size:22px;font-weight:700;color:${colors[s]};font-family:var(--font-data);">${cnt}</span>
+      <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.07em;">${statusLabels[s]}</span>
+    </div>`;
+  }).join('');
+
+  // Channel groups
+  const channelSections = statusOrder.map(s => {
+    if (!grouped[s].length) return '';
+    const colors = { active:'var(--status-active)', reserved:'var(--status-reserved)', interop:'var(--status-interop)', available:'var(--status-available)' };
+    const rows = grouped[s].map(ch => `
+      <div class="channel-row" onclick="switchMainTab('channels');setTimeout(()=>selectChannel(${ch.id}),80);" style="margin-bottom:2px;">
+        <div class="status-bar ${ch.status}"></div>
+        <div class="ch-designator-wrap"><span class="ch-designator">${ch.designator}</span></div>
+        <div class="ch-freq">${ch.freq} MHz</div>
+        <div class="ch-assignment">${ch.function || '—'}</div>
+        <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
+        <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
+        <div class="ch-tone">${ch.tone || '—'}</div>
+        <div class="ch-mode">${ch.mode}</div>
+      </div>`).join('');
+    return `<div style="margin-bottom:16px;">
+      <div style="font-family:var(--font-data);font-size:10px;color:${colors[s]};text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;border-bottom:1px solid ${colors[s]}22;margin-bottom:6px;">${statusLabels[s]} Channels (${grouped[s].length})</div>
+      <div class="channel-grid-header"><span></span><span>Channel</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Tone</span><span>Mode</span></div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  // Talkgroup section — active + reserved only
+  const tgShown = talkgroups.filter(t => t.status === 'active' || t.status === 'reserved');
+  const tgHTML = tgShown.length ? `
+    <div style="margin-top:8px;">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">Active &amp; Reserved Talkgroups (${tgShown.length})</div>
+      ${tgShown.map(tg => {
+        const col = tg.status === 'active' ? 'var(--status-active)' : 'var(--status-reserved)';
+        return `<div style="display:grid;grid-template-columns:80px 1fr 140px 120px 100px;gap:8px;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:var(--radius);margin-bottom:2px;font-size:12px;">
+          <span style="font-family:var(--font-data);font-weight:700;color:var(--text-primary);">${tg.tgId}</span>
+          <span style="color:var(--text-primary);">${tg.name}</span>
+          <span style="color:var(--text-secondary);">${tg.system || '—'}</span>
+          <span style="color:var(--text-dim);">${tg.agency || '—'}</span>
+          <span class="status-pill ${tg.status}">${tg.status}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  el.innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">${summaryHTML}</div>
+    ${channelSections}
+    ${tgHTML}
+    ${!channels.length ? '<div style="text-align:center;padding:48px;color:var(--text-dim);">No channels loaded yet.</div>' : ''}
+  `;
+}
+
+// ── SCHEDULE MONTH VIEW ──
+function renderSchedMonth() {
+  const now = new Date();
+  // Apply offset in months from the week offset (repurpose schedWeekOffset as month offset when in month view)
+  const targetDate = new Date(now.getFullYear(), now.getMonth() + schedWeekOffset, 1);
+  const year  = targetDate.getFullYear();
+  const month = targetDate.getMonth();
+
+  const monthName = targetDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+  document.getElementById('schedWeekLabel').textContent = monthName;
+
+  const todayStr = now.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const fmtT = dt => new Date(dt).toLocaleTimeString('en-US',{ timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
+
+  // Build calendar grid
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const headerRow = dayNames.map(d => `<div style="text-align:center;font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;padding:6px 0;">${d}</div>`).join('');
+
+  const cells = [];
+  // Leading empty cells
+  for (let i = 0; i < firstDay; i++) cells.push(`<div style="min-height:80px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.3;"></div>`);
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds === todayStr;
+    const dayRes = reservations.filter(r => {
+      const rs = new Date(r.start), re = new Date(r.end);
+      const ds2 = new Date(ds), de = new Date(ds); de.setDate(de.getDate()+1);
+      return rs < de && re > ds2;
+    });
+    const events = dayRes.slice(0,3).map(r => {
+      const col = SCHED_COLORS[r.priority] || SCHED_COLORS.Normal;
+      return `<div style="font-size:10px;padding:2px 4px;border-radius:2px;background:${col.bg};color:${col.text};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" onclick="openSchedModal('${r.id}')" title="${r.title} — ${fmtT(r.start)}">${r.title}</div>`;
+    }).join('');
+    const more = dayRes.length > 3 ? `<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">+${dayRes.length-3} more</div>` : '';
+    cells.push(`
+      <div style="min-height:80px;background:${isToday?'var(--accent-glow)':'var(--bg-card)'};border:1px solid ${isToday?'var(--accent)':'var(--border)'};padding:4px 6px;cursor:pointer;" onclick="schedGoToDay('${ds}')">
+        <div style="font-family:var(--font-data);font-size:12px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--accent)':'var(--text-secondary)'};">${d}</div>
+        ${events}${more}
+      </div>`);
+  }
+
+  // Trailing empty cells to fill row
+  const total = firstDay + daysInMonth;
+  const trailing = (7 - (total % 7)) % 7;
+  for (let i = 0; i < trailing; i++) cells.push(`<div style="min-height:80px;background:var(--bg-deep);border:1px solid var(--border);opacity:0.3;"></div>`);
+
+  document.getElementById('schedView').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${headerRow}${cells.join('')}</div>`;
+}
+
+function schedGoToDay(ds) {
+  // Switch to week view centered on this day
+  const now = new Date();
+  const target = new Date(ds + 'T12:00:00');
+  const diffMs = target - now;
+  const diffWeeks = Math.round(diffMs / (7*86400000));
+  schedWeekOffset = diffWeeks;
+  setSchedView('week');
 }
 
 // ─────────────────────────────────────────────
@@ -5643,13 +6019,16 @@ function schedNav(dir) { schedWeekOffset += dir; renderSchedule(); }
 function schedGoToday() { schedWeekOffset = 0; renderSchedule(); }
 function setSchedView(v) {
   schedViewMode = v;
-  document.getElementById('svbtn-week')?.classList.toggle('active', v === 'week');
-  document.getElementById('svbtn-list')?.classList.toggle('active', v === 'list');
+  document.getElementById('svbtn-week')?.classList.toggle('active',  v === 'week');
+  document.getElementById('svbtn-list')?.classList.toggle('active',  v === 'list');
+  document.getElementById('svbtn-month')?.classList.toggle('active', v === 'month');
   renderSchedule();
 }
 
 function renderSchedule() {
-  schedViewMode === 'week' ? renderSchedWeek() : renderSchedList();
+  if (schedViewMode === 'week')       renderSchedWeek();
+  else if (schedViewMode === 'month') renderSchedMonth();
+  else                                renderSchedList();
 }
 
 function renderSchedWeek() {
@@ -6431,7 +6810,7 @@ function checkLowAvailability() {
     pushNotification('active', alertMsg);
     sendEmailNotification(
       '⚠ Low Channel Availability - RF Manager',
-      `${alerts.join('\n')}\n\nTime: ${getPacificTimeStr(true)}\nApp: RF Channel Manager`,
+      `${alerts.join('\n')}\n\nTime: ${getPacificTimeStr(true)}\nApp: COMM CENTER`,
       'lowavail'
     );
   } else {
