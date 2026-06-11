@@ -2049,7 +2049,63 @@
     white-space: nowrap;
   }
 
-  /* ── RESOURCES MODULE ── */
+  /* ── CHANNEL AUDIT TRAIL ── */
+  .audit-row {
+    display: grid;
+    grid-template-columns: 110px 90px 80px 1fr 1fr 90px;
+    align-items: start;
+    gap: 8px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    transition: background var(--transition);
+  }
+  .audit-row:hover { background: var(--bg-hover); }
+  .audit-row:last-child { border-bottom: none; }
+  .audit-ts    { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); line-height: 1.5; }
+  .audit-ch    { font-family: var(--font-data); font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .audit-who   { font-size: 11px; color: var(--text-secondary); }
+  .audit-field { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .audit-val   { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .audit-val .old-val { color: var(--status-active); text-decoration: line-through; opacity: 0.7; }
+  .audit-val .new-val { color: var(--status-available); }
+  .audit-val .arr     { color: var(--text-dim); margin: 0 4px; }
+  .audit-action-chip {
+    display: inline-flex;
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .audit-action-chip.created  { background: rgba(0,230,118,0.12); color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
+  .audit-action-chip.status   { background: rgba(255,196,0,0.12);  color: var(--status-reserved);  border: 1px solid rgba(255,196,0,0.25); }
+  .audit-action-chip.edited   { background: rgba(30,136,229,0.12); color: var(--accent);           border: 1px solid rgba(30,136,229,0.25); }
+  .audit-action-chip.released { background: rgba(0,230,118,0.12); color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
+  .audit-action-chip.deleted  { background: rgba(255,82,82,0.12);  color: var(--status-active);    border: 1px solid rgba(255,82,82,0.25); }
+
+  /* History panel entries */
+  .hist-entry {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .hist-entry:last-child { border-bottom: none; }
+  .hist-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .hist-ts   { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); }
+  .hist-who  { font-size: 11px; color: var(--text-secondary); }
+  .hist-changes { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+  .hist-change-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .hist-change-field { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); text-transform: uppercase; min-width: 70px; }
+
+  @media (max-width: 768px) {
+    .audit-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
+    .audit-row > *:nth-child(n+5) { grid-column: 1 / -1; }
+  }
+</style>
   .res-grid-header {
     display: grid;
     grid-template-columns: 4px 1fr 110px 120px 1fr 140px 110px 72px;
@@ -2389,6 +2445,7 @@
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
     <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
     <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
+    <button class="btn-secondary" onclick="openAuditModal()" title="Channel Audit Trail">🕐 Audit</button>
     <button class="btn-secondary" onclick="openLowAvailSettings()" title="Low Availability Alert Settings">⚠ Alerts</button>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
     <button id="adminMenuBtn" class="btn-secondary" onclick="openUserAdmin()" style="display:none;border-color:rgba(255,82,82,0.4);color:var(--status-active);" title="User Administration">👥 Users</button>
@@ -2695,6 +2752,7 @@
     <!-- Tab bar -->
     <div class="side-tabs">
       <button class="side-tab active" id="tab-detail"  onclick="switchSideTab('detail')">📻 Detail</button>
+      <button class="side-tab"        id="tab-history" onclick="switchSideTab('history')">🕐 History</button>
       <button class="side-tab"        id="tab-log"     onclick="switchSideTab('log')">📋 Log</button>
       <button class="side-tab"        id="tab-notes"   onclick="switchSideTab('notes')">📝 Release Notes</button>
       <button class="panel-toggle-btn" onclick="toggleSidePanel()" title="Close panel" style="margin:6px 8px 6px 4px;flex-shrink:0;">✕</button>
@@ -2709,6 +2767,15 @@
         </div>
       </div>
       <span id="selectedBadge" style="display:none;"></span>
+    </div>
+
+    <!-- Channel History tab -->
+    <div class="side-tab-content" id="tabcontent-history" style="flex-direction:column;">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px;">
+        <div id="historyChannelLabel" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">Select a channel</div>
+        <button class="btn-secondary" style="font-size:10px;padding:3px 8px;white-space:nowrap;" onclick="openAuditModal()">Full Audit Trail</button>
+      </div>
+      <div id="channelHistoryList" style="flex:1;overflow-y:auto;"></div>
     </div>
 
     <!-- Activity Log tab -->
@@ -3147,6 +3214,264 @@ async function logActivity(text) {
   } catch(e) { /* non-critical */ }
 }
 
+// ─────────────────────────────────────────────
+// CHANNEL AUDIT TRAIL
+// ─────────────────────────────────────────────
+// In-memory audit cache; loaded fresh from Supabase on demand
+let auditCache   = [];        // full audit records from DB
+let auditLoaded  = false;     // flag to avoid redundant fetches
+
+// Structured audit record fields:
+//   channel_id, designator, action (created|status|edited|released|deleted),
+//   field, old_value, new_value, changed_by, note, created_at
+
+async function logChannelHistory(record) {
+  // Always store in Supabase (persistent, cross-session)
+  try {
+    await sb.from('channel_history').insert({
+      channel_id:   record.channelId   || null,
+      designator:   record.designator  || '',
+      action:       record.action      || 'edited',
+      field:        record.field       || null,
+      old_value:    record.oldValue    != null ? String(record.oldValue) : null,
+      new_value:    record.newValue    != null ? String(record.newValue) : null,
+      changed_by:   record.changedBy   || currentUser?.name || 'Unknown',
+      note:         record.note        || null,
+    });
+    auditLoaded = false; // invalidate cache so next open fetches fresh
+  } catch(e) {
+    // Table may not exist yet — fail silently, won't break the app
+    console.warn('channel_history write skipped (table may not exist):', e.message);
+  }
+}
+
+// Diff two channel objects and return array of changed field records
+function diffChannelFields(before, after, who) {
+  const TRACKED = [
+    { key:'status',    label:'Status',    fmt: v => statusLabels[v] || v },
+    { key:'freq',      label:'TX Freq',   fmt: v => v + ' MHz' },
+    { key:'rxFreq',    label:'RX Freq',   fmt: v => v + ' MHz' },
+    { key:'function',  label:'Function',  fmt: v => v },
+    { key:'agency',    label:'Agency',    fmt: v => v },
+    { key:'mode',      label:'Mode',      fmt: v => v },
+    { key:'tone',      label:'Tone/NAC',  fmt: v => v },
+    { key:'group',     label:'Group',     fmt: v => v },
+    { key:'notes',     label:'Notes',     fmt: v => v ? v.slice(0,60)+(v.length>60?'…':'') : '—' },
+  ];
+  return TRACKED.filter(f => {
+    const a = (before[f.key] || ''), b = (after[f.key] || '');
+    return String(a) !== String(b);
+  }).map(f => ({
+    channelId:   after.id,
+    designator:  after.designator,
+    action:      f.key === 'status' ? 'status' : 'edited',
+    field:       f.label,
+    oldValue:    f.fmt(before[f.key] || ''),
+    newValue:    f.fmt(after[f.key]  || ''),
+    changedBy:   who,
+  }));
+}
+
+async function loadAuditForChannel(channelId) {
+  try {
+    const { data, error } = await sb
+      .from('channel_history')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+async function loadAllAudit(limit = 500) {
+  try {
+    const { data, error } = await sb
+      .from('channel_history')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function fmtAuditTS(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  });
+}
+
+function actionChip(action) {
+  return `<span class="audit-action-chip ${action}">${action}</span>`;
+}
+
+// ── SIDE PANEL HISTORY TAB ──
+async function renderChannelHistory(channelId, designator) {
+  const el = document.getElementById('channelHistoryList');
+  const label = document.getElementById('historyChannelLabel');
+  if (!el) return;
+
+  if (label) label.textContent = designator || 'Channel History';
+  el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">Loading…</div>`;
+
+  const records = await loadAuditForChannel(channelId);
+
+  if (!records.length) {
+    el.innerHTML = `<div style="padding:24px 16px;text-align:center;color:var(--text-dim);font-size:12px;line-height:1.8;">
+      No history recorded yet.<br>
+      <span style="font-size:11px;">Changes will appear here after the next edit.</span>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = records.map(r => {
+    const hasValues = r.old_value || r.new_value;
+    return `<div class="hist-entry">
+      <div class="hist-meta">
+        ${actionChip(r.action)}
+        ${r.field ? `<span class="hist-change-field">${r.field}</span>` : ''}
+        <span class="hist-ts">${fmtAuditTS(r.created_at)}</span>
+        <span class="hist-who">· ${r.changed_by || '—'}</span>
+      </div>
+      ${hasValues ? `<div class="hist-changes"><div class="hist-change-row">
+        ${r.old_value ? `<span class="audit-val"><span class="old-val">${r.old_value}</span></span><span class="audit-val"><span class="arr">→</span></span>` : ''}
+        <span class="audit-val"><span class="new-val">${r.new_value || '—'}</span></span>
+      </div></div>` : ''}
+      ${r.note ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">${r.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── FULL AUDIT MODAL ──
+async function openAuditModal() {
+  document.getElementById('auditModal').classList.add('open');
+  document.getElementById('auditModalBody').innerHTML =
+    `<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:13px;">Loading audit trail…</div>`;
+
+  auditCache  = await loadAllAudit(1000);
+  auditLoaded = true;
+
+  // Populate channel filter dropdown
+  const sel = document.getElementById('auditChannelFilter');
+  const designators = [...new Set(auditCache.map(r => r.designator).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="all">All Channels</option>' +
+    designators.map(d => `<option value="${d}">${d}</option>`).join('');
+
+  renderAuditModal();
+}
+
+function closeAuditModal() {
+  document.getElementById('auditModal').classList.remove('open');
+}
+
+function renderAuditModal() {
+  if (!auditLoaded) return;
+  const query      = (document.getElementById('auditSearch')?.value || '').toLowerCase();
+  const chFilter   = document.getElementById('auditChannelFilter')?.value || 'all';
+  const actFilter  = document.getElementById('auditActionFilter')?.value  || 'all';
+  const dateFilter = document.getElementById('auditDateFilter')?.value    || 'all';
+
+  const now      = new Date();
+  const todayPT  = now.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const weekAgo  = new Date(now - 7  * 86400000);
+  const monthAgo = new Date(now - 30 * 86400000);
+
+  const filtered = auditCache.filter(r => {
+    if (chFilter  !== 'all' && r.designator !== chFilter)  return false;
+    if (actFilter !== 'all' && r.action     !== actFilter)  return false;
+    if (dateFilter === 'today') {
+      const rDate = new Date(r.created_at).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      if (rDate !== todayPT) return false;
+    }
+    if (dateFilter === 'week'  && new Date(r.created_at) < weekAgo)  return false;
+    if (dateFilter === 'month' && new Date(r.created_at) < monthAgo) return false;
+    if (query) {
+      return [r.designator, r.changed_by, r.field, r.old_value, r.new_value, r.note, r.action]
+        .some(f => (f||'').toLowerCase().includes(query));
+    }
+    return true;
+  });
+
+  const countEl = document.getElementById('auditRecordCount');
+  if (countEl) countEl.textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
+
+  const body = document.getElementById('auditModalBody');
+  if (!filtered.length) {
+    body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:13px;">No records match the current filters.</div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  filtered.forEach(r => {
+    const ds = new Date(r.created_at).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    if (!byDate[ds]) byDate[ds] = [];
+    byDate[ds].push(r);
+  });
+
+  // Table header
+  const headerHTML = `
+    <div style="position:sticky;top:0;background:var(--bg-panel);z-index:2;border-bottom:1px solid var(--border);">
+      <div class="audit-row" style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;">
+        <span>Timestamp</span><span>Channel</span><span>Action</span><span>Field / Change</span><span>Value</span><span>Changed By</span>
+      </div>
+    </div>`;
+
+  const rowsHTML = Object.entries(byDate).map(([ds, recs]) => {
+    const dateLabel = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', {
+      weekday:'long', month:'long', day:'numeric', year:'numeric'
+    });
+    const rows = recs.map(r => {
+      const valueHTML = (r.old_value || r.new_value)
+        ? `${r.old_value ? `<span class="old-val">${r.old_value}</span><span class="arr"> → </span>` : ''}<span class="new-val">${r.new_value || '—'}</span>`
+        : (r.note || '—');
+      return `<div class="audit-row">
+        <div class="audit-ts">${fmtAuditTS(r.created_at)}</div>
+        <div class="audit-ch">${r.designator || '—'}</div>
+        <div>${actionChip(r.action)}</div>
+        <div class="audit-field">${r.field || r.action}</div>
+        <div class="audit-val">${valueHTML}</div>
+        <div class="audit-who">${r.changed_by || '—'}</div>
+      </div>`;
+    }).join('');
+    return `
+      <div style="padding:8px 12px 4px;font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;background:var(--bg-deep);border-bottom:1px solid var(--border);">${dateLabel}</div>
+      ${rows}`;
+  }).join('');
+
+  body.innerHTML = headerHTML + `<div>${rowsHTML}</div>`;
+}
+
+function exportAuditCSV() {
+  if (!auditCache.length) { alert('No audit data to export. Open the audit trail first.'); return; }
+  const header = ['Timestamp (PT)','Channel','Action','Field','Old Value','New Value','Changed By','Note'];
+  const rows = auditCache.map(r => [
+    fmtAuditTS(r.created_at),
+    r.designator || '',
+    r.action || '',
+    r.field || '',
+    r.old_value || '',
+    r.new_value || '',
+    r.changed_by || '',
+    r.note || '',
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv),
+    download: `channel-audit-${new Date().toLocaleDateString('en-CA')}.csv`,
+  });
+  a.click();
+}
+
 function renderLog() {
   const el = document.getElementById('activityLog');
   if (!activityLog.length) {
@@ -3293,6 +3618,7 @@ function selectChannel(id) {
       <button class="btn-primary" onclick="openEditModal(${ch.id})">✏ Edit Channel</button>
       ${ch.status !== 'available' ? `<button class="btn-success" onclick="releaseChannel(${ch.id})">✓ Mark Available</button>` : ''}
       ${ch.status === 'available' ? `<button class="btn-warning" onclick="quickDeploy(${ch.id})">⚡ Quick Deploy</button>` : ''}
+      <button class="btn-secondary" onclick="switchSideTab('history')">🕐 View History</button>
       <button class="btn-danger" onclick="deleteChannel(${ch.id})">✕ Remove Channel</button>
     </div>
   `;
@@ -3346,6 +3672,10 @@ async function releaseChannel(id) {
     status: 'available', function: '—', agency: '—', updated_by: who, updated_at: new Date().toISOString()
   }).eq('id', id);
   if (error) { alert('Error releasing channel: ' + error.message); return; }
+  await logChannelHistory({
+    channelId: id, designator: ch.designator, action: 'released',
+    field: 'Status', oldValue: statusLabels[old], newValue: 'Available', changedBy: who,
+  });
   logActivity(`<span class="log-ch">${ch.designator}</span> released by ${who} — ${statusLabels[old]} → Available`);
 }
 
@@ -3369,6 +3699,11 @@ async function deleteChannel(id) {
   const ch = channels.find(c => c.id === id);
   if (!confirm(`Remove ${ch.designator} from the channel plan?`)) return;
   const who = currentUser ? currentUser.name : 'Unknown';
+  // Log deletion before the row is gone
+  await logChannelHistory({
+    channelId: id, designator: ch.designator, action: 'deleted',
+    field: null, oldValue: `${ch.freq} MHz — ${statusLabels[ch.status]}`, newValue: null, changedBy: who,
+  });
   const { error } = await sb.from('channels').delete().eq('id', id);
   if (error) { alert('Error deleting channel: ' + error.message); return; }
   logActivity(`<span class="log-ch">${ch.designator}</span> removed by ${who}`);
@@ -3457,10 +3792,25 @@ async function saveChannel() {
   if (editingId) {
     const { error } = await sb.from('channels').update(row).eq('id', editingId);
     if (error) { alert('Error saving channel: ' + error.message); return; }
+    // Diff against previous state for precise field-level history
+    const prev = channels.find(c => c.id === editingId);
+    const next = rowToChannel({ ...row, id: editingId });
+    if (prev) {
+      const diffs = diffChannelFields(prev, next, who);
+      for (const d of diffs) await logChannelHistory(d);
+      if (!diffs.length) {
+        // Minor edit with no tracked field changes
+        await logChannelHistory({ channelId: editingId, designator, action:'edited', field:'(misc)', newValue: 'Minor edit', changedBy: who });
+      }
+    }
     logActivity(`<span class="log-ch">${designator}</span> updated by ${who} — ${statusLabels[row.status]}`);
   } else {
-    const { error } = await sb.from('channels').insert(row);
+    const { error, data: inserted } = await sb.from('channels').insert(row).select().single();
     if (error) { alert('Error adding channel: ' + error.message); return; }
+    await logChannelHistory({
+      channelId: inserted?.id || null, designator, action: 'created',
+      field: 'Status', newValue: statusLabels[row.status], changedBy: who,
+    });
     logActivity(`<span class="log-ch">${designator}</span> added by ${who} — ${statusLabels[row.status]}`);
   }
 
@@ -4858,8 +5208,17 @@ function switchSideTab(tab) {
   const tabContent = document.getElementById(`tabcontent-${tab}`);
   if (tabBtn) tabBtn.classList.add('active');
   if (tabContent) tabContent.classList.add('active');
-  if (tab === 'notes') renderReleaseNotes();
-  if (tab === 'log') renderLog();
+  if (tab === 'notes')   renderReleaseNotes();
+  if (tab === 'log')     renderLog();
+  if (tab === 'history') {
+    // Load history for whichever channel is selected
+    const ch = selectedId ? channels.find(c => c.id === selectedId) : null;
+    if (ch) renderChannelHistory(ch.id, ch.designator);
+    else {
+      const el = document.getElementById('channelHistoryList');
+      if (el) el.innerHTML = `<div style="padding:24px 16px;text-align:center;color:var(--text-dim);font-size:12px;line-height:1.8;">Select a channel first<br>to view its history.</div>`;
+    }
+  }
   if (!sidePanelOpen) toggleSidePanel(tab);
 }
 
@@ -6754,3 +7113,39 @@ init();
 
 </body>
 </html>
+
+<!-- ── AUDIT TRAIL MODAL ── -->
+<div class="modal-overlay" id="auditModal">
+  <div class="modal" style="max-width:900px;height:82vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title">🕐 Channel Audit Trail</div>
+      <button class="modal-close" onclick="closeAuditModal()">✕</button>
+    </div>
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0;align-items:center;">
+      <input class="search-input" id="auditSearch" type="text" placeholder="Search channel, user, value…" oninput="renderAuditModal()" style="width:200px;font-size:12px;">
+      <select class="form-select" id="auditChannelFilter" onchange="renderAuditModal()" style="width:190px;font-size:12px;padding:6px 10px;"><option value="all">All Channels</option></select>
+      <select class="form-select" id="auditActionFilter" onchange="renderAuditModal()" style="width:150px;font-size:12px;padding:6px 10px;">
+        <option value="all">All Actions</option>
+        <option value="created">Created</option>
+        <option value="status">Status Change</option>
+        <option value="edited">Field Edit</option>
+        <option value="released">Released</option>
+        <option value="deleted">Deleted</option>
+      </select>
+      <select class="form-select" id="auditDateFilter" onchange="renderAuditModal()" style="width:130px;font-size:12px;padding:6px 10px;">
+        <option value="all">All Time</option>
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+      </select>
+      <button class="btn-secondary" style="font-size:11px;padding:5px 10px;margin-left:auto;" onclick="exportAuditCSV()">⬇ Export CSV</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;" id="auditModalBody">
+      <div style="text-align:center;padding:40px;color:var(--text-dim);font-size:13px;">Loading…</div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;">
+      <span id="auditRecordCount" style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);"></span>
+      <button class="btn-primary" style="margin-left:auto;" onclick="closeAuditModal()">Close</button>
+    </div>
+  </div>
+</div>
