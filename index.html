@@ -18,7 +18,6 @@
     --status-available: #00e676;
     --status-active:    #ff5252;
     --status-reserved:  #ffc400;
-    --status-tactical:  #40c4ff;
     --status-interop:   #ce93d8;
 
     --text-primary:  #e8edf5;
@@ -46,7 +45,6 @@
     --status-available: #00ff88;
     --status-active:    #ff3333;
     --status-reserved:  #ffcc00;
-    --status-tactical:  #00ccff;
     --status-interop:   #dd88ff;
     --text-primary:  #ffffff;
     --text-secondary:#aaaaaa;
@@ -66,7 +64,6 @@
     --status-available: #00875a;
     --status-active:    #d63031;
     --status-reserved:  #b8860b;
-    --status-tactical:  #0066cc;
     --status-interop:   #7b2fbe;
     --text-primary:  #1a2332;
     --text-secondary:#4a5f7a;
@@ -86,7 +83,6 @@
     --status-available: #00e676;
     --status-active:    #ff5252;
     --status-reserved:  #ffc400;
-    --status-tactical:  #40c4ff;
     --status-interop:   #ce93d8;
     --text-primary:  #ffe082;
     --text-secondary:#b8922a;
@@ -106,7 +102,6 @@
     --status-available: #69ff47;
     --status-active:    #ff5252;
     --status-reserved:  #ffd740;
-    --status-tactical:  #40c4ff;
     --status-interop:   #ce93d8;
     --text-primary:  #c8e6c9;
     --text-secondary:#6a9b6a;
@@ -284,7 +279,6 @@
   .stat-dot.available { background: var(--status-available); box-shadow: 0 0 6px var(--status-available); }
   .stat-dot.active    { background: var(--status-active);    box-shadow: 0 0 6px var(--status-active); }
   .stat-dot.reserved  { background: var(--status-reserved);  box-shadow: 0 0 6px var(--status-reserved); }
-  .stat-dot.tactical  { background: var(--status-tactical);  box-shadow: 0 0 6px var(--status-tactical); }
   .stat-dot.interop   { background: var(--status-interop);   box-shadow: 0 0 6px var(--status-interop); }
 
   .stat-label { font-size: 11px; color: var(--text-secondary); font-family: var(--font-data); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -292,7 +286,6 @@
   .stat-count.available { color: var(--status-available); }
   .stat-count.active    { color: var(--status-active); }
   .stat-count.reserved  { color: var(--status-reserved); }
-  .stat-count.tactical  { color: var(--status-tactical); }
   .stat-count.interop   { color: var(--status-interop); }
 
   /* ── LAYOUT ── */
@@ -421,7 +414,6 @@
   .filter-dot.available { background: var(--status-available); }
   .filter-dot.active    { background: var(--status-active); }
   .filter-dot.reserved  { background: var(--status-reserved); }
-  .filter-dot.tactical  { background: var(--status-tactical); }
   .filter-dot.interop   { background: var(--status-interop); }
 
   .search-input {
@@ -527,7 +519,6 @@
   .status-bar.available { background: var(--status-available); }
   .status-bar.active    { background: var(--status-active); }
   .status-bar.reserved  { background: var(--status-reserved); }
-  .status-bar.tactical  { background: var(--status-tactical); }
   .status-bar.interop   { background: var(--status-interop); }
 
   .ch-designator {
@@ -578,7 +569,6 @@
   .status-pill.available { background: rgba(0,230,118,0.12); color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
   .status-pill.active    { background: rgba(255,82,82,0.12);  color: var(--status-active);    border: 1px solid rgba(255,82,82,0.25); }
   .status-pill.reserved  { background: rgba(255,196,0,0.12);  color: var(--status-reserved);  border: 1px solid rgba(255,196,0,0.25); }
-  .status-pill.tactical  { background: rgba(64,196,255,0.12); color: var(--status-tactical);  border: 1px solid rgba(64,196,255,0.25); }
   .status-pill.interop   { background: rgba(206,147,216,0.12);color: var(--status-interop);   border: 1px solid rgba(206,147,216,0.25); }
 
   .ch-tone {
@@ -1998,6 +1988,11 @@
             <option value="blip">Blip</option>
             <option value="alert">Alert</option>
             <option value="soft">Soft</option>
+            <option value="buzzer">Buzzer</option>
+            <option value="ping">Ping</option>
+            <option value="siren">Siren</option>
+            <option value="pulse">Pulse</option>
+            <option value="ding">Ding</option>
             <option value="none">Silent (no tone)</option>
           </select>
           <button class="tone-preview-btn" onclick="previewTone()">▶ Preview</button>
@@ -2015,6 +2010,35 @@
             <div class="notif-toggle-desc">Brief pop-up in corner for each alert</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="nt-toast" checked onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="notif-settings-section">
+        <div class="notif-settings-label">📧 Email Notifications</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+          <input class="form-input" id="emailNotifAddress" type="email" placeholder="name@agency.gov" style="width:100%;">
+          <div style="font-size:11px;color:var(--text-dim);">Enter your email to receive critical alerts. Requires backend integration.</div>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Email on Channel Active</div>
+            <div class="notif-toggle-desc">Notify when channels go active</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-email-active" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Email on Conflict</div>
+            <div class="notif-toggle-desc">Alert on frequency conflicts detected</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-email-conflict" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Email on Low Availability</div>
+            <div class="notif-toggle-desc">Alert when channels below threshold</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-email-lowavail" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
         </div>
       </div>
 
@@ -2233,13 +2257,6 @@
     </div>
   </div>
   <div class="stat-cell">
-    <div class="stat-dot tactical"></div>
-    <div>
-      <div class="stat-label">Tactical</div>
-      <div class="stat-count tactical" id="cnt-tactical">0</div>
-    </div>
-  </div>
-  <div class="stat-cell">
     <div class="stat-dot interop"></div>
     <div>
       <div class="stat-label">Interop / Mutual Aid</div>
@@ -2281,9 +2298,6 @@
         </button>
         <button class="filter-btn" data-filter="reserved" onclick="setFilter('reserved', this)">
           <span class="filter-dot reserved"></span>Reserved
-        </button>
-        <button class="filter-btn" data-filter="tactical" onclick="setFilter('tactical', this)">
-          <span class="filter-dot tactical"></span>Tactical
         </button>
         <button class="filter-btn" data-filter="interop" onclick="setFilter('interop', this)">
           <span class="filter-dot interop"></span>Interop
@@ -2421,7 +2435,6 @@
             <option value="available">Available</option>
             <option value="active">Active / Deployed</option>
             <option value="reserved">Reserved (Pre-planned)</option>
-            <option value="tactical">Tactical</option>
             <option value="interop">Interop / Mutual Aid</option>
           </select>
         </div>
@@ -2561,23 +2574,85 @@ function channelToRow(ch, userName) {
 // ─────────────────────────────────────────────
 // DB LOADING + SEEDING
 // ─────────────────────────────────────────────
+// LACoFD 2024 Channel Plan — source: RadioReference.com (updated Jan 2024)
 const SEED_CHANNELS = [
-  { designator:'FIRE-CMD-1',      freq:'154.4300', rx_freq:'154.4300', status:'active',    mode:'Analog FM',   tone:'100.0 Hz',  function:'Command',               agency:'Fire Dept',    group:'Fire Ops',        notes:'Primary command net' },
-  { designator:'FIRE-TAC-1',      freq:'154.2800', rx_freq:'154.2800', status:'active',    mode:'Analog FM',   tone:'127.3 Hz',  function:'Fire Attack',            agency:'Fire Dept',    group:'Fire Ops',        notes:'' },
-  { designator:'FIRE-TAC-2',      freq:'154.3100', rx_freq:'154.3100', status:'active',    mode:'Analog FM',   tone:'127.3 Hz',  function:'Fire Attack',            agency:'Fire Dept',    group:'Fire Ops',        notes:'' },
-  { designator:'EMS-OPS-1',       freq:'155.3400', rx_freq:'155.3400', status:'active',    mode:'Analog FM',   tone:'103.5 Hz',  function:'EMS Operations',         agency:'EMS / AMR',    group:'EMS',             notes:'Patch to hospital base' },
-  { designator:'LAW-CMD',         freq:'460.1250', rx_freq:'460.1250', status:'active',    mode:'P25 Phase I', tone:'0x293',     function:'Law Enforcement Command', agency:'Sheriff / PD', group:'Law Enforcement', notes:'Encrypted – Talkgroup 4201' },
-  { designator:'INTEROP-8CALL90', freq:'155.3400', rx_freq:'155.3400', status:'interop',   mode:'P25 Phase I', tone:'NAC 0x001', function:'National Calling',        agency:'Multi-Agency', group:'Interop',         notes:'FEMA NPSPAC – do not program out' },
-  { designator:'AIR-OPS-1',       freq:'168.6500', rx_freq:'168.6500', status:'active',    mode:'Analog FM',   tone:'None',      function:'Air Operations',         agency:'Air Attack',   group:'Fire Ops',        notes:'ATGS supervising' },
-  { designator:'MUTUAL-AID-1',    freq:'154.9200', rx_freq:'154.9200', status:'interop',   mode:'Analog FM',   tone:'110.9 Hz',  function:'Mutual Aid Coordination', agency:'State OES',    group:'Interop',         notes:'State mutual aid – available on request' },
-  { designator:'MARATHON-CMD',    freq:'453.2000', rx_freq:'453.2000', status:'reserved',  mode:'Analog FM',   tone:'136.5 Hz',  function:'Event Command',          agency:'Special Events',group:'Special Events',  notes:'Reserved Jun 15 – do not assign' },
-  { designator:'MARATHON-MED',    freq:'453.3500', rx_freq:'453.3500', status:'reserved',  mode:'Analog FM',   tone:'136.5 Hz',  function:'Event EMS',              agency:'EMS / AMR',    group:'Special Events',  notes:'Reserved Jun 15' },
-  { designator:'MNTC-TAC-1',      freq:'151.4450', rx_freq:'151.4450', status:'available', mode:'Analog FM',   tone:'100.0 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
-  { designator:'MNTC-TAC-2',      freq:'151.4600', rx_freq:'151.4600', status:'available', mode:'Analog FM',   tone:'100.0 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
-  { designator:'MNTC-TAC-3',      freq:'151.4750', rx_freq:'151.4750', status:'available', mode:'P25 Phase I', tone:'NAC 0x150', function:'—',                      agency:'—',            group:'Law Enforcement', notes:'' },
-  { designator:'FIRE-TAC-3',      freq:'154.3550', rx_freq:'154.3550', status:'available', mode:'Analog FM',   tone:'127.3 Hz',  function:'—',                      agency:'—',            group:'Fire Ops',        notes:'' },
-  { designator:'SAR-TAC-1',       freq:'155.1600', rx_freq:'155.1600', status:'tactical',  mode:'Analog FM',   tone:'118.8 Hz',  function:'Search & Rescue Ops',    agency:'SAR Team',     group:'SAR',             notes:'Helicopter 7 monitoring' },
+  // ── COUNTYWIDE DISPATCH ──
+  { designator:'LAC U-1',   freq:'483.7500', rx_freq:'483.7500', status:'active',    mode:'Analog FM', tone:'186.2 PL', function:'Countywide Dispatch',                          agency:'LACoFD', group:'LACoFD Dispatch',  notes:'All-county dispatch — monitored all stations', conflict_check:true },
+  { designator:'LAC U-2',   freq:'483.5500', rx_freq:'483.5500', status:'available', mode:'Analog FM', tone:'186.2 PL', function:'Countywide Admin / Alternate Dispatch',         agency:'LACoFD', group:'LACoFD Dispatch',  notes:'Admin / overflow dispatch', conflict_check:true },
+  { designator:'LAC D-1',   freq:'483.3250', rx_freq:'483.3250', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Dispatch — Santa Clarita / Antelope Valley',    agency:'LACoFD', group:'LACoFD Dispatch',  notes:'BN 6, 11, 17, 22', conflict_check:true },
+  { designator:'LAC D-2',   freq:'482.6625', rx_freq:'482.6625', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Dispatch — Southern LA Basin',                  agency:'LACoFD', group:'LACoFD Dispatch',  notes:'BN 7, 8, 9, 14, 18, 21', conflict_check:true },
+  { designator:'LAC D-3',   freq:'484.1125', rx_freq:'484.1125', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Dispatch — San Gabriel Valley',                 agency:'LACoFD', group:'LACoFD Dispatch',  notes:'BN 2, 4, 10, 12, 15, 16', conflict_check:true },
+  { designator:'LAC D-4',   freq:'482.9750', rx_freq:'482.9750', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Dispatch — Western LA Basin / Santa Monica Mtns', agency:'LACoFD', group:'LACoFD Dispatch', notes:'BN 1, 3, 5, 13, 20, 23', conflict_check:true },
+  { designator:'LAC D-5',   freq:'482.7875', rx_freq:'482.7875', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Dispatch — Catalina and Coastal',               agency:'LACoFD', group:'LACoFD Dispatch',  notes:'Catalina Island / coastal units', conflict_check:true },
+
+  // ── COMMAND — SANTA CLARITA / ANTELOPE VALLEY ──
+  { designator:'LAC C-10',  freq:'483.5250', rx_freq:'483.5250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Santa Clarita / Antelope Valley',     agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-11',  freq:'483.8625', rx_freq:'483.8625', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Santa Clarita / Antelope Valley',     agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-12',  freq:'484.0125', rx_freq:'484.0125', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Santa Clarita / Antelope Valley',     agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-13',  freq:'483.0750', rx_freq:'483.0750', status:'available', mode:'Analog FM', tone:'186.2 PL', function:'Command — Antelope Valley Only',                agency:'LACoFD', group:'LACoFD Command',   notes:'Antelope Valley only — different PL', conflict_check:true },
+
+  // ── COMMAND — SOUTHERN LA BASIN ──
+  { designator:'LAC C-20',  freq:'482.8875', rx_freq:'482.8875', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-21',  freq:'483.0500', rx_freq:'483.0500', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-22',  freq:'483.2375', rx_freq:'483.2375', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-23',  freq:'483.3875', rx_freq:'483.3875', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-24',  freq:'483.5375', rx_freq:'483.5375', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-25',  freq:'453.6750', rx_freq:'453.6750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Southern LA Basin',                   agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+
+  // ── COMMAND — SAN GABRIEL VALLEY ──
+  { designator:'LAC C-30',  freq:'483.0250', rx_freq:'483.0250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-31',  freq:'483.1750', rx_freq:'483.1750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-32',  freq:'483.3375', rx_freq:'483.3375', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-33',  freq:'483.5000', rx_freq:'483.5000', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-34',  freq:'483.6750', rx_freq:'483.6750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-35',  freq:'483.8875', rx_freq:'483.8875', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-36',  freq:'483.8125', rx_freq:'483.8125', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-37',  freq:'484.1250', rx_freq:'484.1250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — San Gabriel Valley',                  agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+
+  // ── COMMAND — WESTERN LA BASIN / SANTA MONICA MOUNTAINS ──
+  { designator:'LAC C-40',  freq:'483.1875', rx_freq:'483.1875', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-41',  freq:'483.4750', rx_freq:'483.4750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-42',  freq:'483.6250', rx_freq:'483.6250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-43',  freq:'483.9125', rx_freq:'483.9125', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-44',  freq:'483.0125', rx_freq:'483.0125', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-45',  freq:'483.4125', rx_freq:'483.4125', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+  { designator:'LAC C-46',  freq:'483.7375', rx_freq:'483.7375', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Western LA Basin / SMM',              agency:'LACoFD', group:'LACoFD Command',   notes:'', conflict_check:true },
+
+  // ── COMMAND — CATALINA / COASTAL ──
+  { designator:'LAC C-50',  freq:'483.1625', rx_freq:'483.1625', status:'active',    mode:'Analog FM', tone:'151.4 PL', function:'Command — Catalina and Coastal',                agency:'LACoFD', group:'LACoFD Command',   notes:'Primary dispatch for Catalina Stations 55/155', conflict_check:true },
+  { designator:'LAC C-51',  freq:'483.6000', rx_freq:'483.6000', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Catalina Island Interior',            agency:'LACoFD', group:'LACoFD Command',   notes:'Primary command for island interior incidents', conflict_check:true },
+  { designator:'LAC C-52',  freq:'483.7750', rx_freq:'483.7750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Command — Catalina / Avalon',                   agency:'LACoFD', group:'LACoFD Command',   notes:'Primary command for Avalon incidents', conflict_check:true },
+
+  // ── TACTICAL — SIMPLEX (DIRECT) ──
+  { designator:'LAC U-60D', freq:'478.2750', rx_freq:'478.2750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-61D', freq:'481.2750', rx_freq:'481.2750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Primary tac — Catalina Island interior', conflict_check:true },
+  { designator:'LAC U-62D', freq:'478.3000', rx_freq:'478.3000', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-63D', freq:'481.3000', rx_freq:'481.3000', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Primary tac — Catalina Avalon', conflict_check:true },
+  { designator:'LAC U-64D', freq:'478.3250', rx_freq:'478.3250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-65D', freq:'481.3250', rx_freq:'481.3250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-66D', freq:'453.7750', rx_freq:'453.7750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-67D', freq:'453.8250', rx_freq:'453.8250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-68D', freq:'453.9750', rx_freq:'453.9750', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Simplex',                            agency:'LACoFD', group:'LACoFD Tactical',  notes:'Direct mode — no repeater', conflict_check:true },
+  { designator:'LAC U-69D', freq:'453.9000', rx_freq:'453.9000', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Tactical — Antelope Valley Only',               agency:'LACoFD', group:'LACoFD Tactical',  notes:'Antelope Valley only — simplex', conflict_check:true },
+  { designator:'LAC CREW',  freq:'453.7250', rx_freq:'453.7250', status:'available', mode:'Analog FM', tone:'151.4 PL', function:'Crew / Dozer Operations',                       agency:'LACoFD', group:'LACoFD Tactical',  notes:'Wildland crew and dozer coordination', conflict_check:true },
+
+  // ── INTEROPERABILITY ──
+  { designator:'LARICS-1U', freq:'483.1000', rx_freq:'483.1000', status:'interop',   mode:'Analog FM', tone:'156.7 PL', function:'LA-RICS UHF Interop',                          agency:'Multi-Agency', group:'Interop',     notes:'LARICS interoperability channel', conflict_check:false },
+  { designator:'FD-UMA',    freq:'487.2375', rx_freq:'487.2375', status:'interop',   mode:'Analog FM', tone:'156.7 PL', function:'FD UHF Mutual Aid',                            agency:'Multi-Agency', group:'Interop',     notes:'Fire Department UHF mutual aid', conflict_check:false },
+  { designator:'LAC LG-ACC',freq:'483.9625', rx_freq:'483.9625', status:'interop',   mode:'Analog FM', tone:'151.4 PL', function:'Lifeguard Access',                             agency:'LACoFD Lifeguard', group:'Interop', notes:'Lifeguard beach operations access', conflict_check:false },
+
+  // ── AIR OPERATIONS ──
+  { designator:'AIR-FIXED', freq:'122.9250', rx_freq:'122.9250', status:'active',    mode:'AM',        tone:'None',     function:'Air Ops — Fixed Wing Coordination',            agency:'LACoFD Air Ops', group:'LACoFD Air Ops', notes:'Aviation — fixed wing coord', conflict_check:false },
+  { designator:'AIR-SFRA',  freq:'128.5500', rx_freq:'128.5500', status:'active',    mode:'AM',        tone:'None',     function:'Air SFRA',                                     agency:'LACoFD Air Ops', group:'LACoFD Air Ops', notes:'Special Flight Rules Area coordination', conflict_check:false },
+  { designator:'AIR-TO-AIR',freq:'130.7000', rx_freq:'130.7000', status:'available', mode:'AM',        tone:'None',     function:'Air-to-Air Primary',                           agency:'LACoFD Air Ops', group:'LACoFD Air Ops', notes:'Air-to-air coordination', conflict_check:false },
+  { designator:'AIR-AIR-2', freq:'123.1000', rx_freq:'123.1000', status:'available', mode:'AM',        tone:'None',     function:'Air-to-Air Secondary',                         agency:'LACoFD Air Ops', group:'LACoFD Air Ops', notes:'Air-to-air secondary', conflict_check:false },
+
+  // ── 700 MHz TRAINING / TACTICAL ──
+  { designator:'LAC 7TAC1D',freq:'769.0188', rx_freq:'769.0188', status:'available', mode:'Analog FM', tone:'156.7 PL', function:'Tactical / Training — 700 MHz',                agency:'LACoFD', group:'LACoFD Tactical',  notes:'700 MHz tactical / training', conflict_check:true },
+  { designator:'LAC 7TAC2D',freq:'769.0313', rx_freq:'769.0313', status:'available', mode:'Analog FM', tone:'156.7 PL', function:'Tactical / Training — 700 MHz',                agency:'LACoFD', group:'LACoFD Tactical',  notes:'700 MHz tactical / training', conflict_check:true },
+  { designator:'LAC 7TAC3D',freq:'774.9313', rx_freq:'774.9313', status:'available', mode:'Analog FM', tone:'156.7 PL', function:'Tactical / Training — 700 MHz',                agency:'LACoFD', group:'LACoFD Tactical',  notes:'700 MHz tactical / training', conflict_check:true },
 ];
+
 
 async function loadChannels() {
   setDbStatus('loading');
@@ -2738,7 +2813,6 @@ const statusLabels = {
   available: 'Available',
   active: 'Active',
   reserved: 'Reserved',
-  tactical: 'Tactical',
   interop: 'Interop'
 };
 
@@ -2771,7 +2845,7 @@ function renderLog() {
 }
 
 function updateStats() {
-  const counts = { available: 0, active: 0, reserved: 0, tactical: 0, interop: 0 };
+  const counts = { available: 0, active: 0, reserved: 0, interop: 0 };
   channels.forEach(c => counts[c.status]++);
   Object.keys(counts).forEach(k => {
     document.getElementById(`cnt-${k}`).textContent = counts[k];
@@ -2787,7 +2861,7 @@ function setFilter(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const labels = { all: 'All Channels', available: 'Available Channels', active: 'Active / Deployed Channels', reserved: 'Reserved (Pre-planned)', tactical: 'Tactical Channels', interop: 'Interop / Mutual Aid' };
+  const labels = { all: 'All Channels', available: 'Available Channels', active: 'Active / Deployed Channels', reserved: 'Reserved (Pre-planned)', interop: 'Interop / Mutual Aid' };
   document.getElementById('filterLabel').textContent = labels[filter];
   renderChannels();
 }
@@ -3053,6 +3127,16 @@ async function saveChannel() {
     updated_at:      new Date().toISOString(),
   };
 
+  // Check for frequency conflicts before saving
+  const conflicts = checkFrequencyConflict(freq, row.rx_freq, editingId);
+  if (conflicts.length > 0 && row.status !== 'available') {
+    sendEmailNotification(
+      `⚠ Frequency Conflict Detected - RF Manager`,
+      `Channel: ${designator}\nFrequency: ${freq} MHz\nConflicts with: ${conflicts.map(c => c.designator + ' (' + c.freq + ' MHz)').join(', ')}\n\nTime: ${getPacificTimeStr(true)}\nSaved by: ${who}`,
+      'conflict'
+    );
+  }
+
   if (editingId) {
     const { error } = await sb.from('channels').update(row).eq('id', editingId);
     if (error) { alert('Error saving channel: ' + error.message); return; }
@@ -3090,8 +3174,7 @@ function openICS205() {
         <span style="font-weight:bold;color:${
           ch.status === 'active' ? '#c00' :
           ch.status === 'available' ? '#006400' :
-          ch.status === 'reserved' ? '#996600' :
-          ch.status === 'tactical' ? '#003399' : '#550055'
+          ch.status === 'reserved' ? '#996600' : '#550055'
         };">${statusLabels[ch.status].toUpperCase()}</span>
       </td>
     </tr>
@@ -3615,16 +3698,15 @@ function renderBigBoard() {
   const SC = {
     active:    { color:'#ff5252', bg:'rgba(255,82,82,0.10)',   border:'rgba(255,82,82,0.28)',   label:'ACTIVE' },
     reserved:  { color:'#ffc400', bg:'rgba(255,196,0,0.10)',   border:'rgba(255,196,0,0.28)',   label:'RESERVED' },
-    tactical:  { color:'#40c4ff', bg:'rgba(64,196,255,0.10)',  border:'rgba(64,196,255,0.28)',  label:'TACTICAL' },
     interop:   { color:'#ce93d8', bg:'rgba(206,147,216,0.10)', border:'rgba(206,147,216,0.28)', label:'INTEROP' },
     available: { color:'#00e676', bg:'rgba(0,230,118,0.10)',   border:'rgba(0,230,118,0.28)',   label:'AVAILABLE' },
   };
   if (theme === 'day') {
     SC.active.color='#d63031';   SC.reserved.color='#b8860b';
-    SC.tactical.color='#0066cc'; SC.interop.color='#7b2fbe'; SC.available.color='#00875a';
+    SC.interop.color='#7b2fbe'; SC.available.color='#00875a';
   }
 
-  const groups = { active:[], reserved:[], tactical:[], interop:[], available:[] };
+  const groups = { active:[], reserved:[], interop:[], available:[] };
   channels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
 
   const now = new Date();
@@ -3674,7 +3756,7 @@ function renderBigBoard() {
       </div>
     </div>`).join('');
 
-  const sectionsHTML = ['active','reserved','tactical','interop','available'].map(k => section(k, groups[k])).join('');
+  const sectionsHTML = ['active','reserved','interop','available'].map(k => section(k, groups[k])).join('');
 
   const container = document.getElementById('bigBoardContent');
   container.style.background = t.bgDeep;
@@ -3758,7 +3840,6 @@ const NOTIF_COLORS = {
   active:    { color: '#ff5252', label: 'ACTIVE' },
   available: { color: '#00e676', label: 'AVAILABLE' },
   reserved:  { color: '#ffc400', label: 'RESERVED' },
-  tactical:  { color: '#40c4ff', label: 'TACTICAL' },
   interop:   { color: '#ce93d8', label: 'INTEROP' },
   removed:   { color: '#ff5252', label: 'REMOVED' },
 };
@@ -3769,10 +3850,10 @@ function loadNotifSettings() {
     return s ? JSON.parse(s) : {
       added: true, updated: true, active: true, available: true,
       reserved: true, removed: true, sound: true, toast: true,
-      tone: 'chime'
+      tone: 'chime', emailAddress: '', emailActive: false, emailConflict: false, emailLowAvail: false
     };
   } catch(e) {
-    return { added:true, updated:true, active:true, available:true, reserved:true, removed:true, sound:true, toast:true, tone:'chime' };
+    return { added:true, updated:true, active:true, available:true, reserved:true, removed:true, sound:true, toast:true, tone:'chime', emailAddress: '', emailActive: false, emailConflict: false, emailLowAvail: false };
   }
 }
 
@@ -3787,6 +3868,10 @@ function saveNotifSettings() {
     sound:     document.getElementById('nt-sound')?.checked     ?? true,
     toast:     document.getElementById('nt-toast')?.checked     ?? true,
     tone:      document.getElementById('notifToneSelect')?.value ?? 'chime',
+    emailAddress: document.getElementById('emailNotifAddress')?.value ?? '',
+    emailActive: document.getElementById('nt-email-active')?.checked ?? false,
+    emailConflict: document.getElementById('nt-email-conflict')?.checked ?? false,
+    emailLowAvail: document.getElementById('nt-email-lowavail')?.checked ?? false,
   };
   try { localStorage.setItem('rfNotifSettings', JSON.stringify(notifSettings)); } catch(e) {}
 }
@@ -3795,13 +3880,16 @@ function openNotifSettings() {
   // Sync toggles to current settings
   const map = { added:'nt-added', updated:'nt-updated', active:'nt-active',
     available:'nt-available', reserved:'nt-reserved', removed:'nt-removed',
-    sound:'nt-sound', toast:'nt-toast' };
+    sound:'nt-sound', toast:'nt-toast', emailActive:'nt-email-active',
+    emailConflict:'nt-email-conflict', emailLowAvail:'nt-email-lowavail' };
   Object.entries(map).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (el) el.checked = notifSettings[k] !== false;
   });
   const toneEl = document.getElementById('notifToneSelect');
   if (toneEl) toneEl.value = notifSettings.tone || 'chime';
+  const emailEl = document.getElementById('emailNotifAddress');
+  if (emailEl) emailEl.value = notifSettings.emailAddress || '';
   document.getElementById('notifSettingsModal').classList.add('open');
 }
 
@@ -3819,6 +3907,11 @@ function playTone(toneName) {
       blip:   () => { playNote(ctx,1200,0,0.08,'sine'); playNote(ctx,1200,0.09,0.08,'sine'); },
       alert:  () => { playNote(ctx,440,0,0.1,'sawtooth'); playNote(ctx,550,0.12,0.1,'sawtooth'); playNote(ctx,440,0.24,0.1,'sawtooth'); },
       soft:   () => { playNote(ctx,660,0,0.2,'sine'); },
+      buzzer: () => { playNote(ctx,440,0,0.2,'square'); playNote(ctx,330,0.21,0.2,'square'); },
+      ping:   () => { playNote(ctx,1500,0,0.1,'sine'); playNote(ctx,1200,0.11,0.1,'sine'); },
+      siren:  () => { for(let i=0;i<3;i++) playNote(ctx,800+i*200,i*0.12,0.1,'triangle'); },
+      pulse:  () => { playNote(ctx,1000,0,0.08,'sine'); playNote(ctx,1000,0.1,0.08,'sine'); playNote(ctx,1000,0.2,0.08,'sine'); },
+      ding:   () => { playNote(ctx,1046,0,0.2,'triangle'); },
       none:   () => {},
     };
     (tones[toneName] || tones.chime)();
@@ -3843,6 +3936,49 @@ function previewTone() {
   playTone(tone);
 }
 
+// ── EMAIL NOTIFICATIONS ──
+async function sendEmailNotification(subject, body, type) {
+  if (!notifSettings.emailAddress) return;
+  
+  // Check if this type of email is enabled
+  if (type === 'active' && !notifSettings.emailActive) return;
+  if (type === 'conflict' && !notifSettings.emailConflict) return;
+  if (type === 'lowavail' && !notifSettings.emailLowAvail) return;
+  
+  try {
+    // This is a placeholder - replace with your own backend endpoint
+    // Example using a simple webhook service or your own API:
+    const emailPayload = {
+      to: notifSettings.emailAddress,
+      subject: subject,
+      body: body,
+      timestamp: new Date().toISOString(),
+      app: 'RF Channel Manager',
+      type: type
+    };
+    
+    // Replace this URL with your backend email service
+    // Examples: Firebase Functions, AWS Lambda, SendGrid, Mailgun, etc.
+    const emailServiceUrl = localStorage.getItem('rfEmailServiceUrl') || '';
+    
+    if (emailServiceUrl) {
+      const response = await fetch(emailServiceUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload)
+      });
+      if (response.ok) {
+        console.log('📧 Email notification sent:', subject);
+      }
+    } else {
+      // Fallback: log to console for debugging
+      console.log('📧 Email notification ready (no service configured):', emailPayload);
+    }
+  } catch(e) {
+    console.error('Email send error:', e);
+  }
+}
+
 // ── PUSH NOTIFICATION ──
 function pushNotification(type, text) {
   // Check if this type is enabled
@@ -3863,6 +3999,15 @@ function pushNotification(type, text) {
 
   if (notifSettings.sound !== false) playTone(notifSettings.tone || 'chime');
   if (notifSettings.toast !== false) showToast(notif);
+  
+  // Send email for critical events
+  if (type === 'active') {
+    sendEmailNotification(
+      '🚨 Channel Activated - RF Manager',
+      `${text}\n\nTime: ${getPacificTimeStr(true)}\nApp: RF Channel Manager`,
+      'active'
+    );
+  }
 }
 
 function showToast(notif) {
@@ -3973,7 +4118,7 @@ function diffChannels(newChannels) {
       const prev = prevChannelSnapshot[ch.id];
       if (prev.status !== ch.status) {
         // Status changed
-        const type = ch.status; // active / available / reserved / tactical / interop
+        const type = ch.status; // active / available / reserved / interop
         pushNotification(type, `<span class="log-ch">${ch.designator}</span> status changed: ${statusLabels[prev.status]} → ${statusLabels[ch.status]}`);
       } else if (prev.designator !== ch.designator) {
         pushNotification('updated', `Channel renamed: ${prev.designator} → <span class="log-ch">${ch.designator}</span>`);
@@ -4049,7 +4194,7 @@ function mobileNav(tab) {
           style="font-size:16px;" oninput="document.getElementById('searchBox').value=this.value;renderChannels();"
           value="${document.getElementById('searchBox').value}">
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
-          ${['all','available','active','reserved','tactical','interop'].map(f => `
+          ${['all','available','active','reserved','interop'].map(f => `
             <button class="filter-btn ${currentFilter===f?'active':''}" style="flex:1;min-width:80px;justify-content:center;"
               onclick="setFilter('${f}',this);document.querySelectorAll('#sheetContent .filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');">
               ${f==='all'?'All':`<span class='filter-dot ${f}'></span>${f.charAt(0).toUpperCase()+f.slice(1)}`}
@@ -4170,9 +4315,14 @@ function generateReportHTML() {
 
   const active   = channels.filter(c => c.status === 'active');
   const reserved = channels.filter(c => c.status === 'reserved');
-  const tactical = channels.filter(c => c.status === 'tactical');
   const interop  = channels.filter(c => c.status === 'interop');
   const available= channels.filter(c => c.status === 'available');
+
+  // Talkgroup sections
+  const tgActive    = talkgroups.filter(t => t.status === 'active');
+  const tgAvailable = talkgroups.filter(t => t.status === 'available');
+  const tgInterop   = talkgroups.filter(t => t.status === 'interop');
+  const tgOther     = talkgroups.filter(t => !['active','available','interop'].includes(t.status));
 
   function tableRows(list) {
     if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:8px;">None</td></tr>`;
@@ -4183,6 +4333,18 @@ function generateReportHTML() {
         <td>${ch.function !== '—' ? ch.function : '—'}</td>
         <td>${ch.agency !== '—' ? ch.agency : '—'}</td>
         <td>${ch.notes || '—'}</td>
+      </tr>`).join('');
+  }
+
+  function tgRows(list) {
+    if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:8px;">None</td></tr>`;
+    return list.map(tg => `
+      <tr>
+        <td><strong>${tg.tgId}</strong></td>
+        <td>${tg.system}</td>
+        <td>${tg.name}</td>
+        <td>${tg.agency||'—'}</td>
+        <td>${tg.encryption||'None'} · Pri: ${tg.priority||'Normal'}${tg.notes ? ' · '+tg.notes : ''}</td>
       </tr>`).join('');
   }
 
@@ -4205,38 +4367,81 @@ function generateReportHTML() {
       </table>`;
   }
 
+  function tgSection(title, color, list) {
+    if (!list.length) return '';
+    return `
+      <h3 style="margin:20px 0 8px;font-size:14px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">
+        ${title} (${list.length})
+      </h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#f0f0f0;">
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">TG ID</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">System</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Name / Function</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Agency</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Encryption / Notes</th>
+          </tr>
+        </thead>
+        <tbody>${tgRows(list)}</tbody>
+      </table>`;
+  }
+
   return `
-    <div style="font-family:Arial,sans-serif;color:#111;max-width:800px;margin:0 auto;padding:24px;">
+    <div style="font-family:Arial,sans-serif;color:#111;max-width:860px;margin:0 auto;padding:24px;">
       <div style="text-align:center;border-bottom:3px solid #1e88e5;padding-bottom:16px;margin-bottom:20px;">
         <div style="font-size:22px;font-weight:700;letter-spacing:0.04em;">📡 RF Channel Manager</div>
         <div style="font-size:16px;font-weight:600;margin-top:4px;">Daily Morning Report</div>
         <div style="font-size:13px;color:#555;margin-top:4px;">${date} · Generated ${time}</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;text-align:center;">
+      <!-- Channel summary counters -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;text-align:center;">
         ${[
           { label:'Active',    count:active.length,    color:'#d63031' },
           { label:'Reserved',  count:reserved.length,  color:'#b8860b' },
-          { label:'Tactical',  count:tactical.length,  color:'#0066cc' },
           { label:'Interop',   count:interop.length,   color:'#7b2fbe' },
           { label:'Available', count:available.length, color:'#00875a' },
         ].map(s => `
           <div style="border:1px solid ${s.color};border-radius:6px;padding:10px 6px;">
             <div style="font-size:28px;font-weight:700;color:${s.color};">${s.count}</div>
-            <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">${s.label}</div>
+            <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">${s.label} Channels</div>
           </div>`).join('')}
       </div>
 
+      <!-- Talkgroup summary counters -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;text-align:center;">
+        <div style="border:1px solid #d63031;border-radius:6px;padding:8px 6px;">
+          <div style="font-size:22px;font-weight:700;color:#d63031;">${tgActive.length}</div>
+          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Active Talkgroups</div>
+        </div>
+        <div style="border:1px solid #7b2fbe;border-radius:6px;padding:8px 6px;">
+          <div style="font-size:22px;font-weight:700;color:#7b2fbe;">${tgInterop.length}</div>
+          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Interop Talkgroups</div>
+        </div>
+        <div style="border:1px solid #00875a;border-radius:6px;padding:8px 6px;">
+          <div style="font-size:22px;font-weight:700;color:#00875a;">${tgAvailable.length}</div>
+          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Available Talkgroups</div>
+        </div>
+      </div>
+
+      <h2 style="font-size:16px;margin:0 0 4px;padding:8px 12px;background:#1e88e5;color:#fff;border-radius:4px;">📻 RADIO CHANNELS</h2>
       ${section('Active / Deployed', '#d63031', active)}
       ${section('Reserved (Pre-planned)', '#b8860b', reserved)}
-      ${section('Tactical', '#0066cc', tactical)}
       ${section('Interop / Mutual Aid', '#7b2fbe', interop)}
       ${section('Available', '#00875a', available)}
 
+      <h2 style="font-size:16px;margin:24px 0 4px;padding:8px 12px;background:#555;color:#fff;border-radius:4px;">🔢 TALKGROUPS</h2>
+      ${tgSection('Active Talkgroups', '#d63031', tgActive)}
+      ${tgSection('Interop Talkgroups', '#7b2fbe', tgInterop)}
+      ${tgSection('Available Talkgroups', '#00875a', tgAvailable)}
+      ${tgSection('Other Talkgroups', '#888', tgOther)}
+
       <div style="margin-top:24px;font-size:11px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
-        RF Channel Manager — Public Safety Operations · Auto-generated ${time} PT
+        RF Channel Manager — Public Safety Operations · Auto-generated ${time} PT · ${channels.length} channels · ${talkgroups.length} talkgroups
       </div>
     </div>`;
+}
 }
 
 function sendMorningReport() {
@@ -4455,13 +4660,24 @@ function loadTalkgroups() {
 }
 
 function getDefaultTalkgroups() {
+  // LACoFD talkgroups — these operate on LA-RICS P25 trunked system
   return [
-    { id:'tg1', tgId:'4201', system:'LACRO P25', name:'Fire Command', agency:'LAFD', status:'active', encryption:'AES-256', priority:'High', notes:'Primary fire command talkgroup' },
-    { id:'tg2', tgId:'4202', system:'LACRO P25', name:'Fire Attack', agency:'LAFD', status:'active', encryption:'AES-256', priority:'Normal', notes:'' },
-    { id:'tg3', tgId:'5101', system:'LACRO P25', name:'Law Dispatch', agency:'LAPD', status:'active', encryption:'AES-256', priority:'High', notes:'Encrypted — monitor only' },
-    { id:'tg4', tgId:'6001', system:'LACRO P25', name:'EMS Operations', agency:'AMR', status:'active', encryption:'None', priority:'Normal', notes:'' },
-    { id:'tg5', tgId:'9001', system:'LACRO P25', name:'Interop Calling', agency:'Multi', status:'interop', encryption:'None', priority:'Normal', notes:'VCALL equivalent on P25' },
-    { id:'tg6', tgId:'TG-SAR-1', system:'DMR Site 3', name:'SAR Operations', agency:'SAR Team', status:'tactical', encryption:'None', priority:'High', notes:'' },
+    { id:'tg1',  tgId:'1024',  system:'LA-RICS P25', name:'LAC Fire Dispatch — South Basin',     agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'Trunked dispatch — BN 7,8,9,14,18,21' },
+    { id:'tg2',  tgId:'1025',  system:'LA-RICS P25', name:'LAC Fire Dispatch — San Gabriel',     agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'Trunked dispatch — BN 2,4,10,12,15,16' },
+    { id:'tg3',  tgId:'1026',  system:'LA-RICS P25', name:'LAC Fire Dispatch — West Basin / SMM',agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'Trunked dispatch — BN 1,3,5,13,20,23' },
+    { id:'tg4',  tgId:'1027',  system:'LA-RICS P25', name:'LAC Fire Dispatch — Santa Clarita / AV', agency:'LACoFD', status:'active', encryption:'AES-256', priority:'High',      notes:'Trunked dispatch — BN 6,11,17,22' },
+    { id:'tg5',  tgId:'1032',  system:'LA-RICS P25', name:'LAC Fire Tactical 1',                 agency:'LACoFD', status:'available', encryption:'AES-256', priority:'Normal',    notes:'General fire tactical' },
+    { id:'tg6',  tgId:'1033',  system:'LA-RICS P25', name:'LAC Fire Tactical 2',                 agency:'LACoFD', status:'available', encryption:'AES-256', priority:'Normal',    notes:'General fire tactical' },
+    { id:'tg7',  tgId:'1034',  system:'LA-RICS P25', name:'LAC Fire Tactical 3',                 agency:'LACoFD', status:'available', encryption:'AES-256', priority:'Normal',    notes:'General fire tactical' },
+    { id:'tg8',  tgId:'1040',  system:'LA-RICS P25', name:'LAC EMS / Paramedic Ops',             agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'EMS operations and paramedic coordination' },
+    { id:'tg9',  tgId:'1041',  system:'LA-RICS P25', name:'LAC EMS Medical Control',             agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'Hospital base contact and medical direction' },
+    { id:'tg10', tgId:'1050',  system:'LA-RICS P25', name:'LAC HazMat Operations',               agency:'LACoFD', status:'available', encryption:'AES-256', priority:'Normal',    notes:'HazMat units 43, 76, 105, 129, 150' },
+    { id:'tg11', tgId:'1055',  system:'LA-RICS P25', name:'LAC USAR Operations',                 agency:'LACoFD', status:'available', encryption:'AES-256', priority:'Normal',    notes:'USAR units 103, 130' },
+    { id:'tg12', tgId:'1060',  system:'LA-RICS P25', name:'LAC Air Operations',                  agency:'LACoFD', status:'active',    encryption:'AES-256', priority:'High',      notes:'Helicopters 11-22, Helitanker 731' },
+    { id:'tg13', tgId:'1065',  system:'LA-RICS P25', name:'LAC Wildland / Brush Operations',     agency:'LACoFD', status:'available', encryption:'None',    priority:'Normal',    notes:'Brush patrol and wildland — unencrypted for mutual aid interop' },
+    { id:'tg14', tgId:'1070',  system:'LA-RICS P25', name:'LAC Lifeguard Operations',            agency:'LACoFD Lifeguard', status:'active', encryption:'AES-256', priority:'Normal', notes:'Baywatch and beach lifeguard units' },
+    { id:'tg15', tgId:'9001',  system:'LA-RICS P25', name:'LARICS Interop Calling',              agency:'Multi-Agency', status:'interop', encryption:'None', priority:'Normal',   notes:'Multi-agency interop calling channel — unencrypted' },
+    { id:'tg16', tgId:'9002',  system:'LA-RICS P25', name:'LARICS Interop Tactical',             agency:'Multi-Agency', status:'interop', encryption:'None', priority:'Normal',   notes:'Multi-agency tactical — unencrypted' },
   ];
 }
 
@@ -4757,8 +4973,8 @@ let lowAvailDismissed = false;
 function loadLowAvailSettings() {
   try {
     const s = localStorage.getItem('rfLowAvail');
-    return s ? JSON.parse(s) : { enabled: true, available:2, active:0, reserved:0, tactical:0, interop:0 };
-  } catch(e) { return { enabled: true, available:2, active:0, reserved:0, tactical:0, interop:0 }; }
+    return s ? JSON.parse(s) : { enabled: true, available:2, active:0, reserved:0, interop:0 };
+  } catch(e) { return { enabled: true, available:2, active:0, reserved:0, interop:0 }; }
 }
 
 function saveLowAvailSettings() {
@@ -4767,7 +4983,6 @@ function saveLowAvailSettings() {
     available: parseInt(document.getElementById('lav-available')?.value || 2),
     active:    parseInt(document.getElementById('lav-active')?.value    || 0),
     reserved:  parseInt(document.getElementById('lav-reserved')?.value  || 0),
-    tactical:  parseInt(document.getElementById('lav-tactical')?.value  || 0),
     interop:   parseInt(document.getElementById('lav-interop')?.value   || 0),
   };
   try { localStorage.setItem('rfLowAvail', JSON.stringify(lowAvailSettings)); } catch(e) {}
@@ -4779,7 +4994,6 @@ function openLowAvailSettings() {
   document.getElementById('lav-available').value = lowAvailSettings.available ?? 2;
   document.getElementById('lav-active').value    = lowAvailSettings.active    ?? 0;
   document.getElementById('lav-reserved').value  = lowAvailSettings.reserved  ?? 0;
-  document.getElementById('lav-tactical').value  = lowAvailSettings.tactical  ?? 0;
   document.getElementById('lav-interop').value   = lowAvailSettings.interop   ?? 0;
   document.getElementById('lowAvailSettingsModal').classList.add('open');
 }
@@ -4794,11 +5008,11 @@ function checkLowAvailability() {
     if (banner) banner.classList.add('hidden');
     return;
   }
-  const counts = { available:0, active:0, reserved:0, tactical:0, interop:0 };
+  const counts = { available:0, active:0, reserved:0, interop:0 };
   channels.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
 
   const alerts = [];
-  ['available','active','reserved','tactical','interop'].forEach(s => {
+  ['available','active','reserved','interop'].forEach(s => {
     const threshold = lowAvailSettings[s] ?? 0;
     if (threshold > 0 && counts[s] <= threshold) {
       alerts.push(`${statusLabels[s]}: ${counts[s]} channel${counts[s]!==1?'s':''} (threshold: ${threshold})`);
@@ -4808,8 +5022,14 @@ function checkLowAvailability() {
   if (alerts.length) {
     banner.classList.remove('hidden');
     document.getElementById('lowAvailText').textContent = '⚠ Low channel availability — ' + alerts.join(' · ');
-    // Also push a notification
-    pushNotification('active', `Low availability: ${alerts[0]}`);
+    // Push notification and email
+    const alertMsg = `Low availability: ${alerts[0]}`;
+    pushNotification('active', alertMsg);
+    sendEmailNotification(
+      '⚠ Low Channel Availability - RF Manager',
+      `${alerts.join('\n')}\n\nTime: ${getPacificTimeStr(true)}\nApp: RF Channel Manager`,
+      'lowavail'
+    );
   } else {
     banner.classList.add('hidden');
   }
@@ -5001,7 +5221,7 @@ init();
           Automatically generates a daily channel status report at a set time each morning.
           The report covers all <strong style="color:var(--status-active);">Active</strong>,
           <strong style="color:var(--status-reserved);">Reserved</strong>, and
-          <strong style="color:var(--status-tactical);">Tactical</strong> channels.
+          <strong style="color:var(--status-interop);">Interop</strong> channels.
         </div>
       </div>
 
@@ -5028,15 +5248,17 @@ init();
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <span class="status-pill active">Active / Deployed</span>
           <span class="status-pill reserved">Reserved</span>
-          <span class="status-pill tactical">Tactical</span>
           <span class="status-pill interop">Interop</span>
           <span class="status-pill available">Available</span>
         </div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">Report opens as a printable page — save as PDF from your browser.</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:10px;">
+          Report opens as a printable page — save as PDF from your browser.
+          <br><strong>📱 On Mobile:</strong> Tap menu (☰) → "📋 Morning Report" → Print icon → "Save as PDF" or "Print to file"
+        </div>
       </div>
 
       <div style="padding:10px 20px;background:rgba(255,196,0,0.06);border-top:1px solid rgba(255,196,0,0.15);">
-        <div style="font-size:11px;color:var(--status-reserved);font-family:var(--font-data);">⚠ Report runs while this tab is open. For automated email delivery, SendGrid or similar integration is required.</div>
+        <div style="font-size:11px;color:var(--status-reserved);font-family:var(--font-data);">⚠ Report runs while this tab is open. For automated email delivery, configure email notifications in Notification Settings.</div>
       </div>
 
     </div>
@@ -5085,7 +5307,6 @@ init();
             <option value="available">Available</option>
             <option value="active">Active</option>
             <option value="reserved">Reserved</option>
-            <option value="tactical">Tactical</option>
             <option value="interop">Interop</option>
           </select>
         </div>
@@ -5223,14 +5444,6 @@ init();
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
               <input type="number" min="0" max="99" class="form-input" id="lav-reserved" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
-              <span style="font-size:12px;color:var(--text-dim);">channels</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <span class="status-pill tactical">Tactical</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:12px;color:var(--text-dim);">Alert if ≤</span>
-              <input type="number" min="0" max="99" class="form-input" id="lav-tactical" value="0" style="width:60px;padding:5px 8px;font-size:13px;text-align:center;" onchange="saveLowAvailSettings()">
               <span style="font-size:12px;color:var(--text-dim);">channels</span>
             </div>
           </div>
