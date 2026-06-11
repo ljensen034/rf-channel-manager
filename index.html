@@ -2048,6 +2048,94 @@
     border-radius: 10px;
     white-space: nowrap;
   }
+
+  /* ── RESOURCES MODULE ── */
+  .res-grid-header {
+    display: grid;
+    grid-template-columns: 4px 1fr 110px 120px 1fr 140px 110px 72px;
+    gap: 8px;
+    padding: 4px 12px 8px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .res-row {
+    display: grid;
+    grid-template-columns: 4px 1fr 110px 120px 1fr 140px 110px 72px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 0;
+  }
+  .res-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .res-row-bar   { width: 4px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+  .res-name      { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .res-sub       { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+  .res-cat       { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .res-assign    { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .res-return    { font-family: var(--font-data); font-size: 11px; color: var(--text-secondary); }
+  .res-return.overdue { color: var(--status-active); font-weight: 600; }
+  .res-updated   { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); }
+
+  .res-pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .res-pill.available   { background: rgba(0,230,118,0.12);  color: var(--status-available); border: 1px solid rgba(0,230,118,0.25); }
+  .res-pill.deployed    { background: rgba(255,82,82,0.12);  color: var(--status-active);    border: 1px solid rgba(255,82,82,0.25); }
+  .res-pill.signed-out  { background: rgba(255,196,0,0.12);  color: var(--status-reserved);  border: 1px solid rgba(255,196,0,0.25); }
+  .res-pill.maintenance { background: rgba(206,147,216,0.12);color: var(--status-interop);   border: 1px solid rgba(206,147,216,0.25); }
+  .res-pill.oos         { background: rgba(120,120,120,0.12);color: #888;                    border: 1px solid rgba(120,120,120,0.25); }
+
+  .res-row-bar.available   { background: var(--status-available); }
+  .res-row-bar.deployed    { background: var(--status-active); }
+  .res-row-bar.signed-out  { background: var(--status-reserved); }
+  .res-row-bar.maintenance { background: var(--status-interop); }
+  .res-row-bar.oos         { background: #555; }
+
+  .res-summary-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .res-summary-chip:hover  { border-color: var(--border-lit); }
+  .res-summary-chip.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+  .res-summary-chip .chip-count { font-size: 15px; font-weight: 700; line-height: 1; }
+
+  @media (max-width: 768px) {
+    .res-grid-header { display: none; }
+    .res-row {
+      grid-template-columns: 4px 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 4px 8px;
+    }
+    .res-row > *:nth-child(n+5) { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -2183,6 +2271,20 @@
             <div class="notif-toggle-desc">Alert when channels below threshold</div>
           </div>
           <label class="toggle-switch"><input type="checkbox" id="nt-email-lowavail" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Email on Resource Signed Out</div>
+            <div class="notif-toggle-desc">Alert when a vehicle or equipment is signed out to the field</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-email-res-signout" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-toggle-row">
+          <div class="notif-toggle-info">
+            <div class="notif-toggle-name">Email on Resource Overdue</div>
+            <div class="notif-toggle-desc">Alert when a signed-out resource passes its expected return time</div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="nt-email-res-overdue" onchange="saveNotifSettings()"><span class="toggle-slider"></span></label>
         </div>
       </div>
 
@@ -2415,11 +2517,12 @@
   <div class="main-panel">
 
     <!-- Main view tabs -->
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;">
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;overflow-x:auto;">
       <button class="main-view-tab active" id="mvtab-channels"   onclick="switchMainTab('channels')">📻 Channels</button>
       <button class="main-view-tab"        id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
       <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
       <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
+      <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
     </div>
 
     <!-- ── CHANNELS VIEW ── -->
@@ -2534,6 +2637,55 @@
         </div>
       </div>
       <div id="schedView"></div>
+    </div>
+
+    <!-- ── RESOURCES VIEW ── -->
+    <div id="view-resources" style="display:none;">
+
+      <!-- Toolbar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input class="search-input" type="text" id="resSearchBox" placeholder="Search resources…" oninput="renderResources()" style="width:220px;">
+          <select class="form-select" id="resCategoryFilter" onchange="renderResources()" style="width:160px;font-size:12px;padding:6px 10px;">
+            <option value="all">All Categories</option>
+            <option value="Vehicle">Vehicles</option>
+            <option value="Cache">Cache / Equipment</option>
+            <option value="Personnel">Personnel</option>
+            <option value="Aircraft">Aircraft</option>
+            <option value="Watercraft">Watercraft</option>
+            <option value="Other">Other</option>
+          </select>
+          <select class="form-select" id="resStatusFilter" onchange="renderResources()" style="width:150px;font-size:12px;padding:6px 10px;">
+            <option value="all">All Statuses</option>
+            <option value="available">Available</option>
+            <option value="deployed">Deployed</option>
+            <option value="signed-out">Signed Out</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="oos">Out of Service</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary" style="font-size:12px;padding:5px 12px;" onclick="openResourceCategoryModal()">⚙ Manage Categories</button>
+          <button class="btn-primary"   style="font-size:12px;padding:5px 14px;" onclick="openResourceModal(null)">+ Add Resource</button>
+        </div>
+      </div>
+
+      <!-- Summary strip -->
+      <div id="resSummaryStrip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+      <!-- Grid header -->
+      <div class="res-grid-header">
+        <span></span>
+        <span>Resource / Unit</span>
+        <span>Category</span>
+        <span>Status</span>
+        <span>Assigned To / Location</span>
+        <span>Expected Return</span>
+        <span>Last Updated</span>
+        <span></span>
+      </div>
+      <div id="resourceGrid"></div>
+
     </div>
 
   </div><!-- end main-panel -->
@@ -3528,13 +3680,14 @@ async function doLogin() {
   }
 
   currentUser = {
-    id:        data.user.id,
-    email:     data.user.email,
-    name:      profile.name,
-    role:      profile.role,
-    roleLabel: ROLE_DEFS[profile.role]?.label || profile.role,
-    color:     profile.color || '#1e88e5',
-    active:    profile.active,
+    id:               data.user.id,
+    email:            data.user.email,
+    name:             profile.name,
+    role:             profile.role,
+    roleLabel:        ROLE_DEFS[profile.role]?.label || profile.role,
+    color:            profile.color || '#1e88e5',
+    active:           profile.active,
+    canViewResources: profile.can_view_resources === true || profile.role === 'admin',
   };
 
   onLoginSuccess();
@@ -3573,6 +3726,10 @@ function onLoginSuccess() {
   const mAdminBtn = document.getElementById('mobileAdminBtn');
   if (mAdminBtn) mAdminBtn.style.display = match.role === 'admin' ? 'block' : 'none';
 
+  // Show/hide Resources tab based on per-user permission
+  const resTab = document.getElementById('mvtab-resources');
+  if (resTab) resTab.style.display = match.canViewResources ? '' : 'none';
+
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('topbarUser').innerHTML = `
     <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
@@ -3607,13 +3764,14 @@ async function checkExistingSession() {
   }
 
   currentUser = {
-    id:        session.user.id,
-    email:     session.user.email,
-    name:      profile.name,
-    role:      profile.role,
-    roleLabel: ROLE_DEFS[profile.role]?.label || profile.role,
-    color:     profile.color || '#1e88e5',
-    active:    profile.active,
+    id:               session.user.id,
+    email:            session.user.email,
+    name:             profile.name,
+    role:             profile.role,
+    roleLabel:        ROLE_DEFS[profile.role]?.label || profile.role,
+    color:            profile.color || '#1e88e5',
+    active:           profile.active,
+    canViewResources: profile.can_view_resources === true || profile.role === 'admin',
   };
   onLoginSuccess();
   return true;
@@ -3709,6 +3867,7 @@ function openUserForm(userId) {
     document.getElementById('uf-username').value = u.email || '';
     document.getElementById('uf-role').value     = u.role  || 'viewer';
     document.getElementById('uf-color').value    = u.color || '#1e88e5';
+    document.getElementById('uf-can-resources').checked = u.canViewResources || u.role === 'admin' || false;
     document.getElementById('userFormTitle').textContent = 'Edit User';
     document.getElementById('uf-username').readOnly = true;
     document.getElementById('uf-username').style.opacity = '0.5';
@@ -3719,6 +3878,7 @@ function openUserForm(userId) {
     document.getElementById('uf-username').value = '';
     document.getElementById('uf-role').value     = 'viewer';
     document.getElementById('uf-color').value    = '#1e88e5';
+    document.getElementById('uf-can-resources').checked = false;
     if (document.getElementById('uf-uuid')) document.getElementById('uf-uuid').value = '';
     document.getElementById('userFormTitle').textContent = 'Add New User';
     document.getElementById('uf-username').readOnly = false;
@@ -3755,7 +3915,7 @@ async function saveUserForm() {
   try {
     if (userEditingId) {
       // ── EDIT: update profile fields only ──
-      const updates = { name, role, color };
+      const updates = { name, role, color, can_view_resources: document.getElementById('uf-can-resources').checked };
       const { error: profErr } = await sb.from('profiles').update(updates).eq('id', userEditingId);
       if (profErr) { errEl.textContent = 'Error: ' + profErr.message; return; }
       logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser.name}`);
@@ -3805,7 +3965,7 @@ async function saveUserForm() {
         return;
       }
 
-      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true });
+      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true, can_view_resources: document.getElementById('uf-can-resources').checked });
       if (profErr) { errEl.textContent = 'Profile save failed: ' + profErr.message; return; }
 
       logActivity(`User <span class="log-ch">${name}</span> added by ${currentUser.name}`);
@@ -4050,7 +4210,8 @@ function loadNotifSettings() {
     return s ? JSON.parse(s) : {
       added: true, updated: true, active: true, available: true,
       reserved: true, removed: true, sound: true, toast: true,
-      tone: 'chime', emailAddress: '', emailActive: false, emailConflict: false, emailLowAvail: false
+      tone: 'chime', emailAddress: '', emailActive: false, emailConflict: false, emailLowAvail: false,
+      emailResSignout: false, emailResOverdue: false
     };
   } catch(e) {
     return { added:true, updated:true, active:true, available:true, reserved:true, removed:true, sound:true, toast:true, tone:'chime', emailAddress: '', emailActive: false, emailConflict: false, emailLowAvail: false };
@@ -4072,6 +4233,8 @@ function saveNotifSettings() {
     emailActive: document.getElementById('nt-email-active')?.checked ?? false,
     emailConflict: document.getElementById('nt-email-conflict')?.checked ?? false,
     emailLowAvail: document.getElementById('nt-email-lowavail')?.checked ?? false,
+    emailResSignout: document.getElementById('nt-email-res-signout')?.checked ?? false,
+    emailResOverdue: document.getElementById('nt-email-res-overdue')?.checked ?? false,
   };
   try { localStorage.setItem('rfNotifSettings', JSON.stringify(notifSettings)); } catch(e) {}
 }
@@ -4081,10 +4244,11 @@ function openNotifSettings() {
   const map = { added:'nt-added', updated:'nt-updated', active:'nt-active',
     available:'nt-available', reserved:'nt-reserved', removed:'nt-removed',
     sound:'nt-sound', toast:'nt-toast', emailActive:'nt-email-active',
-    emailConflict:'nt-email-conflict', emailLowAvail:'nt-email-lowavail' };
+    emailConflict:'nt-email-conflict', emailLowAvail:'nt-email-lowavail',
+    emailResSignout:'nt-email-res-signout', emailResOverdue:'nt-email-res-overdue' };
   Object.entries(map).forEach(([k,id]) => {
     const el = document.getElementById(id);
-    if (el) el.checked = notifSettings[k] !== false;
+    if (el) el.checked = !!notifSettings[k];
   });
   const toneEl = document.getElementById('notifToneSelect');
   if (toneEl) toneEl.value = notifSettings.tone || 'chime';
@@ -4141,9 +4305,11 @@ async function sendEmailNotification(subject, body, type) {
   if (!notifSettings.emailAddress) return;
   
   // Check if this type of email is enabled
-  if (type === 'active' && !notifSettings.emailActive) return;
-  if (type === 'conflict' && !notifSettings.emailConflict) return;
-  if (type === 'lowavail' && !notifSettings.emailLowAvail) return;
+  if (type === 'active'      && !notifSettings.emailActive)      return;
+  if (type === 'conflict'    && !notifSettings.emailConflict)    return;
+  if (type === 'lowavail'    && !notifSettings.emailLowAvail)    return;
+  if (type === 'res-signout' && !notifSettings.emailResSignout)  return;
+  if (type === 'res-overdue' && !notifSettings.emailResOverdue)  return;
   
   try {
     // This is a placeholder - replace with your own backend endpoint
@@ -4832,7 +4998,7 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['channels','talkgroups','library','schedule'].forEach(t => {
+  ['channels','talkgroups','library','schedule','resources'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
@@ -4840,6 +5006,243 @@ function switchMainTab(tab) {
   if (tab === 'talkgroups') renderTalkgroups();
   if (tab === 'library')    renderLibrary();
   if (tab === 'schedule')   renderSchedule();
+  if (tab === 'resources')  renderResources();
+}
+
+// ─────────────────────────────────────────────
+// RESOURCES MODULE
+// ─────────────────────────────────────────────
+let resources         = loadResources();
+let resourceEditingId = null;
+let resFilterStatus   = 'all';
+
+const RES_STATUS_LABELS = {
+  available:   'Available',
+  deployed:    'Deployed',
+  'signed-out':'Signed Out',
+  maintenance: 'Maintenance',
+  oos:         'Out of Service',
+};
+
+const RES_CONDITION_ICON = { Good:'🟢', Fair:'🟡', Poor:'🟠', Damaged:'🔴', Unknown:'⚪' };
+
+function loadResources() {
+  try { const s = localStorage.getItem('rfResources'); return s ? JSON.parse(s) : getDefaultResources(); }
+  catch(e) { return getDefaultResources(); }
+}
+
+function saveResources() {
+  try { localStorage.setItem('rfResources', JSON.stringify(resources)); } catch(e) {}
+}
+
+function getDefaultResources() {
+  return [
+    { id:'res1',  name:'Engine 51',         unitId:'E51',        category:'Vehicle',   status:'available',  assignedTo:'',              location:'Station 51',      signedOutBy:'', expectedReturn:'', condition:'Good',    quantity:1, home:'Station 51',    notes:'Primary response engine' },
+    { id:'res2',  name:'Squad 51',          unitId:'S51',        category:'Vehicle',   status:'deployed',   assignedTo:'Incident Cmd',   location:'Malibu Creek St', signedOutBy:'Capt. Rodriguez', expectedReturn:'', condition:'Good',    quantity:1, home:'Station 51',    notes:'' },
+    { id:'res3',  name:'Helitanker 731',    unitId:'HT-731',     category:'Aircraft',  status:'available',  assignedTo:'',              location:'Air Ops Base',    signedOutBy:'', expectedReturn:'', condition:'Good',    quantity:1, home:'Air Ops Base',  notes:'Annual inspection due 08/15' },
+    { id:'res4',  name:'Cache Unit Alpha',  unitId:'CACHE-A',    category:'Cache',     status:'signed-out', assignedTo:'Bn 5 Strike Tm', location:'Deployed',        signedOutBy:'BC Martinez',    expectedReturn:'', condition:'Good',    quantity:1, home:'Logistics Ctr', notes:'Contains 6x portable radios, chargers, spare batteries' },
+    { id:'res5',  name:'Cache Unit Bravo',  unitId:'CACHE-B',    category:'Cache',     status:'available',  assignedTo:'',              location:'Logistics Ctr',   signedOutBy:'', expectedReturn:'', condition:'Fair',    quantity:1, home:'Logistics Ctr', notes:'Portable repeater + antenna kit' },
+    { id:'res6',  name:'Rescue Boat 110',   unitId:'RB-110',     category:'Watercraft',status:'maintenance',assignedTo:'Maint. Shop',   location:'Marina Del Rey',  signedOutBy:'', expectedReturn:'', condition:'Fair',    quantity:1, home:'Sta. 110',       notes:'Engine overhaul in progress' },
+    { id:'res7',  name:'Command Post Unit', unitId:'CPU-1',      category:'Vehicle',   status:'available',  assignedTo:'',              location:'Logistics Ctr',   signedOutBy:'', expectedReturn:'', condition:'Good',    quantity:1, home:'Logistics Ctr', notes:'ICS mobile command trailer' },
+    { id:'res8',  name:'Portable Radios',   unitId:'PORT-RADIO', category:'Cache',     status:'available',  assignedTo:'',              location:'Comms Cache',     signedOutBy:'', expectedReturn:'', condition:'Good',    quantity:24, home:'Comms Cache',   notes:'APX 6000 portables — 24 units in cache' },
+  ];
+}
+
+function renderResources() {
+  const query    = (document.getElementById('resSearchBox')?.value   || '').toLowerCase();
+  const catFilter= (document.getElementById('resCategoryFilter')?.value || 'all');
+  const stFilter = (document.getElementById('resStatusFilter')?.value   || 'all');
+
+  const filtered = resources.filter(r => {
+    if (catFilter !== 'all' && r.category !== catFilter) return false;
+    if (stFilter  !== 'all' && r.status   !== stFilter)  return false;
+    if (query) {
+      return [r.name, r.unitId, r.category, r.status, r.assignedTo, r.location, r.home, r.notes]
+        .some(f => (f||'').toLowerCase().includes(query));
+    }
+    return true;
+  });
+
+  // Summary strip
+  const counts = {};
+  resources.forEach(r => { counts[r.status] = (counts[r.status]||0) + 1; });
+  counts.all = resources.length;
+  const stripEl = document.getElementById('resSummaryStrip');
+  if (stripEl) {
+    const chips = [
+      { key:'all',         label:'All',            color:'var(--text-secondary)' },
+      { key:'available',   label:'Available',       color:'var(--status-available)' },
+      { key:'deployed',    label:'Deployed',        color:'var(--status-active)' },
+      { key:'signed-out',  label:'Signed Out',      color:'var(--status-reserved)' },
+      { key:'maintenance', label:'Maintenance',     color:'var(--status-interop)' },
+      { key:'oos',         label:'Out of Service',  color:'#888' },
+    ].filter(c => c.key === 'all' || (counts[c.key]||0) > 0);
+    stripEl.innerHTML = chips.map(c => `
+      <div class="res-summary-chip${stFilter===c.key?' active':''}" onclick="document.getElementById('resStatusFilter').value='${c.key}';renderResources();">
+        <span class="chip-count" style="color:${c.color};">${counts[c.key]||0}</span>
+        <span>${c.label}</span>
+      </div>`).join('');
+  }
+
+  const grid = document.getElementById('resourceGrid');
+  if (!grid) return;
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-dim);font-size:13px;">No resources match the current filters.<br><span style="font-size:12px;">Click + Add Resource to get started.</span></div>`;
+    return;
+  }
+
+  const now = Date.now();
+  grid.innerHTML = filtered.map(r => {
+    const isOverdue = r.expectedReturn && new Date(r.expectedReturn).getTime() < now && r.status !== 'available';
+    const fmtDT = iso => iso ? new Date(iso).toLocaleString('en-US',{ timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }) : '—';
+    const updStr = r.updatedAt ? new Date(r.updatedAt).toLocaleString('en-US',{ timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }) : '—';
+    const condIcon = RES_CONDITION_ICON[r.condition] || '⚪';
+    const qty = r.quantity > 1 ? `<span style="font-family:var(--font-data);font-size:10px;color:var(--accent);margin-left:4px;">×${r.quantity}</span>` : '';
+    return `
+      <div class="res-row" onclick="openResourceModal('${r.id}')">
+        <div class="res-row-bar ${r.status}"></div>
+        <div>
+          <div class="res-name">${r.name}${qty}</div>
+          <div class="res-sub">${r.unitId||'—'} ${r.home ? '· '+r.home : ''}</div>
+        </div>
+        <div class="res-cat">${r.category}</div>
+        <div><span class="res-pill ${r.status}">${RES_STATUS_LABELS[r.status]||r.status}</span>
+          ${r.condition && r.condition!=='Good' ? `<span style="margin-left:4px;font-size:11px;">${condIcon}</span>` : ''}
+        </div>
+        <div class="res-assign">${r.assignedTo||'—'}${r.location&&r.location!==r.home ? ' · '+r.location : ''}</div>
+        <div class="res-return${isOverdue?' overdue':''}">${isOverdue?'⚠ ':''} ${fmtDT(r.expectedReturn)}</div>
+        <div class="res-updated">${updStr}</div>
+        <div style="display:flex;gap:4px;">
+          <button class="btn-secondary" style="font-size:11px;padding:3px 8px;" onclick="event.stopPropagation();quickStatusCycle('${r.id}')">↻</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Quick-cycle status with one click: available → deployed → signed-out → available
+function quickStatusCycle(id) {
+  const r = resources.find(x => x.id === id);
+  if (!r) return;
+  const cycle = ['available','deployed','signed-out','maintenance','oos'];
+  const next = cycle[(cycle.indexOf(r.status)+1) % cycle.length];
+  r.status = next;
+  r.updatedAt = new Date().toISOString();
+  r.updatedBy = currentUser?.name || 'Unknown';
+  saveResources();
+  renderResources();
+  logActivity(`Resource <span class="log-ch">${r.name}</span> → ${RES_STATUS_LABELS[next]}`);
+}
+
+function openResourceModal(id) {
+  resourceEditingId = id;
+  const deleteBtn = document.getElementById('rm-delete-btn');
+
+  if (id) {
+    const r = resources.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('resourceModalTitle').textContent = 'Edit Resource';
+    document.getElementById('rm-name').value             = r.name            || '';
+    document.getElementById('rm-unit-id').value          = r.unitId          || '';
+    document.getElementById('rm-category').value         = r.category        || 'Vehicle';
+    document.getElementById('rm-status').value           = r.status          || 'available';
+    document.getElementById('rm-assigned-to').value      = r.assignedTo      || '';
+    document.getElementById('rm-location').value         = r.location        || '';
+    document.getElementById('rm-signed-out-by').value    = r.signedOutBy     || '';
+    document.getElementById('rm-expected-return').value  = r.expectedReturn ? toLocalDatetimeInput(r.expectedReturn) : '';
+    document.getElementById('rm-condition').value        = r.condition       || 'Good';
+    document.getElementById('rm-quantity').value         = r.quantity        || 1;
+    document.getElementById('rm-home').value             = r.home            || '';
+    document.getElementById('rm-notes').value            = r.notes           || '';
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+  } else {
+    document.getElementById('resourceModalTitle').textContent = 'Add Resource';
+    ['rm-name','rm-unit-id','rm-assigned-to','rm-location','rm-signed-out-by','rm-home','rm-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('rm-category').value  = 'Vehicle';
+    document.getElementById('rm-status').value    = 'available';
+    document.getElementById('rm-condition').value = 'Good';
+    document.getElementById('rm-quantity').value  = 1;
+    document.getElementById('rm-expected-return').value = '';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
+  toggleReturnFields();
+  document.getElementById('resourceModal').classList.add('open');
+}
+
+function closeResourceModal() {
+  document.getElementById('resourceModal').classList.remove('open');
+  resourceEditingId = null;
+}
+
+// Show/hide assignment + checkout rows based on status
+function toggleReturnFields() {
+  const st = document.getElementById('rm-status')?.value || 'available';
+  const showAssign   = st !== 'available';
+  const showCheckout = st === 'signed-out' || st === 'deployed';
+  document.getElementById('rm-assign-row').style.display   = showAssign   ? 'grid' : 'none';
+  document.getElementById('rm-checkout-row').style.display = showCheckout ? 'grid' : 'none';
+}
+
+function saveResource() {
+  const name = document.getElementById('rm-name').value.trim();
+  if (!name) { alert('Resource Name is required.'); return; }
+
+  const status = document.getElementById('rm-status').value;
+  const expReturnV = document.getElementById('rm-expected-return').value;
+  const data = {
+    name,
+    unitId:         document.getElementById('rm-unit-id').value.trim(),
+    category:       document.getElementById('rm-category').value,
+    status,
+    assignedTo:     document.getElementById('rm-assigned-to').value.trim(),
+    location:       document.getElementById('rm-location').value.trim(),
+    signedOutBy:    document.getElementById('rm-signed-out-by').value.trim(),
+    expectedReturn: expReturnV ? ptInputToISO(expReturnV) : '',
+    condition:      document.getElementById('rm-condition').value,
+    quantity:       parseInt(document.getElementById('rm-quantity').value)||1,
+    home:           document.getElementById('rm-home').value.trim(),
+    notes:          document.getElementById('rm-notes').value.trim(),
+    updatedAt:      new Date().toISOString(),
+    updatedBy:      currentUser?.name || 'Unknown',
+  };
+
+  if (resourceEditingId) {
+    const prev = resources.find(r => r.id === resourceEditingId);
+    const prevStatus = prev?.status;
+    const idx = resources.findIndex(r => r.id === resourceEditingId);
+    resources[idx] = { ...resources[idx], ...data };
+    logActivity(`Resource <span class="log-ch">${name}</span> updated — ${RES_STATUS_LABELS[status]}`);
+    // Email on sign-out
+    if ((status === 'signed-out' || status === 'deployed') && prevStatus !== status) {
+      sendEmailNotification(
+        `🚒 Resource Signed Out — ${name}`,
+        `Resource: ${name} (${data.unitId||'—'})\nStatus: ${RES_STATUS_LABELS[status]}\nAssigned To: ${data.assignedTo||'—'}\nLocation: ${data.location||'—'}\nSigned Out By: ${data.signedOutBy||'—'}\nExpected Return: ${data.expectedReturn ? new Date(data.expectedReturn).toLocaleString('en-US',{timeZone:'America/Los_Angeles'}) : '—'}\n\nUpdated by: ${data.updatedBy}\nTime: ${getPacificTimeStr(true)}`,
+        'res-signout'
+      );
+    }
+  } else {
+    resources.push({ id: 'res' + Date.now(), ...data });
+    logActivity(`Resource <span class="log-ch">${name}</span> added — ${RES_STATUS_LABELS[status]}`);
+  }
+
+  saveResources();
+  closeResourceModal();
+  renderResources();
+}
+
+function deleteResource(id) {
+  const r = resources.find(x => x.id === id);
+  if (!r || !confirm(`Remove "${r.name}" from resources?`)) return;
+  resources = resources.filter(x => x.id !== id);
+  saveResources();
+  logActivity(`Resource <span class="log-ch">${r.name}</span> removed`);
+  closeResourceModal();
+  renderResources();
+}
+
+// Stub — category management UI can be added later
+function openResourceCategoryModal() {
+  alert('Category management coming soon. Current categories: Vehicle, Cache / Equipment, Personnel, Aircraft, Watercraft, Other.');
 }
 
 // ─────────────────────────────────────────────
@@ -5021,7 +5424,7 @@ function renderSchedList() {
       // Status badges
       const badges = [
         r.emailed205   ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.15);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">205 ✓</span>` : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.08);color:var(--text-dim);border:1px solid var(--border);">205 pending</span>`,
-        r.comlNotified ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.15);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">COML ✓</span>` : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.08);color:var(--text-dim);border:1px solid var(--border);">COML pending</span>`,
+        r.comlNotified ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.15);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">LACC ✓</span>` : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.08);color:var(--text-dim);border:1px solid var(--border);">LACC pending</span>`,
       ].join('');
 
       return `<div class="sched-list-item${now?' active-now':''}" onclick="openSchedModal('${r.id}')">
@@ -5057,7 +5460,7 @@ function openSchedModal(id) {
   schedEditingId = id;
   const deleteBtn = document.getElementById('sr-delete-btn');
 
-  // Populate channel dropdown
+  // Populate multi-select channel list
   const sel = document.getElementById('sr-channel');
   sel.innerHTML = channels.map(c =>
     `<option value="${c.id}" data-designator="${c.designator}">${c.designator} — ${c.freq} MHz</option>`
@@ -5077,8 +5480,9 @@ function openSchedModal(id) {
     document.getElementById('sr-coml-notified').checked      = r.comlNotified || false;
     document.getElementById('sr-start').value                = toLocalDatetimeInput(r.start);
     document.getElementById('sr-end').value                  = toLocalDatetimeInput(r.end);
-    const opt = [...sel.options].find(o => o.value == r.channelId);
-    if (opt) sel.value = r.channelId;
+    // Restore multi-channel selection — channelIds is an array; channelId is legacy single
+    const ids = r.channelIds || (r.channelId ? [r.channelId] : []);
+    [...sel.options].forEach(o => { o.selected = ids.includes(o.value); });
     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
   } else {
     document.getElementById('schedModalTitle').textContent   = 'New Reservation';
@@ -5090,7 +5494,7 @@ function openSchedModal(id) {
     document.getElementById('sr-notes').value                = '';
     document.getElementById('sr-205-emailed').checked        = false;
     document.getElementById('sr-coml-notified').checked      = false;
-    // Default: tomorrow 08:00–17:00 PT
+    [...sel.options].forEach(o => { o.selected = false; });
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const ds = tomorrow.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
@@ -5122,13 +5526,19 @@ function saveReservation() {
   const title   = document.getElementById('sr-title').value.trim();
   const startV  = document.getElementById('sr-start').value;
   const endV    = document.getElementById('sr-end').value;
-  const chId    = document.getElementById('sr-channel').value;
+  const sel     = document.getElementById('sr-channel');
   const errEl   = document.getElementById('sr-conflict-warn');
   errEl.style.display = 'none';
 
-  if (!title)  { errEl.textContent = '⚠ Title is required.';           errEl.style.display='block'; return; }
-  if (!startV) { errEl.textContent = '⚠ Start date/time is required.'; errEl.style.display='block'; return; }
-  if (!endV)   { errEl.textContent = '⚠ End date/time is required.';   errEl.style.display='block'; return; }
+  // Gather selected channel IDs and designators
+  const selectedOpts = [...sel.options].filter(o => o.selected);
+  const channelIds   = selectedOpts.map(o => o.value);
+  const channelDesignators = selectedOpts.map(o => o.dataset.designator || o.text.split(' — ')[0]);
+
+  if (!title)             { errEl.textContent = '⚠ Title is required.';             errEl.style.display='block'; return; }
+  if (!channelIds.length) { errEl.textContent = '⚠ Select at least one channel.';   errEl.style.display='block'; return; }
+  if (!startV)            { errEl.textContent = '⚠ Start date/time is required.';   errEl.style.display='block'; return; }
+  if (!endV)              { errEl.textContent = '⚠ End date/time is required.';     errEl.style.display='block'; return; }
 
   const startISO = ptInputToISO(startV);
   const endISO   = ptInputToISO(endV);
@@ -5137,26 +5547,31 @@ function saveReservation() {
     errEl.textContent = '⚠ End time must be after start time.'; errEl.style.display='block'; return;
   }
 
-  const ch = channels.find(c => c.id == chId);
-  const chDesignator = ch ? ch.designator : '';
-
-  // Conflict check against other reservations on the same channel
-  const conflicts = reservations.filter(r =>
-    r.id !== schedEditingId &&
-    r.channelId == chId &&
-    new Date(r.start) < new Date(endISO) &&
-    new Date(r.end)   > new Date(startISO)
-  );
-  if (conflicts.length) {
-    errEl.textContent = `⚠ Overlaps with: ${conflicts.map(r => `"${r.title}"`).join(', ')}`;
+  // Conflict check — each selected channel against other reservations
+  const conflictMsgs = [];
+  channelIds.forEach(chId => {
+    const conflicts = reservations.filter(r =>
+      r.id !== schedEditingId &&
+      (r.channelIds || [r.channelId]).includes(chId) &&
+      new Date(r.start) < new Date(endISO) &&
+      new Date(r.end)   > new Date(startISO)
+    );
+    if (conflicts.length) {
+      const ch = channels.find(c => c.id == chId);
+      conflictMsgs.push(`${ch?.designator || chId}: overlaps "${conflicts.map(r=>r.title).join('", "')}"`);
+    }
+  });
+  if (conflictMsgs.length) {
+    errEl.textContent = '⚠ Conflicts: ' + conflictMsgs.join(' · ');
     errEl.style.display = 'block';
     return;
   }
 
   const data = {
     title,
-    channelId:         chId,
-    channelDesignator: chDesignator,
+    channelIds,                              // new: array
+    channelId: channelIds[0] || '',          // legacy compat: keep first for week-view rendering
+    channelDesignator: channelDesignators.join(', '),
     start:          startISO,
     end:            endISO,
     requestor:      document.getElementById('sr-requestor').value.trim(),
@@ -5174,7 +5589,7 @@ function saveReservation() {
     logActivity(`Reservation "<span class="log-ch">${title}</span>" updated`);
   } else {
     reservations.push({ id: 'rsv' + Date.now(), ...data });
-    logActivity(`Reservation "<span class="log-ch">${title}</span>" scheduled on ${chDesignator}`);
+    logActivity(`Reservation "<span class="log-ch">${title}</span>" scheduled — ${channelDesignators.join(', ')}`);
   }
 
   saveReservations();
@@ -5242,6 +5657,30 @@ function applyScheduledReservations() {
 
 // Run auto-scheduling check every minute
 setInterval(applyScheduledReservations, 60000);
+
+// ── RESOURCE OVERDUE CHECKER ──
+function checkOverdueResources() {
+  const now = Date.now();
+  resources.forEach(r => {
+    if (!r.expectedReturn) return;
+    if (r.status !== 'signed-out' && r.status !== 'deployed') return;
+    const returnTime = new Date(r.expectedReturn).getTime();
+    // Only fire once — mark as notified to avoid repeated alerts
+    if (returnTime < now && !r._overdueNotified) {
+      r._overdueNotified = true;
+      saveResources();
+      pushNotification('active', `⏰ Overdue: <span class="log-ch">${r.name}</span> — expected return has passed`);
+      sendEmailNotification(
+        `⚠ Resource Overdue — ${r.name}`,
+        `Resource: ${r.name} (${r.unitId||'—'})\nExpected Return: ${new Date(r.expectedReturn).toLocaleString('en-US',{timeZone:'America/Los_Angeles'})}\nAssigned To: ${r.assignedTo||'—'}\nSigned Out By: ${r.signedOutBy||'—'}\n\nTime: ${getPacificTimeStr(true)}`,
+        'res-overdue'
+      );
+    }
+    // Reset notified flag when status returns to available
+    if (r.status === 'available') r._overdueNotified = false;
+  });
+}
+setInterval(checkOverdueResources, 60000);
 
 // ─────────────────────────────────────────────
 // TALKGROUP MANAGEMENT
@@ -5676,6 +6115,7 @@ async function init() {
   scheduleMorningReport();
   checkLowAvailability();
   applyScheduledReservations();
+  checkOverdueResources();
 }
 
 // Re-render on resize/orientation change
@@ -5761,6 +6201,23 @@ init();
             ⚠ Could not auto-detect this user's UUID. Paste it below from Supabase Dashboard → Authentication → Users → click the user → copy the UUID at the top.
           </div>
           <input class="form-input" id="uf-uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:var(--font-data);font-size:12px;width:100%;">
+        </div>
+
+        <!-- Module Permissions -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Module Access</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+              <div>
+                <div style="font-size:13px;color:var(--text-primary);font-weight:500;">🚒 Resources Tab</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Vehicle, cache &amp; equipment status tracking</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="uf-can-resources" onchange="">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div id="uf-error" style="color:var(--status-active);font-size:12px;font-family:var(--font-data);margin-top:8px;min-height:18px;"></div>
@@ -5982,15 +6439,19 @@ init();
     </div>
     <div class="modal-body">
 
-      <!-- Row 1: Title + Resource -->
-      <div class="form-row">
+      <!-- Row 1: Title -->
+      <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Incident / Event Title *</label>
           <input class="form-input" id="sr-title" placeholder="e.g. Malibu Marathon, Strike Team Staging">
         </div>
+      </div>
+
+      <!-- Row 1b: Multi-channel selector -->
+      <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">Channel *</label>
-          <select class="form-select" id="sr-channel"></select>
+          <label class="form-label">Channels * <span style="font-weight:400;color:var(--text-dim);">(hold Ctrl/Cmd to select multiple)</span></label>
+          <select class="form-select" id="sr-channel" multiple style="height:110px;font-family:var(--font-data);font-size:12px;"></select>
         </div>
       </div>
 
@@ -6006,7 +6467,7 @@ init();
         </div>
       </div>
 
-      <!-- Row 3: Requestor + Priority -->
+      <!-- Row 3: Requestor + Agency -->
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Requestor</label>
@@ -6018,11 +6479,11 @@ init();
         </div>
       </div>
 
-      <!-- Row 4: COML + Priority -->
+      <!-- Row 4: COML Assigning + Priority -->
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">COML Assigned</label>
-          <input class="form-input" id="sr-coml" placeholder="Name of Communications Unit Leader filling request">
+          <label class="form-label">COML Assigning</label>
+          <input class="form-input" id="sr-coml" placeholder="Name of COML assigning this request">
         </div>
         <div class="form-field">
           <label class="form-label">Priority</label>
@@ -6035,7 +6496,7 @@ init();
       </div>
 
       <!-- Row 5: Checkboxes -->
-      <div style="display:flex;gap:24px;align-items:center;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:4px 0;">
+      <div style="display:flex;gap:24px;align-items:center;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:4px 0;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="checkbox" id="sr-205-emailed" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
           <div>
@@ -6046,8 +6507,8 @@ init();
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="checkbox" id="sr-coml-notified" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
           <div>
-            <div style="font-size:13px;color:var(--text-primary);font-weight:500;">COML Notified</div>
-            <div style="font-size:11px;color:var(--text-dim);">Comm Unit Leader confirmed assignment</div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500;">LACC Notified</div>
+            <div style="font-size:11px;color:var(--text-dim);">Fire Command &amp; Control notified</div>
           </div>
         </label>
       </div>
@@ -6189,6 +6650,104 @@ init();
     </div>
     <div class="modal-footer">
       <button class="btn-primary" onclick="closeLowAvailSettings()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESOURCE ITEM MODAL ── -->
+<div class="modal-overlay" id="resourceModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div class="modal-title" id="resourceModalTitle">Add Resource</div>
+      <button class="modal-close" onclick="closeResourceModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Resource Name *</label>
+          <input class="form-input" id="rm-name" placeholder="e.g. Engine 51, Cache Unit A, Helitanker 731">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Unit / Asset ID</label>
+          <input class="form-input" id="rm-unit-id" placeholder="e.g. E51, LACoFD-HT731, CACHE-A">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Category *</label>
+          <select class="form-select" id="rm-category">
+            <option value="Vehicle">Vehicle</option>
+            <option value="Cache">Cache / Equipment</option>
+            <option value="Personnel">Personnel</option>
+            <option value="Aircraft">Aircraft</option>
+            <option value="Watercraft">Watercraft</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Status *</label>
+          <select class="form-select" id="rm-status" onchange="toggleReturnFields()">
+            <option value="available">Available</option>
+            <option value="deployed">Deployed</option>
+            <option value="signed-out">Signed Out</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="oos">Out of Service</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" id="rm-assign-row">
+        <div class="form-field">
+          <label class="form-label">Assigned To</label>
+          <input class="form-input" id="rm-assigned-to" placeholder="Unit, person, or incident name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Current Location / Deployment</label>
+          <input class="form-input" id="rm-location" placeholder="Station, incident, staging area…">
+        </div>
+      </div>
+      <div class="form-row" id="rm-checkout-row">
+        <div class="form-field">
+          <label class="form-label">Signed Out By</label>
+          <input class="form-input" id="rm-signed-out-by" placeholder="Name / badge / unit">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Expected Return</label>
+          <input class="form-input" id="rm-expected-return" type="datetime-local">
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-field">
+          <label class="form-label">Condition</label>
+          <select class="form-select" id="rm-condition">
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Quantity / Count</label>
+          <input class="form-input" id="rm-quantity" type="number" min="1" value="1">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Home Station / Cache</label>
+          <input class="form-input" id="rm-home" placeholder="Station 7, Warehouse B…">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes / Contents / Special Instructions</label>
+          <textarea class="form-textarea" id="rm-notes" placeholder="Maintenance due, special handling, inventory contents, contact info…" style="height:68px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="rm-delete-btn" style="display:none;" onclick="deleteResource(resourceEditingId)">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeResourceModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveResource()">Save Resource</button>
+      </div>
     </div>
   </div>
 </div>
