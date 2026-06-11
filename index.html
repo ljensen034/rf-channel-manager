@@ -1904,6 +1904,150 @@
     font-size: 12px;
     line-height: 1.8;
   }
+
+  /* ── SCHEDULE ── */
+  .sched-nav-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .sched-nav-btn:hover { border-color: var(--border-lit); color: var(--text-primary); }
+
+  .sched-view-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-data);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .sched-view-btn.active { background: var(--accent); color: #fff; }
+  .sched-view-btn:not(.active):hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+  /* Week grid */
+  .sched-week-grid {
+    display: grid;
+    grid-template-columns: 52px repeat(7, 1fr);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .sched-day-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 4px;
+    text-align: center;
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .sched-day-header.today { color: var(--accent); border-bottom-color: var(--accent); }
+  .sched-day-header .day-num {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    line-height: 1.2;
+  }
+  .sched-day-header.today .day-num { color: var(--accent); }
+  .sched-time-col {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+  }
+  .sched-time-label {
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .sched-day-col {
+    border-right: 1px solid var(--border);
+    position: relative;
+    background: var(--bg-deep);
+  }
+  .sched-day-col:last-child { border-right: none; }
+  .sched-hour-cell {
+    height: 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .sched-hour-cell.half { border-bottom-style: dashed; border-bottom-color: rgba(255,255,255,0.02); }
+  .sched-event {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: 3px;
+    padding: 3px 5px;
+    font-size: 10px;
+    line-height: 1.3;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    z-index: 1;
+  }
+  .sched-event:hover { opacity: 0.85; }
+  .sched-event .ev-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sched-event .ev-ch    { opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* List view */
+  .sched-list-group { margin-bottom: 18px; }
+  .sched-list-date {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 0 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .sched-list-date.today-label { color: var(--accent); border-bottom-color: var(--accent); }
+  .sched-list-item {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .sched-list-item:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .sched-list-item.active-now { border-left: 3px solid var(--status-active); }
+  .sched-list-time { font-family: var(--font-data); font-size: 11px; color: var(--text-secondary); }
+  .sched-list-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .sched-list-ch { font-family: var(--font-data); font-size: 11px; color: var(--accent); margin-top:2px; }
+  .sched-list-agency { font-size: 11px; color: var(--text-dim); }
+  .sched-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .sched-status-chip {
+    font-family: var(--font-data);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -2272,9 +2416,10 @@
 
     <!-- Main view tabs -->
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;">
-      <button class="main-view-tab active" id="mvtab-channels" onclick="switchMainTab('channels')">📻 Channels</button>
-      <button class="main-view-tab" id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
-      <button class="main-view-tab" id="mvtab-library" onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
+      <button class="main-view-tab active" id="mvtab-channels"   onclick="switchMainTab('channels')">📻 Channels</button>
+      <button class="main-view-tab"        id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
+      <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
+      <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
     </div>
 
     <!-- ── CHANNELS VIEW ── -->
@@ -2369,6 +2514,26 @@
         </div>
       </div>
       <div id="libraryGrid" class="channel-grid"></div>
+    </div>
+
+    <!-- ── SCHEDULE VIEW ── -->
+    <div id="view-schedule" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="sched-nav-btn" onclick="schedNav(-1)">‹</button>
+          <span id="schedWeekLabel" style="font-family:var(--font-data);font-size:13px;color:var(--text-primary);min-width:220px;text-align:center;"></span>
+          <button class="sched-nav-btn" onclick="schedNav(1)">›</button>
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="schedGoToday()">Today</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+            <button class="sched-view-btn active" id="svbtn-week" onclick="setSchedView('week')">Week</button>
+            <button class="sched-view-btn"        id="svbtn-list" onclick="setSchedView('list')">List</button>
+          </div>
+          <button class="btn-primary" style="font-size:12px;padding:5px 14px;" onclick="openSchedModal(null)">+ New Reservation</button>
+        </div>
+      </div>
+      <div id="schedView"></div>
     </div>
 
   </div><!-- end main-panel -->
@@ -3529,29 +3694,46 @@ function renderUserTable() {
 function openUserForm(userId) {
   userEditingId = userId || null;
   document.getElementById('userFormSection').style.display = 'block';
+  document.getElementById('uf-error').textContent = '';
+  document.getElementById('uf-error').style.color = 'var(--status-active)';
+
+  const uuidRow = document.getElementById('uf-uuid-row');
+  const instructions = document.getElementById('uf-instructions');
+  if (uuidRow) uuidRow.style.display = 'none';
+
   if (userId) {
+    // Editing existing user — no instructions needed, no UUID field
     const u = allProfiles.find(x => x.id === userId);
     if (!u) return;
-    document.getElementById('uf-name').value     = u.name || '';
+    document.getElementById('uf-name').value     = u.name  || '';
     document.getElementById('uf-username').value = u.email || '';
-    document.getElementById('uf-role').value     = u.role || 'viewer';
+    document.getElementById('uf-role').value     = u.role  || 'viewer';
     document.getElementById('uf-color').value    = u.color || '#1e88e5';
-    document.getElementById('uf-password').value = '';
-    document.getElementById('uf-password').placeholder = 'Leave blank to keep current';
     document.getElementById('userFormTitle').textContent = 'Edit User';
+    document.getElementById('uf-username').readOnly = true;
+    document.getElementById('uf-username').style.opacity = '0.5';
+    if (instructions) instructions.style.display = 'none';
   } else {
-    ['uf-name','uf-username','uf-password'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('uf-role').value  = 'viewer';
-    document.getElementById('uf-color').value = '#1e88e5';
-    document.getElementById('uf-password').placeholder = 'Set password (required)';
+    // Adding new user — show instructions
+    document.getElementById('uf-name').value     = '';
+    document.getElementById('uf-username').value = '';
+    document.getElementById('uf-role').value     = 'viewer';
+    document.getElementById('uf-color').value    = '#1e88e5';
+    if (document.getElementById('uf-uuid')) document.getElementById('uf-uuid').value = '';
     document.getElementById('userFormTitle').textContent = 'Add New User';
+    document.getElementById('uf-username').readOnly = false;
+    document.getElementById('uf-username').style.opacity = '1';
+    if (instructions) instructions.style.display = 'block';
   }
-  document.getElementById('uf-error').textContent = '';
   document.getElementById('uf-name').focus();
 }
 
 function closeUserForm() {
   document.getElementById('userFormSection').style.display = 'none';
+  const uuidRow = document.getElementById('uf-uuid-row');
+  if (uuidRow) uuidRow.style.display = 'none';
+  document.getElementById('uf-username').readOnly = false;
+  document.getElementById('uf-username').style.opacity = '1';
   userEditingId = null;
 }
 
@@ -3560,9 +3742,9 @@ async function saveUserForm() {
   const email    = document.getElementById('uf-username').value.trim().toLowerCase();
   const role     = document.getElementById('uf-role').value;
   const color    = document.getElementById('uf-color').value;
-  const password = document.getElementById('uf-password').value.trim();
   const errEl    = document.getElementById('uf-error');
   errEl.textContent = '';
+  errEl.style.color = 'var(--status-active)';
 
   if (!name || !email) { errEl.textContent = 'Name and email are required.'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email address.'; return; }
@@ -3572,43 +3754,61 @@ async function saveUserForm() {
 
   try {
     if (userEditingId) {
-      // Update profile fields
+      // ── EDIT: update profile fields only ──
       const updates = { name, role, color };
       const { error: profErr } = await sb.from('profiles').update(updates).eq('id', userEditingId);
       if (profErr) { errEl.textContent = 'Error: ' + profErr.message; return; }
-
-      // Update password if provided (admin uses service role — note: signInWithPassword won't work here)
-      // We use Supabase admin API via edge function if available; otherwise inform admin
-      if (password) {
-        errEl.textContent = '⚠ Password changes require the user to use "Forgot Password" or be updated in the Supabase dashboard.';
-        errEl.style.color = 'var(--status-reserved)';
-      }
-
       logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser.name}`);
+
     } else {
-      // Create new Supabase auth user via admin API
-      // Since we're in a browser (no service role), we use signUp and immediately create the profile
-      if (!password) { errEl.textContent = 'Password is required for new users.'; return; }
-
-      const { data: newUser, error: signUpErr } = await sb.auth.admin.createUser({
-        email, password, email_confirm: true,
-        user_metadata: { name }
-      });
-
-      // Fallback: if admin API not available, use signUp
-      let userId = newUser?.user?.id;
-      if (signUpErr || !userId) {
-        const { data: signUpData, error: suErr } = await sb.auth.signUp({ email, password });
-        if (suErr) { errEl.textContent = 'Error creating user: ' + suErr.message; return; }
-        userId = signUpData?.user?.id;
+      // ── ADD: look up auth user by email, then insert profile ──
+      // Step 1: find the auth user ID that matches the email
+      // We try the profiles table first (if email column exists), then fall back to a login probe
+      const { data: existingProfiles } = await sb.from('profiles').select('id, email').eq('email', email);
+      if (existingProfiles && existingProfiles.length > 0) {
+        errEl.textContent = '⚠ A profile with this email already exists.'; return;
       }
 
-      if (!userId) { errEl.textContent = 'Could not create user — check Supabase dashboard.'; return; }
+      // Step 2: check if an auth user exists for this email via a lookup
+      // Since we can't call auth.admin from the browser, we ask the admin to have
+      // pre-created the auth user. We look up the UUID by matching against auth.users
+      // via the profiles.email column, or we accept a manual UUID entry.
+      const manualUUID = document.getElementById('uf-uuid')?.value.trim();
+      
+      let userId = null;
 
-      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, active: true });
-      if (profErr) { errEl.textContent = 'User created but profile failed: ' + profErr.message; return; }
+      if (manualUUID && /^[0-9a-f-]{36}$/i.test(manualUUID)) {
+        // Admin supplied the UUID from Supabase dashboard
+        userId = manualUUID;
+      } else {
+        // Try to discover the UUID: sign in temporarily won't work (would kick the admin out)
+        // Instead, attempt a direct profiles lookup to find any existing auth user with this email
+        // by checking the Supabase auth metadata endpoint
+        try {
+          const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+            headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+          });
+          if (res.ok) {
+            const authData = await res.json();
+            const match = (authData.users || []).find(u => u.email === email);
+            if (match) userId = match.id;
+          }
+        } catch(e) { /* admin endpoint not accessible with anon key, expected */ }
+      }
 
-      logActivity(`User <span class="log-ch">${name}</span> created by ${currentUser.name}`);
+      if (!userId) {
+        errEl.style.color = 'var(--status-reserved)';
+        errEl.textContent = '⚠ Auth user not found. Please create this user in Supabase Dashboard → Authentication → Users first, then paste their UUID below.';
+        // Show the UUID input
+        const uuidRow = document.getElementById('uf-uuid-row');
+        if (uuidRow) uuidRow.style.display = 'flex';
+        return;
+      }
+
+      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true });
+      if (profErr) { errEl.textContent = 'Profile save failed: ' + profErr.message; return; }
+
+      logActivity(`User <span class="log-ch">${name}</span> added by ${currentUser.name}`);
     }
 
     await loadAllProfiles();
@@ -4307,80 +4507,84 @@ function checkMorningReport() {
 }
 
 function generateReportHTML() {
-  const date = new Date().toLocaleDateString('en-US', {
+  // Date/time context in PT
+  const reportDate = new Date();
+  const dateLabel  = reportDate.toLocaleDateString('en-US', {
     timeZone: 'America/Los_Angeles',
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-  const time = getPacificTimeStr(false);
+  const todayISO = reportDate.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }); // YYYY-MM-DD
+  const time     = getPacificTimeStr(false);
 
+  // ── CHANNELS: only active and reserved ──
   const active   = channels.filter(c => c.status === 'active');
   const reserved = channels.filter(c => c.status === 'reserved');
-  const interop  = channels.filter(c => c.status === 'interop');
-  const available= channels.filter(c => c.status === 'available');
 
-  // Talkgroup sections
-  const tgActive    = talkgroups.filter(t => t.status === 'active');
-  const tgAvailable = talkgroups.filter(t => t.status === 'available');
-  const tgInterop   = talkgroups.filter(t => t.status === 'interop');
-  const tgOther     = talkgroups.filter(t => !['active','available','interop'].includes(t.status));
+  // ── TALKGROUPS: active + reserved, filtered to today or no date set ──
+  const tgActive   = talkgroups.filter(t => t.status === 'active'   && (!t.date || t.date === todayISO));
+  const tgReserved = talkgroups.filter(t => t.status === 'reserved' && (!t.date || t.date === todayISO));
 
-  function tableRows(list) {
-    if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:8px;">None</td></tr>`;
+  function chRows(list) {
+    if (!list.length) return `<tr><td colspan="6" style="text-align:center;color:#888;padding:10px;font-style:italic;">None</td></tr>`;
     return list.map(ch => `
       <tr>
-        <td><strong>${ch.designator}</strong></td>
-        <td>${ch.freq} MHz</td>
+        <td style="white-space:nowrap;"><strong>${ch.designator}</strong></td>
+        <td style="font-family:monospace;white-space:nowrap;">${ch.freq} MHz</td>
+        <td style="font-family:monospace;font-size:11px;color:#555;white-space:nowrap;">${ch.rxFreq && ch.rxFreq !== ch.freq ? ch.rxFreq + ' MHz' : '—'}</td>
         <td>${ch.function !== '—' ? ch.function : '—'}</td>
-        <td>${ch.agency !== '—' ? ch.agency : '—'}</td>
+        <td>${ch.tone || '—'}</td>
         <td>${ch.notes || '—'}</td>
       </tr>`).join('');
   }
 
   function tgRows(list) {
-    if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:8px;">None</td></tr>`;
-    return list.map(tg => `
+    if (!list.length) return `<tr><td colspan="5" style="text-align:center;color:#888;padding:10px;font-style:italic;">None</td></tr>`;
+    return list.map(tg => {
+      const dateTag = tg.date ? `<span style="font-size:10px;color:#888;margin-left:4px;">(${tg.date})</span>` : '';
+      return `
       <tr>
-        <td><strong>${tg.tgId}</strong></td>
-        <td>${tg.system}</td>
-        <td>${tg.name}</td>
-        <td>${tg.agency||'—'}</td>
-        <td>${tg.encryption||'None'} · Pri: ${tg.priority||'Normal'}${tg.notes ? ' · '+tg.notes : ''}</td>
-      </tr>`).join('');
+        <td style="font-family:monospace;white-space:nowrap;"><strong>${tg.tgId}</strong></td>
+        <td>${tg.name}${dateTag}</td>
+        <td>${tg.system || '—'}</td>
+        <td>${tg.agency || '—'}</td>
+        <td style="font-size:11px;">${tg.encryption !== 'None' ? '🔒 ' + tg.encryption : 'Clear'} · ${tg.priority || 'Normal'}${tg.notes ? ' · ' + tg.notes : ''}</td>
+      </tr>`;
+    }).join('');
   }
 
-  function section(title, color, list) {
+  function chSection(title, color, list) {
     return `
-      <h3 style="margin:20px 0 8px;font-size:14px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">
-        ${title} (${list.length})
+      <h3 style="margin:18px 0 6px;font-size:13px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.07em;">
+        ${title} <span style="font-weight:400;font-size:11px;">(${list.length})</span>
       </h3>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
-          <tr style="background:#f0f0f0;">
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Channel</th>
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Frequency</th>
+          <tr style="background:#f0f4f8;">
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">Channel</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">TX Freq</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">RX Freq</th>
             <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Function</th>
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Agency</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">Tone / NAC</th>
             <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Notes</th>
           </tr>
         </thead>
-        <tbody>${tableRows(list)}</tbody>
+        <tbody>${chRows(list)}</tbody>
       </table>`;
   }
 
   function tgSection(title, color, list) {
-    if (!list.length) return '';
     return `
-      <h3 style="margin:20px 0 8px;font-size:14px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">
-        ${title} (${list.length})
+      <h3 style="margin:18px 0 6px;font-size:13px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.07em;">
+        ${title} <span style="font-weight:400;font-size:11px;">(${list.length})</span>
       </h3>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead>
-          <tr style="background:#f0f0f0;">
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">TG ID</th>
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">System</th>
+          <tr style="background:#f0f4f8;">
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">TG ID</th>
             <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Name / Function</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;white-space:nowrap;">System</th>
             <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Agency</th>
-            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Encryption / Notes</th>
+            <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;">Enc · Priority · Notes</th>
           </tr>
         </thead>
         <tbody>${tgRows(list)}</tbody>
@@ -4388,60 +4592,52 @@ function generateReportHTML() {
   }
 
   return `
-    <div style="font-family:Arial,sans-serif;color:#111;max-width:860px;margin:0 auto;padding:24px;">
-      <div style="text-align:center;border-bottom:3px solid #1e88e5;padding-bottom:16px;margin-bottom:20px;">
-        <div style="font-size:22px;font-weight:700;letter-spacing:0.04em;">📡 RF Channel Manager</div>
-        <div style="font-size:16px;font-weight:600;margin-top:4px;">Daily Morning Report</div>
-        <div style="font-size:13px;color:#555;margin-top:4px;">${date} · Generated ${time}</div>
+    <div style="font-family:Arial,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:24px;">
+
+      <div style="text-align:center;border-bottom:3px solid #1565c0;padding-bottom:14px;margin-bottom:18px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">Los Angeles County Fire Department</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:0.03em;">Daily Morning Report</div>
+        <div style="font-size:13px;color:#444;margin-top:4px;">${dateLabel}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">Generated ${time} PT</div>
       </div>
 
-      <!-- Channel summary counters -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;text-align:center;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;text-align:center;">
         ${[
-          { label:'Active',    count:active.length,    color:'#d63031' },
-          { label:'Reserved',  count:reserved.length,  color:'#b8860b' },
-          { label:'Interop',   count:interop.length,   color:'#7b2fbe' },
-          { label:'Available', count:available.length, color:'#00875a' },
+          { label:'Active Channels',    count:active.length,    color:'#c0392b' },
+          { label:'Reserved Channels',  count:reserved.length,  color:'#b8860b' },
+          { label:'Active TGs Today',   count:tgActive.length,  color:'#c0392b' },
+          { label:'Reserved TGs Today', count:tgReserved.length,color:'#b8860b' },
         ].map(s => `
-          <div style="border:1px solid ${s.color};border-radius:6px;padding:10px 6px;">
-            <div style="font-size:28px;font-weight:700;color:${s.color};">${s.count}</div>
-            <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">${s.label} Channels</div>
+          <div style="border:2px solid ${s.color};border-radius:6px;padding:10px 6px;">
+            <div style="font-size:26px;font-weight:700;color:${s.color};line-height:1;">${s.count}</div>
+            <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;margin-top:4px;">${s.label}</div>
           </div>`).join('')}
       </div>
 
-      <!-- Talkgroup summary counters -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;text-align:center;">
-        <div style="border:1px solid #d63031;border-radius:6px;padding:8px 6px;">
-          <div style="font-size:22px;font-weight:700;color:#d63031;">${tgActive.length}</div>
-          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Active Talkgroups</div>
-        </div>
-        <div style="border:1px solid #7b2fbe;border-radius:6px;padding:8px 6px;">
-          <div style="font-size:22px;font-weight:700;color:#7b2fbe;">${tgInterop.length}</div>
-          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Interop Talkgroups</div>
-        </div>
-        <div style="border:1px solid #00875a;border-radius:6px;padding:8px 6px;">
-          <div style="font-size:22px;font-weight:700;color:#00875a;">${tgAvailable.length}</div>
-          <div style="font-size:10px;text-transform:uppercase;color:#555;letter-spacing:0.06em;">Available Talkgroups</div>
-        </div>
+      <div style="background:#1565c0;color:#fff;font-size:13px;font-weight:700;padding:7px 12px;border-radius:4px;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">
+        📻 Radio Channels
+      </div>
+      ${chSection('Active / Deployed', '#c0392b', active)}
+      ${chSection('Reserved (Pre-planned)', '#b8860b', reserved)}
+
+      <div style="background:#444;color:#fff;font-size:13px;font-weight:700;padding:7px 12px;border-radius:4px;margin:22px 0 2px;text-transform:uppercase;letter-spacing:0.06em;">
+        🔢 Talkgroups — ${dateLabel}
+      </div>
+      ${tgSection('Active Talkgroups', '#c0392b', tgActive)}
+      ${tgSection('Reserved Talkgroups', '#b8860b', tgReserved)}
+      ${(tgActive.length + tgReserved.length) === 0 ? `
+        <div style="padding:14px;text-align:center;color:#888;font-size:12px;border:1px dashed #ccc;border-radius:4px;margin-top:8px;">
+          No active or reserved talkgroups are assigned for ${todayISO}.<br>
+          Set an operational date on talkgroups to have them appear here.
+        </div>` : ''}
+
+      <div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
+        RF Channel Manager — LACoFD Public Safety Operations &nbsp;·&nbsp; ${channels.length} total channels &nbsp;·&nbsp; ${talkgroups.length} total talkgroups &nbsp;·&nbsp; Auto-generated ${time} PT
       </div>
 
-      <h2 style="font-size:16px;margin:0 0 4px;padding:8px 12px;background:#1e88e5;color:#fff;border-radius:4px;">📻 RADIO CHANNELS</h2>
-      ${section('Active / Deployed', '#d63031', active)}
-      ${section('Reserved (Pre-planned)', '#b8860b', reserved)}
-      ${section('Interop / Mutual Aid', '#7b2fbe', interop)}
-      ${section('Available', '#00875a', available)}
-
-      <h2 style="font-size:16px;margin:24px 0 4px;padding:8px 12px;background:#555;color:#fff;border-radius:4px;">🔢 TALKGROUPS</h2>
-      ${tgSection('Active Talkgroups', '#d63031', tgActive)}
-      ${tgSection('Interop Talkgroups', '#7b2fbe', tgInterop)}
-      ${tgSection('Available Talkgroups', '#00875a', tgAvailable)}
-      ${tgSection('Other Talkgroups', '#888', tgOther)}
-
-      <div style="margin-top:24px;font-size:11px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
-        RF Channel Manager — Public Safety Operations · Auto-generated ${time} PT · ${channels.length} channels · ${talkgroups.length} talkgroups
-      </div>
     </div>`;
 }
+
 
 function sendMorningReport() {
   // Display the report in a print-ready modal/window
@@ -4636,14 +4832,416 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['channels','talkgroups','library'].forEach(t => {
+  ['channels','talkgroups','library','schedule'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'talkgroups') renderTalkgroups();
   if (tab === 'library')    renderLibrary();
+  if (tab === 'schedule')   renderSchedule();
 }
+
+// ─────────────────────────────────────────────
+// SCHEDULE / RESERVATIONS
+// ─────────────────────────────────────────────
+let reservations    = loadReservations();
+let schedViewMode   = 'week';         // 'week' | 'list'
+let schedWeekOffset = 0;              // 0 = current week
+let schedEditingId  = null;
+
+const SCHED_COLORS = {
+  Normal:    { bg:'rgba(30,136,229,0.75)',   text:'#fff' },
+  High:      { bg:'rgba(255,196,0,0.85)',     text:'#111' },
+  Emergency: { bg:'rgba(255,82,82,0.90)',     text:'#fff' },
+};
+
+function loadReservations() {
+  try { const s = localStorage.getItem('rfReservations'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+function saveReservations() {
+  try { localStorage.setItem('rfReservations', JSON.stringify(reservations)); } catch(e) {}
+}
+
+// Return the Monday of the week that is `offset` weeks from today
+function getWeekStart(offset) {
+  const now = new Date();
+  const pt  = new Date(now.toLocaleString('en-US', { timeZone:'America/Los_Angeles' }));
+  const day = pt.getDay(); // 0=Sun
+  const diffToMon = (day === 0) ? -6 : 1 - day;
+  const mon = new Date(pt);
+  mon.setDate(pt.getDate() + diffToMon + offset * 7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+function schedNav(dir) { schedWeekOffset += dir; renderSchedule(); }
+function schedGoToday() { schedWeekOffset = 0; renderSchedule(); }
+function setSchedView(v) {
+  schedViewMode = v;
+  document.getElementById('svbtn-week')?.classList.toggle('active', v === 'week');
+  document.getElementById('svbtn-list')?.classList.toggle('active', v === 'list');
+  renderSchedule();
+}
+
+function renderSchedule() {
+  schedViewMode === 'week' ? renderSchedWeek() : renderSchedList();
+}
+
+function renderSchedWeek() {
+  const weekStart = getWeekStart(schedWeekOffset);
+  const days = Array.from({length:7}, (_,i) => {
+    const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
+  });
+
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const fmt = d => d.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric' });
+  const weekLabel = `${fmt(days[0])} – ${fmt(days[6])} ${days[0].getFullYear()}`;
+  document.getElementById('schedWeekLabel').textContent = weekLabel;
+
+  const HOURS = Array.from({length:24}, (_,i) => i);
+  const PX_PER_HOUR = 48;
+
+  // Header row
+  const dayHeaders = days.map((d, i) => {
+    const dStr = d.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    const isToday = dStr === todayStr;
+    const dayName = d.toLocaleDateString('en-US', { weekday:'short' });
+    const dayNum  = d.toLocaleDateString('en-US', { day:'numeric' });
+    return `<div class="sched-day-header${isToday?' today':''}">
+      <span style="font-size:11px;">${dayName}</span>
+      <span class="day-num">${dayNum}</span>
+    </div>`;
+  }).join('');
+
+  // Time labels column
+  const timeLabels = HOURS.map(h =>
+    `<div class="sched-time-label">${h === 0 ? '' : String(h).padStart(2,'0') + ':00'}</div>`
+  ).join('');
+
+  // Day columns with events
+  const dayCols = days.map(d => {
+    const dStr = d.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    // Get reservations that overlap this day
+    const dayRes = reservations.filter(r => {
+      const rs = new Date(r.start), re = new Date(r.end);
+      const ds = new Date(dStr), de = new Date(dStr);
+      de.setDate(de.getDate() + 1);
+      return rs < de && re > ds;
+    });
+
+    const hourCells = HOURS.map(h =>
+      `<div class="sched-hour-cell"></div>`
+    ).join('');
+
+    const events = dayRes.map(r => {
+      const rs = new Date(r.start), re = new Date(r.end);
+      const dayMidnight = new Date(dStr);
+      const startOfDay = Math.max(rs, dayMidnight);
+      const endOfDay   = Math.min(re, new Date(new Date(dStr).setDate(new Date(dStr).getDate()+1)));
+      const startMins  = (startOfDay - dayMidnight) / 60000;
+      const durMins    = (endOfDay - startOfDay) / 60000;
+      const top    = (startMins / 60) * PX_PER_HOUR;
+      const height = Math.max(18, (durMins / 60) * PX_PER_HOUR - 2);
+      const col    = SCHED_COLORS[r.priority] || SCHED_COLORS.Normal;
+      const isNow  = isActiveNow(r);
+      return `<div class="sched-event" style="top:${top}px;height:${height}px;background:${col.bg};color:${col.text};${isNow?'box-shadow:0 0 0 2px #fff4;':''}"
+        onclick="openSchedModal('${r.id}')" title="${r.title}${r.requestor ? '\nReq: '+r.requestor : ''}${r.coml ? '\nCOML: '+r.coml : ''}">
+        <div class="ev-title">${r.title}</div>
+        <div class="ev-ch">${r.channelDesignator || '—'}${r.requestor ? ' · '+r.requestor : ''}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="sched-day-col" style="height:${PX_PER_HOUR*24}px;">
+      ${hourCells}
+      ${events}
+    </div>`;
+  }).join('');
+
+  document.getElementById('schedView').innerHTML = `
+    <div style="overflow-y:auto;max-height:calc(100vh - 240px);">
+      <div class="sched-week-grid">
+        <div class="sched-time-col" style="grid-row:1;"></div>
+        ${dayHeaders}
+        <div class="sched-time-col" style="grid-row:2;">${timeLabels}</div>
+        ${dayCols}
+      </div>
+    </div>`;
+}
+
+function renderSchedList() {
+  const weekStart = getWeekStart(schedWeekOffset);
+  const weekEnd   = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
+  const todayStr  = new Date().toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+
+  document.getElementById('schedWeekLabel').textContent = (() => {
+    const days = Array.from({length:7}, (_,i) => { const d = new Date(weekStart); d.setDate(d.getDate()+i); return d; });
+    const fmt = d => d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return `${fmt(days[0])} – ${fmt(days[6])} ${days[0].getFullYear()}`;
+  })();
+
+  // Group reservations by date within the week, plus all future
+  const upcoming = reservations
+    .filter(r => new Date(r.end) > new Date())
+    .sort((a,b) => new Date(a.start) - new Date(b.start));
+
+  if (!upcoming.length) {
+    document.getElementById('schedView').innerHTML = `
+      <div class="sched-empty">
+        📅 No upcoming reservations<br>
+        <span style="font-size:12px;color:var(--text-dim);">Click + New Reservation to schedule a channel for a future date</span>
+      </div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  upcoming.forEach(r => {
+    const ds = new Date(r.start).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    if (!byDate[ds]) byDate[ds] = [];
+    byDate[ds].push(r);
+  });
+
+  const html = Object.entries(byDate).map(([ds, items]) => {
+    const isToday = ds === todayStr;
+    const label = isToday ? 'Today — ' + new Date(ds+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})
+      : new Date(ds+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    const rows = items.map(r => {
+      const col  = SCHED_COLORS[r.priority] || SCHED_COLORS.Normal;
+      const now  = isActiveNow(r);
+      const fmtT = dt => new Date(dt).toLocaleTimeString('en-US',{ timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
+
+      // Build meta line: requestor, agency, COML
+      const metaParts = [];
+      if (r.requestor) metaParts.push(`Req: ${r.requestor}`);
+      if (r.agency)    metaParts.push(r.agency);
+      if (r.coml)      metaParts.push(`COML: ${r.coml}`);
+
+      // Status badges
+      const badges = [
+        r.emailed205   ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.15);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">205 ✓</span>` : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.08);color:var(--text-dim);border:1px solid var(--border);">205 pending</span>`,
+        r.comlNotified ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.15);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">COML ✓</span>` : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.08);color:var(--text-dim);border:1px solid var(--border);">COML pending</span>`,
+      ].join('');
+
+      return `<div class="sched-list-item${now?' active-now':''}" onclick="openSchedModal('${r.id}')">
+        <div class="sched-list-time">${fmtT(r.start)}<br><span style="color:var(--text-dim);">→ ${fmtT(r.end)}</span></div>
+        <div>
+          <div class="sched-list-title">${r.title}</div>
+          <div class="sched-list-ch">${r.channelDesignator || '—'}</div>
+          ${metaParts.length ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${metaParts.join(' · ')}</div>` : ''}
+          ${r.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;font-style:italic;">${r.notes}</div>` : ''}
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;">${badges}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="sched-status-chip" style="background:${col.bg};color:${col.text};">${r.priority}</span>
+          ${now ? `<span class="sched-status-chip" style="background:rgba(255,82,82,0.15);color:var(--status-active);border:1px solid rgba(255,82,82,0.3);">ACTIVE NOW</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="sched-list-group">
+      <div class="sched-list-date${isToday?' today-label':''}">${label}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  document.getElementById('schedView').innerHTML = `<div style="padding-bottom:24px;">${html}</div>`;
+}
+
+function isActiveNow(r) {
+  const now = Date.now();
+  return new Date(r.start).getTime() <= now && new Date(r.end).getTime() >= now;
+}
+
+function openSchedModal(id) {
+  schedEditingId = id;
+  const deleteBtn = document.getElementById('sr-delete-btn');
+
+  // Populate channel dropdown
+  const sel = document.getElementById('sr-channel');
+  sel.innerHTML = channels.map(c =>
+    `<option value="${c.id}" data-designator="${c.designator}">${c.designator} — ${c.freq} MHz</option>`
+  ).join('');
+
+  if (id) {
+    const r = reservations.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('schedModalTitle').textContent   = 'Edit Reservation';
+    document.getElementById('sr-title').value                = r.title        || '';
+    document.getElementById('sr-requestor').value            = r.requestor    || '';
+    document.getElementById('sr-agency').value               = r.agency       || '';
+    document.getElementById('sr-coml').value                 = r.coml         || '';
+    document.getElementById('sr-priority').value             = r.priority     || 'Normal';
+    document.getElementById('sr-notes').value                = r.notes        || '';
+    document.getElementById('sr-205-emailed').checked        = r.emailed205   || false;
+    document.getElementById('sr-coml-notified').checked      = r.comlNotified || false;
+    document.getElementById('sr-start').value                = toLocalDatetimeInput(r.start);
+    document.getElementById('sr-end').value                  = toLocalDatetimeInput(r.end);
+    const opt = [...sel.options].find(o => o.value == r.channelId);
+    if (opt) sel.value = r.channelId;
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+  } else {
+    document.getElementById('schedModalTitle').textContent   = 'New Reservation';
+    document.getElementById('sr-title').value                = '';
+    document.getElementById('sr-requestor').value            = '';
+    document.getElementById('sr-agency').value               = '';
+    document.getElementById('sr-coml').value                 = '';
+    document.getElementById('sr-priority').value             = 'Normal';
+    document.getElementById('sr-notes').value                = '';
+    document.getElementById('sr-205-emailed').checked        = false;
+    document.getElementById('sr-coml-notified').checked      = false;
+    // Default: tomorrow 08:00–17:00 PT
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const ds = tomorrow.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    document.getElementById('sr-start').value = `${ds}T08:00`;
+    document.getElementById('sr-end').value   = `${ds}T17:00`;
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
+  document.getElementById('sr-conflict-warn').style.display = 'none';
+  document.getElementById('schedModal').classList.add('open');
+}
+
+function closeSchedModal() {
+  document.getElementById('schedModal').classList.remove('open');
+  schedEditingId = null;
+}
+
+// Convert an ISO string to the value format for datetime-local input (YYYY-MM-DDTHH:MM) in PT
+function toLocalDatetimeInput(iso) {
+  const d = new Date(iso);
+  const pt = d.toLocaleString('en-US', { timeZone:'America/Los_Angeles',
+    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false });
+  // pt format: MM/DD/YYYY, HH:MM
+  const [datePart, timePart] = pt.split(', ');
+  const [m, dd, yyyy] = datePart.split('/');
+  return `${yyyy}-${m}-${dd}T${timePart.replace('24:','00:')}`;
+}
+
+function saveReservation() {
+  const title   = document.getElementById('sr-title').value.trim();
+  const startV  = document.getElementById('sr-start').value;
+  const endV    = document.getElementById('sr-end').value;
+  const chId    = document.getElementById('sr-channel').value;
+  const errEl   = document.getElementById('sr-conflict-warn');
+  errEl.style.display = 'none';
+
+  if (!title)  { errEl.textContent = '⚠ Title is required.';           errEl.style.display='block'; return; }
+  if (!startV) { errEl.textContent = '⚠ Start date/time is required.'; errEl.style.display='block'; return; }
+  if (!endV)   { errEl.textContent = '⚠ End date/time is required.';   errEl.style.display='block'; return; }
+
+  const startISO = ptInputToISO(startV);
+  const endISO   = ptInputToISO(endV);
+
+  if (new Date(endISO) <= new Date(startISO)) {
+    errEl.textContent = '⚠ End time must be after start time.'; errEl.style.display='block'; return;
+  }
+
+  const ch = channels.find(c => c.id == chId);
+  const chDesignator = ch ? ch.designator : '';
+
+  // Conflict check against other reservations on the same channel
+  const conflicts = reservations.filter(r =>
+    r.id !== schedEditingId &&
+    r.channelId == chId &&
+    new Date(r.start) < new Date(endISO) &&
+    new Date(r.end)   > new Date(startISO)
+  );
+  if (conflicts.length) {
+    errEl.textContent = `⚠ Overlaps with: ${conflicts.map(r => `"${r.title}"`).join(', ')}`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const data = {
+    title,
+    channelId:         chId,
+    channelDesignator: chDesignator,
+    start:          startISO,
+    end:            endISO,
+    requestor:      document.getElementById('sr-requestor').value.trim(),
+    agency:         document.getElementById('sr-agency').value.trim(),
+    coml:           document.getElementById('sr-coml').value.trim(),
+    priority:       document.getElementById('sr-priority').value,
+    emailed205:     document.getElementById('sr-205-emailed').checked,
+    comlNotified:   document.getElementById('sr-coml-notified').checked,
+    notes:          document.getElementById('sr-notes').value.trim(),
+  };
+
+  if (schedEditingId) {
+    const idx = reservations.findIndex(r => r.id === schedEditingId);
+    reservations[idx] = { ...reservations[idx], ...data };
+    logActivity(`Reservation "<span class="log-ch">${title}</span>" updated`);
+  } else {
+    reservations.push({ id: 'rsv' + Date.now(), ...data });
+    logActivity(`Reservation "<span class="log-ch">${title}</span>" scheduled on ${chDesignator}`);
+  }
+
+  saveReservations();
+  closeSchedModal();
+  renderSchedule();
+  applyScheduledReservations();
+}
+
+function deleteReservation(id) {
+  const r = reservations.find(x => x.id === id);
+  if (!r || !confirm(`Delete reservation "${r.title}"?`)) return;
+  reservations = reservations.filter(x => x.id !== id);
+  saveReservations();
+  logActivity(`Reservation "<span class="log-ch">${r.title}</span>" deleted`);
+  closeSchedModal();
+  renderSchedule();
+}
+
+// Convert a datetime-local input value (YYYY-MM-DDTHH:MM, interpreted as PT) to UTC ISO string
+function ptInputToISO(localStr) {
+  // Create a date from the local string, then get UTC by treating it as PT
+  // We format it as if it were local and convert via the PT timezone offset
+  const [datePart, timePart] = localStr.split('T');
+  const [yyyy, mm, dd] = datePart.split('-').map(Number);
+  const [hh, min]      = timePart.split(':').map(Number);
+  // Use Intl to get offset for this exact moment in PT
+  const probe   = new Date(Date.UTC(yyyy, mm-1, dd, hh, min));
+  const ptStr   = probe.toLocaleString('en-US', { timeZone:'America/Los_Angeles', timeZoneName:'short' });
+  const isDST   = ptStr.includes('PDT');
+  const offset  = isDST ? 7 : 8; // PDT = UTC-7, PST = UTC-8
+  return new Date(Date.UTC(yyyy, mm-1, dd, hh + offset, min)).toISOString();
+}
+
+// Auto-activate/release channels based on schedules — called on init and every minute
+function applyScheduledReservations() {
+  const now = Date.now();
+  let changed = false;
+
+  reservations.forEach(r => {
+    const start = new Date(r.start).getTime();
+    const end   = new Date(r.end).getTime();
+    const ch    = channels.find(c => c.id == r.channelId);
+    if (!ch) return;
+
+    if (start <= now && end > now) {
+      // Should be active now — set to reserved (marks it as in-use)
+      if (ch.status === 'available') {
+        sb.from('channels').update({
+          status: 'reserved',
+          function: r.title,
+          agency:   r.agency || ch.agency,
+          updated_by: 'Schedule',
+          updated_at: new Date().toISOString()
+        }).eq('id', ch.id).then(({ error }) => {
+          if (!error) {
+            logActivityLocal(`⏰ Schedule activated: <span class="log-ch">${ch.designator}</span> → Reserved for "${r.title}"`);
+            pushNotification('reserved', `⏰ Scheduled reservation started: ${ch.designator} — ${r.title}`);
+          }
+        });
+        changed = true;
+      }
+    }
+  });
+}
+
+// Run auto-scheduling check every minute
+setInterval(applyScheduledReservations, 60000);
 
 // ─────────────────────────────────────────────
 // TALKGROUP MANAGEMENT
@@ -4713,24 +5311,29 @@ function renderTalkgroups() {
 
 function openTalkgroupModal(id) {
   tgEditingId = id;
+  // Default date field to today in PT
+  const todayPT = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }); // YYYY-MM-DD
   if (id) {
     const tg = talkgroups.find(x => x.id === id);
     if (!tg) return;
     document.getElementById('tgModalTitle').textContent = 'Edit Talkgroup';
-    document.getElementById('tg-id').value         = tg.tgId || '';
-    document.getElementById('tg-system').value     = tg.system || '';
-    document.getElementById('tg-name').value       = tg.name || '';
-    document.getElementById('tg-agency').value     = tg.agency || '';
-    document.getElementById('tg-status').value     = tg.status || 'available';
-    document.getElementById('tg-encryption').value = tg.encryption || 'None';
-    document.getElementById('tg-priority').value   = tg.priority || 'Normal';
-    document.getElementById('tg-notes').value      = tg.notes || '';
+    document.getElementById('tg-id').value             = tg.tgId || '';
+    document.getElementById('tg-system').value         = tg.system || '';
+    document.getElementById('tg-name').value           = tg.name || '';
+    document.getElementById('tg-agency').value         = tg.agency || '';
+    document.getElementById('tg-status').value         = tg.status || 'available';
+    document.getElementById('tg-encryption').value     = tg.encryption || 'None';
+    document.getElementById('tg-priority').value       = tg.priority || 'Normal';
+    document.getElementById('tg-date').value           = tg.date || '';
+    document.getElementById('tg-notes-inline').value   = tg.notes || '';
+    document.getElementById('tg-notes').value          = tg.notes || '';
   } else {
     document.getElementById('tgModalTitle').textContent = 'Add Talkgroup';
-    ['tg-id','tg-system','tg-name','tg-agency','tg-notes'].forEach(id => document.getElementById(id).value = '');
+    ['tg-id','tg-system','tg-name','tg-agency','tg-notes-inline','tg-notes'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('tg-status').value     = 'available';
     document.getElementById('tg-encryption').value = 'None';
     document.getElementById('tg-priority').value   = 'Normal';
+    document.getElementById('tg-date').value       = todayPT;
   }
   document.getElementById('talkgroupModal').classList.add('open');
 }
@@ -4746,13 +5349,16 @@ function saveTalkgroup() {
   const name   = document.getElementById('tg-name').value.trim();
   if (!tgId || !name) { alert('Talkgroup ID and Name are required.'); return; }
   const who = currentUser?.name || 'Unknown';
+  // tg-notes-inline is the visible field; keep tg-notes in sync
+  const notes = document.getElementById('tg-notes-inline').value.trim() || document.getElementById('tg-notes').value.trim();
   const data = {
     tgId, system, name,
     agency:     document.getElementById('tg-agency').value.trim(),
     status:     document.getElementById('tg-status').value,
     encryption: document.getElementById('tg-encryption').value,
     priority:   document.getElementById('tg-priority').value,
-    notes:      document.getElementById('tg-notes').value.trim(),
+    date:       document.getElementById('tg-date').value || '',
+    notes,
   };
   if (tgEditingId) {
     const idx = talkgroups.findIndex(x => x.id === tgEditingId);
@@ -5069,6 +5675,7 @@ async function init() {
   subscribeRealtime();
   scheduleMorningReport();
   checkLowAvailability();
+  applyScheduledReservations();
 }
 
 // Re-render on resize/orientation change
@@ -5108,10 +5715,20 @@ init();
 
       <!-- Add / Edit form (hidden by default) -->
       <div id="userFormSection" style="display:none;border-top:1px solid var(--border);margin-top:16px;padding:16px 20px;background:var(--bg-card);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div id="userFormTitle" style="font-family:var(--font-data);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-primary);">Add New User</div>
           <button class="modal-close" onclick="closeUserForm()" style="font-size:16px;">✕</button>
         </div>
+
+        <!-- New-user instructions (only shown when adding, not editing) -->
+        <div id="uf-instructions" style="background:rgba(30,136,229,0.08);border:1px solid rgba(30,136,229,0.25);border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
+          <strong style="color:var(--accent);font-family:var(--font-data);">Step 1 — Create the auth account first:</strong><br>
+          Go to <strong>Supabase Dashboard → Authentication → Users → Add User</strong> and enter the email + password.<br>
+          Then come back here and fill in this form — the app will link the profile automatically by email.
+          <br><br>
+          <strong style="color:var(--accent);font-family:var(--font-data);">Step 2 — If the email lookup fails</strong>, paste the user's UUID from the Supabase Users list into the field that appears.
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div class="form-field">
             <label class="form-label">Full Name *</label>
@@ -5130,10 +5747,6 @@ init();
             </select>
           </div>
           <div class="form-field">
-            <label class="form-label">Password *</label>
-            <input class="form-input" id="uf-password" type="password" placeholder="Set password">
-          </div>
-          <div class="form-field">
             <label class="form-label">Avatar Color</label>
             <div style="display:flex;align-items:center;gap:10px;">
               <input type="color" id="uf-color" value="#1e88e5" style="width:40px;height:34px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);cursor:pointer;padding:2px;">
@@ -5141,6 +5754,15 @@ init();
             </div>
           </div>
         </div>
+
+        <!-- UUID fallback row — hidden until needed -->
+        <div id="uf-uuid-row" style="display:none;margin-top:12px;gap:10px;align-items:flex-start;flex-direction:column;">
+          <div style="font-size:12px;color:var(--status-reserved);font-family:var(--font-data);">
+            ⚠ Could not auto-detect this user's UUID. Paste it below from Supabase Dashboard → Authentication → Users → click the user → copy the UUID at the top.
+          </div>
+          <input class="form-input" id="uf-uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:var(--font-data);font-size:12px;width:100%;">
+        </div>
+
         <div id="uf-error" style="color:var(--status-active);font-size:12px;font-family:var(--font-data);margin-top:8px;min-height:18px;"></div>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <button class="btn-primary" onclick="saveUserForm()">Save User</button>
@@ -5328,9 +5950,18 @@ init();
           </select>
         </div>
       </div>
-      <div class="form-row single">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Operational Date <span style="color:var(--text-dim);font-weight:400;">(for morning report filtering)</span></label>
+          <input class="form-input" id="tg-date" type="date">
+        </div>
         <div class="form-field">
           <label class="form-label">Notes</label>
+          <input class="form-input" id="tg-notes-inline" placeholder="Patch info, scan lists, special instructions…">
+        </div>
+      </div>
+      <div class="form-row single" style="display:none;">
+        <div class="form-field">
           <textarea class="form-textarea" id="tg-notes" placeholder="Patch info, scan lists, special instructions…"></textarea>
         </div>
       </div>
@@ -5338,6 +5969,105 @@ init();
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeTalkgroupModal()">Cancel</button>
       <button class="btn-primary" onclick="saveTalkgroup()">Save Talkgroup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHEDULE RESERVATION MODAL ── -->
+<div class="modal-overlay" id="schedModal">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title" id="schedModalTitle">New Reservation</div>
+      <button class="modal-close" onclick="closeSchedModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Row 1: Title + Resource -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Incident / Event Title *</label>
+          <input class="form-input" id="sr-title" placeholder="e.g. Malibu Marathon, Strike Team Staging">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Channel *</label>
+          <select class="form-select" id="sr-channel"></select>
+        </div>
+      </div>
+
+      <!-- Row 2: Dates -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Start Date &amp; Time *</label>
+          <input class="form-input" id="sr-start" type="datetime-local">
+        </div>
+        <div class="form-field">
+          <label class="form-label">End Date &amp; Time *</label>
+          <input class="form-input" id="sr-end" type="datetime-local">
+        </div>
+      </div>
+
+      <!-- Row 3: Requestor + Priority -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Requestor</label>
+          <input class="form-input" id="sr-requestor" placeholder="Name or unit making the request">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Agency</label>
+          <input class="form-input" id="sr-agency" placeholder="LAFD, CalFire, Special Events…">
+        </div>
+      </div>
+
+      <!-- Row 4: COML + Priority -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">COML Assigned</label>
+          <input class="form-input" id="sr-coml" placeholder="Name of Communications Unit Leader filling request">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="sr-priority">
+            <option value="Normal">Normal</option>
+            <option value="High">High</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 5: Checkboxes -->
+      <div style="display:flex;gap:24px;align-items:center;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:4px 0;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="sr-205-emailed" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
+          <div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500;">ICS 205 Emailed</div>
+            <div style="font-size:11px;color:var(--text-dim);">Communications plan sent to requestor</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="sr-coml-notified" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
+          <div>
+            <div style="font-size:13px;color:var(--text-primary);font-weight:500;">COML Notified</div>
+            <div style="font-size:11px;color:var(--text-dim);">Comm Unit Leader confirmed assignment</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Row 6: Comments -->
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Comments</label>
+          <textarea class="form-textarea" id="sr-notes" placeholder="Special instructions, contact info, frequency plan notes, restrictions…" style="height:72px;"></textarea>
+        </div>
+      </div>
+
+      <div id="sr-conflict-warn" style="display:none;padding:8px 12px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:4px;font-size:12px;color:var(--status-active);margin-top:4px;"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="sr-delete-btn" style="display:none;" onclick="deleteReservation(schedEditingId)">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeSchedModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveReservation()">Save Reservation</button>
+      </div>
     </div>
   </div>
 </div>
