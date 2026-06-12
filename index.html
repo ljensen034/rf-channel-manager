@@ -3115,30 +3115,45 @@
             <option value="D-STAR">D-STAR</option>
             <option value="NXDN">NXDN</option>
             <option value="TETRA">TETRA</option>
+            <option value="AM">AM (Aviation)</option>
           </select>
         </div>
+        <div class="form-field">
+          <label class="form-label">Band <span style="font-weight:400;color:var(--text-dim);">auto-fills from freq</span></label>
+          <select class="form-select" id="f-band">
+            <option value="VHF">VHF (136–174 MHz)</option>
+            <option value="UHF">UHF (400–512 MHz)</option>
+            <option value="700">700 MHz</option>
+            <option value="800">800 MHz</option>
+            <option value="Aviation">Aviation (108–136 MHz)</option>
+            <option value="HF">HF (&lt;30 MHz)</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Tone / NAC</label>
           <input class="form-input" id="f-tone" placeholder="100.0 Hz / 0x293">
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Function / Purpose</label>
           <input class="form-input" id="f-function" placeholder="Command, Fire Attack, EMS, etc.">
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Department / Agency</label>
           <input class="form-input" id="f-agency" placeholder="LAFD, LAPD, CalFire…">
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Group / Category</label>
           <input class="form-input" id="f-group" placeholder="Fire Ops, Law, EMS, Special Events…">
         </div>
+      </div>
+      <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">Rx / Repeater Output (if different)</label>
+          <label class="form-label">Rx / Repeater Output <span style="font-weight:400;color:var(--text-dim);">leave blank if same as TX</span></label>
           <input class="form-input" id="f-rxfreq" placeholder="154.4300" oninput="onFreqInput()">
         </div>
       </div>
@@ -3210,6 +3225,7 @@ function rowToChannel(row) {
     rxFreq:        row.rx_freq || row.freq,
     status:        row.status,
     mode:          row.mode        || 'Analog FM',
+    band:          row.band        || detectBand(row.freq || ''),
     tone:          row.tone        || '—',
     function:      row.function    || '—',
     agency:        row.agency      || '—',
@@ -3228,6 +3244,7 @@ function channelToRow(ch, userName) {
     rx_freq:     ch.rxFreq || ch.freq,
     status:      ch.status,
     mode:        ch.mode,
+    band:        ch.band || detectBand(ch.freq || ''),
     tone:        ch.tone,
     function:    ch.function,
     agency:      ch.agency,
@@ -3965,7 +3982,8 @@ function openAddModal() {
     if (el) el.value = '';
   });
   document.getElementById('f-status').value = 'available';
-  document.getElementById('f-mode').value = 'Analog FM';
+  document.getElementById('f-mode').value   = 'Analog FM';
+  document.getElementById('f-band').value   = 'VHF';
   const cc = document.getElementById('f-conflict-check');
   if (cc) cc.checked = true;
   document.getElementById('conflictWarning')?.remove();
@@ -3980,6 +3998,7 @@ function openEditModal(id) {
   document.getElementById('f-freq').value        = ch.freq;
   document.getElementById('f-status').value      = ch.status;
   document.getElementById('f-mode').value        = ch.mode;
+  document.getElementById('f-band').value        = ch.band || detectBand(ch.freq || '');
   document.getElementById('f-tone').value        = ch.tone !== '—' ? ch.tone : '';
   document.getElementById('f-function').value    = ch.function !== '—' ? ch.function : '';
   document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
@@ -4011,6 +4030,7 @@ async function saveChannel() {
     rx_freq:         document.getElementById('f-rxfreq').value.trim()    || freq,
     status:          document.getElementById('f-status').value,
     mode:            document.getElementById('f-mode').value,
+    band:            document.getElementById('f-band').value              || detectBand(freq),
     tone:            document.getElementById('f-tone').value.trim()      || '—',
     function:        document.getElementById('f-function').value.trim()  || '—',
     agency:          document.getElementById('f-agency').value.trim()    || '—',
@@ -6825,7 +6845,7 @@ function openSchedModal(id) {
   // Populate multi-select channel list
   const sel = document.getElementById('sr-channel');
   sel.innerHTML = channels.map(c =>
-    `<option value="${c.id}" data-designator="${c.designator}" data-freq="${c.freq}">${c.designator} — ${c.freq} MHz</option>`
+    `<option value="${c.id}" data-designator="${c.designator}" data-freq="${c.freq}" data-band="${c.band || detectBand(c.freq||'')}">${c.designator} — ${c.freq} MHz (${c.band || detectBand(c.freq||'')})</option>`
   ).join('');
 
   const clearRisk = () => {
@@ -7279,8 +7299,13 @@ async function runSimplexRiskEngine() {
   const selOpts = sel ? [...sel.options].filter(o => o.selected) : [];
   let band = bandSel !== 'auto' ? bandSel : null;
   if (!band && selOpts.length) {
-    const freq = channels.find(c => c.id == selOpts[0].value)?.freq;
-    if (freq) band = detectBand(freq);
+    // 1. Try data-band attribute on the option (set at render time from ch.band)
+    band = selOpts[0].dataset.band || null;
+    // 2. Fall back to stored ch.band or frequency detection
+    if (!band || band === 'undefined') {
+      const ch = channels.find(c => c.id == selOpts[0].value);
+      band = ch?.band || (ch?.freq ? detectBand(ch.freq) : null);
+    }
   }
   if (!band) band = 'UHF';
 
@@ -8008,6 +8033,14 @@ function showConflictWarning(conflicts) {
 function onFreqInput() {
   const freq   = document.getElementById('f-freq')?.value.trim();
   const rxFreq = document.getElementById('f-rxfreq')?.value.trim();
+
+  // Auto-fill band from frequency
+  if (freq) {
+    const autoBand = detectBand(freq);
+    const bandEl = document.getElementById('f-band');
+    if (bandEl) bandEl.value = autoBand;
+  }
+
   const checkEnabled = document.getElementById('f-conflict-check')?.checked;
   if (!checkEnabled) { document.getElementById('conflictWarning')?.remove(); return; }
   const conflicts = checkFrequencyConflict(freq, rxFreq, editingId);
