@@ -3327,6 +3327,14 @@ function subscribeRealtime() {
       if (activeMainTab === 'admin')      renderAdminView();
     })
     .subscribe();
+
+  sb.channel('reservations-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
+      await loadReservations();
+      if (activeMainTab === 'schedule') renderSchedule();
+      applyScheduledReservations();
+    })
+    .subscribe();
 }
 
 // ─────────────────────────────────────────────
@@ -6626,9 +6634,9 @@ function openResourceCategoryModal() {
 // ─────────────────────────────────────────────
 // SCHEDULE / RESERVATIONS
 // ─────────────────────────────────────────────
-let reservations    = loadReservations();
-let schedViewMode   = 'week';         // 'week' | 'list'
-let schedWeekOffset = 0;              // 0 = current week
+let reservations    = [];             // loaded from Supabase
+let schedViewMode   = 'week';         // 'week' | 'list' | 'month'
+let schedWeekOffset = 0;              // 0 = current week/month
 let schedEditingId  = null;
 
 const SCHED_COLORS = {
@@ -6637,12 +6645,69 @@ const SCHED_COLORS = {
   Emergency: { bg:'rgba(255,82,82,0.90)',     text:'#fff' },
 };
 
-function loadReservations() {
-  try { const s = localStorage.getItem('rfReservations'); return s ? JSON.parse(s) : []; }
-  catch(e) { return []; }
+async function loadReservations() {
+  try {
+    const { data, error } = await sb.from('reservations').select('*').order('start', { ascending: true });
+    if (error) { console.warn('loadReservations error:', error.message); return; }
+    reservations = (data || []).map(rowToReservation);
+  } catch(e) { console.warn('loadReservations failed:', e.message); }
 }
-function saveReservations() {
-  try { localStorage.setItem('rfReservations', JSON.stringify(reservations)); } catch(e) {}
+
+function rowToReservation(row) {
+  // channel_ids stored as jsonb array
+  const channelIds = Array.isArray(row.channel_ids) ? row.channel_ids.map(String)
+    : (row.channel_id ? [String(row.channel_id)] : []);
+  return {
+    id:                String(row.id),
+    title:             row.title              || '',
+    channelIds,
+    channelId:         channelIds[0]          || '',
+    channelDesignator: row.channel_designator || '',
+    start:             row.start,
+    end:               row.end_time,
+    requestor:         row.requestor          || '',
+    agency:            row.agency             || '',
+    coml:              row.coml               || '',
+    priority:          row.priority           || 'Normal',
+    emailed205:        row.emailed_205        || false,
+    comlNotified:      row.coml_notified      || false,
+    notes:             row.notes              || '',
+    lat:               row.lat               || null,
+    lon:               row.lon               || null,
+    elev:              row.elev              || null,
+    radius:            row.radius            || 5,
+    band:              row.band              || 'auto',
+    street:            row.street            || '',
+    city:              row.city              || '',
+  };
+}
+
+function reservationToRow(data) {
+  const who = currentUser?.name || 'Unknown';
+  return {
+    title:              data.title,
+    channel_ids:        data.channelIds,
+    channel_id:         data.channelIds?.[0]  || null,
+    channel_designator: data.channelDesignator || '',
+    start:              data.start,
+    end_time:           data.end,
+    requestor:          data.requestor        || '',
+    agency:             data.agency           || '',
+    coml:               data.coml             || '',
+    priority:           data.priority         || 'Normal',
+    emailed_205:        data.emailed205        || false,
+    coml_notified:      data.comlNotified      || false,
+    notes:              data.notes            || '',
+    lat:                data.lat              || null,
+    lon:                data.lon              || null,
+    elev:               data.elev             || null,
+    radius:             data.radius           || 5,
+    band:               data.band             || 'auto',
+    street:             data.street           || '',
+    city:               data.city             || '',
+    updated_by:         who,
+    updated_at:         new Date().toISOString(),
+  };
 }
 
 // Return the Monday of the week that is `offset` weeks from today
@@ -7489,7 +7554,7 @@ function toLocalDatetimeInput(iso) {
   return `${yyyy}-${m}-${dd}T${timePart.replace('24:','00:')}`;
 }
 
-function saveReservation() {
+async function saveReservation() {
   const title   = document.getElementById('sr-title').value.trim();
   const startV  = document.getElementById('sr-start').value;
   const endV    = document.getElementById('sr-end').value;
@@ -7557,27 +7622,31 @@ function saveReservation() {
     city:           document.getElementById('sr-city').value.trim()   || '',
   };
 
+  const row = reservationToRow(data);
+
   if (schedEditingId) {
-    const idx = reservations.findIndex(r => r.id === schedEditingId);
-    reservations[idx] = { ...reservations[idx], ...data };
+    const { error } = await sb.from('reservations').update(row).eq('id', schedEditingId);
+    if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
     logActivity(`Reservation "<span class="log-ch">${title}</span>" updated`);
   } else {
-    reservations.push({ id: 'rsv' + Date.now(), ...data });
+    const { error } = await sb.from('reservations').insert(row);
+    if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
     logActivity(`Reservation "<span class="log-ch">${title}</span>" scheduled — ${channelDesignators.join(', ')}`);
   }
 
-  saveReservations();
+  await loadReservations();
   closeSchedModal();
   renderSchedule();
   applyScheduledReservations();
 }
 
-function deleteReservation(id) {
+async function deleteReservation(id) {
   const r = reservations.find(x => x.id === id);
   if (!r || !confirm(`Delete reservation "${r.title}"?`)) return;
-  reservations = reservations.filter(x => x.id !== id);
-  saveReservations();
+  const { error } = await sb.from('reservations').delete().eq('id', id);
+  if (error) { alert('Error deleting reservation: ' + error.message); return; }
   logActivity(`Reservation "<span class="log-ch">${r.title}</span>" deleted`);
+  await loadReservations();
   closeSchedModal();
   renderSchedule();
 }
@@ -8138,6 +8207,7 @@ async function init() {
   const hasSession = await checkExistingSession();
   await loadChannels();
   await loadTalkgroups();
+  await loadReservations();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
