@@ -2232,10 +2232,10 @@
   /* ── TRIGGER LOOKUP ── */
   .trigger-row {
     display: grid;
-    grid-template-columns: 100px 1fr 140px 140px 80px;
+    grid-template-columns: 30px 80px 1fr 110px 120px 100px 70px 70px;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 9px 12px;
     background: var(--bg-card);
     border: 1px solid transparent;
     border-radius: var(--radius);
@@ -2244,11 +2244,12 @@
     transition: var(--transition);
   }
   .trigger-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .trigger-row.ctrl-top-set { border-left: 3px solid var(--accent); }
   .trigger-id { font-family: var(--font-data); font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; }
   .trigger-grid-header {
     display: grid;
-    grid-template-columns: 100px 1fr 140px 140px 80px;
-    gap: 10px;
+    grid-template-columns: 30px 80px 1fr 110px 120px 100px 70px 70px;
+    gap: 8px;
     padding: 4px 12px 8px;
     font-family: var(--font-data);
     font-size: 10px;
@@ -2257,10 +2258,10 @@
     letter-spacing: 0.08em;
   }
   .trigger-note-row { padding: 7px 14px; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; gap: 12px; align-items: flex-start; }
-  .trigger-note-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 140px; }
+  .trigger-note-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 150px; }
   @media (max-width: 768px) {
     .trigger-grid-header { display: none; }
-    .trigger-row { grid-template-columns: 80px 1fr; }
+    .trigger-row { grid-template-columns: 24px 70px 1fr; }
     .trigger-row > *:nth-child(n+4) { display: none; }
   }
 
@@ -2756,15 +2757,15 @@
   </div>
 </div>
 
-<!-- MAIN LAYOUT -->
-<div class="layout">
-
-<!-- ANNOUNCEMENT BANNER — shown when active system notice exists -->
+<!-- ANNOUNCEMENT BANNER — outside layout so it spans full width above everything -->
 <div id="announcementBanner">
   <span class="banner-icon">📢</span>
   <span class="banner-text" id="bannerText"></span>
   <button class="banner-dismiss" onclick="dismissBanner()" title="Dismiss">✕</button>
 </div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
 
   <!-- MAIN PANEL -->
   <div class="main-panel">
@@ -3069,23 +3070,52 @@
 
     <!-- ── TRIGGER LOOKUP VIEW ── -->
     <div id="view-triggers" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-        <div>
-          <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">TRIGGER LOOKUP</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">MDC1200 Emergency Trigger ID Registry</div>
+      <!-- Tabs: Registry / System Log -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <button class="admin-sub-tab active" id="trtab-registry" onclick="switchTriggerTab('registry')">📋 Registry</button>
+        <button class="admin-sub-tab"        id="trtab-log"      onclick="switchTriggerTab('log')">🕐 System Log</button>
+      </div>
+
+      <!-- Registry panel -->
+      <div id="tr-registry-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div>
+            <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">TRIGGER LOOKUP</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">MDC1200 Emergency Trigger ID Registry</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="triggerSearch" type="text" placeholder="Search ID, serial, LARICS, model…" oninput="renderTriggers()" style="width:260px;">
+            <button class="btn-secondary" id="triggerCtrlTopBtn" style="display:none;font-size:12px;" onclick="massSetControlTop()">☑ Mark Control Top</button>
+            <button class="btn-primary" id="triggerAddBtn" style="display:none;" onclick="openTriggerEditForm(null)">+ Add Radio ID</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input class="search-input" id="triggerSearch" type="text" placeholder="Search ID, assignment, serial…" oninput="renderTriggers()" style="width:240px;">
-          <button class="btn-primary" id="triggerAddBtn" style="display:none;" onclick="openTriggerEditForm(null)">+ Add Radio ID</button>
+        <div class="trigger-grid-header">
+          <span style="width:30px;"></span>
+          <span>MDC ID</span><span>Assignment</span><span>Serial</span><span>Model</span><span>LARICS</span><span>Band</span><span>Ctrl Top</span>
+        </div>
+        <div id="triggerGrid"></div>
+        <div id="triggerEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:28px;margin-bottom:10px;">🔔</div>
+          <div style="font-size:13px;color:var(--text-secondary);">No radio IDs registered yet</div>
         </div>
       </div>
-      <div class="trigger-grid-header">
-        <span>MDC ID</span><span>Assignment</span><span>Radio Model</span><span>Serial Number</span><span>Notes</span>
-      </div>
-      <div id="triggerGrid"></div>
-      <div id="triggerEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
-        <div style="font-size:28px;margin-bottom:10px;">🔔</div>
-        <div style="font-size:13px;color:var(--text-secondary);">No radio IDs registered yet</div>
+
+      <!-- Trigger system log panel -->
+      <div id="tr-log-panel" style="display:none;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+          <input class="search-input" id="trlogSearch" type="text" placeholder="Search log…" oninput="renderTriggerLog()" style="width:220px;font-size:12px;">
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="loadTriggerLog()">↺ Refresh</button>
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="exportTriggerLogCSV()">⬇ CSV</button>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:150px 120px 1fr 120px;gap:0;padding:6px 14px;background:var(--bg-deep);font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+            <span>Timestamp (PT)</span><span>Radio / MDC</span><span>Event</span><span>Actor</span>
+          </div>
+          <div id="trlogBody" style="max-height:520px;overflow-y:auto;"></div>
+          <div style="padding:8px 14px;border-top:1px solid var(--border);text-align:center;">
+            <button class="btn-secondary" id="trlogMoreBtn" style="font-size:11px;padding:4px 12px;display:none;" onclick="loadMoreTriggerLog()">Load more</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3391,7 +3421,7 @@
           <input class="form-input" id="f-designator" placeholder="e.g. FIRE-TAC-1">
         </div>
         <div class="form-field">
-          <label class="form-label">Frequency (MHz) *</label>
+          <label class="form-label">RX Frequency (MHz) * <span style="font-weight:400;color:var(--text-dim);">Receive / Repeater Output</span></label>
           <input class="form-input" id="f-freq" placeholder="154.4300" oninput="onFreqInput()">
         </div>
       </div>
@@ -3453,7 +3483,7 @@
       </div>
       <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">Rx / Repeater Output <span style="font-weight:400;color:var(--text-dim);">leave blank if same as TX</span></label>
+          <label class="form-label">TX Frequency (MHz) <span style="font-weight:400;color:var(--text-dim);">Transmit — leave blank if same as RX</span></label>
           <input class="form-input" id="f-rxfreq" placeholder="154.4300" oninput="onFreqInput()">
         </div>
       </div>
@@ -9212,6 +9242,7 @@ async function init() {
   await loadChannels();
   await loadTalkgroups();
   await loadTriggers();
+  await loadTriggerLookups();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
@@ -9406,9 +9437,18 @@ async function deleteNotice(id) {
 // ─────────────────────────────────────────────
 // TRIGGER LOOKUP MODULE
 // ─────────────────────────────────────────────
-let triggers = [];
+let triggers        = [];
+let triggerModels   = [];
+let triggerBands    = [];
 let triggerEditingId = null;
 let triggerViewingId = null;
+let triggerSelected  = new Set(); // for mass actions
+let trlogCache       = [];
+let trlogOffset      = 0;
+const TRLOG_PAGE     = 100;
+
+const DEFAULT_RADIO_MODELS = ['APX8000','APX8000HXE','APX8000XE','APX4500','APX7500','APX7000XE','APX7000','APX4000','NEXT','NEXT XE','NEXT N70'];
+const DEFAULT_RADIO_BANDS  = ['UHF','VHF','800','UHF/VHF','UHF/800','VHF/800','ALL BAND'];
 
 async function loadTriggers() {
   try {
@@ -9419,18 +9459,59 @@ async function loadTriggers() {
   } catch(e) { console.warn('loadTriggers:', e.message); }
 }
 
+async function loadTriggerLookups() {
+  // Load radio models
+  try {
+    const { data } = await sb.from('radio_models').select('*').order('name');
+    triggerModels = (data||[]).map(r=>r.name);
+  } catch(e) {}
+  if (!triggerModels.length) triggerModels = [...DEFAULT_RADIO_MODELS];
+  // Load radio bands
+  try {
+    const { data } = await sb.from('radio_bands').select('*').order('name');
+    triggerBands = (data||[]).map(r=>r.name);
+  } catch(e) {}
+  if (!triggerBands.length) triggerBands = [...DEFAULT_RADIO_BANDS];
+}
+
+function populateTriggerDropdowns() {
+  const modelSel = document.getElementById('te-model');
+  const bandSel  = document.getElementById('te-band');
+  if (modelSel) {
+    const cur = modelSel.value;
+    modelSel.innerHTML = '<option value="">— Select model —</option>' +
+      triggerModels.map(m => `<option value="${escHtml(m)}"${m===cur?' selected':''}>${escHtml(m)}</option>`).join('');
+  }
+  if (bandSel) {
+    const cur = bandSel.value;
+    bandSel.innerHTML = '<option value="">— Select band —</option>' +
+      triggerBands.map(b => `<option value="${escHtml(b)}"${b===cur?' selected':''}>${escHtml(b)}</option>`).join('');
+  }
+}
+
+function switchTriggerTab(tab) {
+  document.getElementById('trtab-registry')?.classList.toggle('active', tab === 'registry');
+  document.getElementById('trtab-log')?.classList.toggle('active', tab === 'log');
+  document.getElementById('tr-registry-panel').style.display = tab === 'registry' ? 'block' : 'none';
+  document.getElementById('tr-log-panel').style.display      = tab === 'log'      ? 'block' : 'none';
+  if (tab === 'log') loadTriggerLog();
+}
+
 function renderTriggers() {
-  const query  = (document.getElementById('triggerSearch')?.value || '').toLowerCase();
-  const grid   = document.getElementById('triggerGrid');
-  const empty  = document.getElementById('triggerEmpty');
-  const addBtn = document.getElementById('triggerAddBtn');
+  const query   = (document.getElementById('triggerSearch')?.value || '').toLowerCase();
+  const grid    = document.getElementById('triggerGrid');
+  const empty   = document.getElementById('triggerEmpty');
+  const addBtn  = document.getElementById('triggerAddBtn');
+  const ctBtn   = document.getElementById('triggerCtrlTopBtn');
   if (!grid) return;
 
-  // Show add button for admins/comms only
-  if (addBtn) addBtn.style.display = (currentUser?.role === 'admin' || currentUser?.role === 'comms') ? 'inline-flex' : 'none';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'comms';
+  if (addBtn) addBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (ctBtn)  ctBtn.style.display  = isAdmin ? 'inline-flex' : 'none';
 
   const filtered = triggers.filter(t => !query ||
-    [t.mdc_id, t.assignment, t.serial_number, t.radio_model, t.notes]
+    [t.mdc_id, t.assignment, t.serial_number, t.radio_model, t.radio_band,
+     t.larics_id, t.ici_id, t.cwirs_id, t.cris_id]
       .some(f => (f||'').toLowerCase().includes(query))
   );
 
@@ -9441,14 +9522,40 @@ function renderTriggers() {
   }
   if (empty) empty.style.display = 'none';
 
+  const ctIcon = t => t.control_top_replaced
+    ? `<span style="font-family:var(--font-data);font-size:10px;color:var(--accent);">✓</span>`
+    : `<span style="color:var(--text-dim);font-size:10px;">—</span>`;
+
   grid.innerHTML = filtered.map(t => `
-    <div class="trigger-row" onclick="openTriggerModal('${t.id}')">
+    <div class="trigger-row${t.control_top_replaced?' ctrl-top-set':''}" onclick="openTriggerModal('${t.id}')">
+      <input type="checkbox" onclick="event.stopPropagation();toggleTriggerSelect('${t.id}',this)"
+        style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;"
+        ${triggerSelected.has(String(t.id))?'checked':''}>
       <div class="trigger-id">${escHtml(t.mdc_id)}</div>
-      <div style="font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.assignment||'—')}</div>
-      <div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.radio_model||'—')}</div>
-      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${escHtml(t.serial_number||'—')}</div>
-      <div style="font-size:11px;color:var(--text-dim);">${t.note_count > 0 ? `${t.note_count} note${t.note_count!==1?'s':''}` : '—'}</div>
+      <div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.assignment||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.serial_number||'—')}</div>
+      <div style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.radio_model||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.larics_id||'—')}</div>
+      <div style="font-size:11px;color:var(--text-dim);">${escHtml(t.radio_band||'—')}</div>
+      <div style="text-align:center;">${ctIcon(t)}</div>
     </div>`).join('');
+}
+
+function toggleTriggerSelect(id, cb) {
+  if (cb.checked) triggerSelected.add(String(id));
+  else            triggerSelected.delete(String(id));
+}
+
+async function massSetControlTop() {
+  if (!triggerSelected.size) { alert('Select at least one row using the checkboxes first.'); return; }
+  if (!confirm(`Mark Control Top Replaced on ${triggerSelected.size} selected radio(s)?`)) return;
+  const ids = [...triggerSelected].map(Number);
+  const { error } = await sb.from('radio_ids').update({ control_top_replaced: true, updated_by: currentUser?.name||'Unknown', updated_at: new Date().toISOString() }).in('id', ids);
+  if (error) { alert('Error: ' + error.message); return; }
+  await logTriggerEvent('MASS_CTRL_TOP', null, `Control Top Replaced set on ${ids.length} radios`);
+  triggerSelected.clear();
+  await loadTriggers();
+  renderTriggers();
 }
 
 async function openTriggerModal(id) {
@@ -9460,34 +9567,43 @@ async function openTriggerModal(id) {
   document.getElementById('triggerModalTitle').textContent = `ID: ${t.mdc_id}`;
   document.getElementById('triggerModalAdminBtns').style.display = isAdmin ? 'flex' : 'none';
 
+  const field = (label, val) => val && val !== '—' ? `
+    <div>
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">${label}</div>
+      <div style="font-size:13px;color:var(--text-secondary);">${escHtml(val)}</div>
+    </div>` : '';
+
+  const ctTag = t.control_top_replaced
+    ? `<span style="font-family:var(--font-data);font-size:10px;padding:2px 8px;border-radius:2px;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.3);">✓ CONTROL TOP REPLACED</span>`
+    : `<span style="font-family:var(--font-data);font-size:10px;padding:2px 8px;border-radius:2px;background:var(--bg-deep);color:var(--text-dim);border:1px solid var(--border);">Control Top: Original</span>`;
+
   document.getElementById('triggerDetailSection').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
       <div>
         <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">MDC1200 ID</div>
-        <div style="font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--accent);letter-spacing:0.1em;">${escHtml(t.mdc_id)}</div>
+        <div style="font-family:var(--font-data);font-size:32px;font-weight:700;color:var(--accent);letter-spacing:0.12em;">${escHtml(t.mdc_id)}</div>
       </div>
       <div>
         <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Assignment</div>
-        <div style="font-size:16px;font-weight:600;color:var(--text-primary);">${escHtml(t.assignment||'—')}</div>
-      </div>
-      <div>
-        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Radio Model</div>
-        <div style="font-size:13px;color:var(--text-secondary);">${escHtml(t.radio_model||'—')}</div>
-      </div>
-      <div>
-        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Serial Number</div>
-        <div style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);">${escHtml(t.serial_number||'—')}</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text-primary);">${escHtml(t.assignment||'—')}</div>
       </div>
     </div>
-    ${t.notes ? `<div style="font-size:12px;color:var(--text-secondary);padding:10px 12px;background:var(--bg-deep);border-radius:var(--radius);margin-top:4px;line-height:1.6;">${escHtml(t.notes)}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px;">
+      ${field('Serial Number', t.serial_number)}
+      ${field('Radio Model',   t.radio_model)}
+      ${field('Radio Band',    t.radio_band)}
+      ${field('LARICS ID',     t.larics_id)}
+      ${field('ICI ID',        t.ici_id)}
+      ${field('CWIRS ID',      t.cwirs_id)}
+      ${field('CRIS ID',       t.cris_id)}
+    </div>
+    <div style="margin-bottom:4px;">${ctTag}</div>
   `;
 
-  // Load notes log
   await renderTriggerNotes(id);
-
   document.getElementById('triggerNewNote').value = '';
   document.getElementById('triggerModal').classList.add('open');
-  logEvent('system', 'Trigger Lookup', `MDC ID ${t.mdc_id} — ${t.assignment||''}`, { mdc_id: t.mdc_id });
+  await logTriggerEvent('LOOKUP', t.mdc_id, `MDC ${t.mdc_id} — ${t.assignment||'unknown'} — viewed by ${currentUser?.name||'Unknown'}`);
 }
 
 function closeTriggerModal() {
@@ -9500,12 +9616,10 @@ async function renderTriggerNotes(radioId) {
   if (!el) return;
   el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Loading…</div>';
   try {
-    const { data, error } = await sb.from('radio_notes')
-      .select('*').eq('radio_id', radioId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await sb.from('radio_notes').select('*').eq('radio_id', radioId).order('created_at', { ascending: false });
     if (error) throw error;
     if (!data?.length) {
-      el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">No notes yet. Be the first to add one.</div>';
+      el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">No notes yet.</div>';
       return;
     }
     el.innerHTML = data.map(n => {
@@ -9514,18 +9628,19 @@ async function renderTriggerNotes(radioId) {
         year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
       });
       return `<div class="trigger-note-row">
-        <div class="trigger-note-meta">${ts}<br>${escHtml(n.author||'Unknown')}</div>
+        <div class="trigger-note-meta">${ts}<br><strong>${escHtml(n.author||'Unknown')}</strong></div>
         <div style="flex:1;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${escHtml(n.note)}</div>
       </div>`;
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Error loading notes.</div>';
+    el.innerHTML = `<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`;
   }
 }
 
 async function saveTriggerNote() {
   const noteText = document.getElementById('triggerNewNote').value.trim();
   if (!noteText) return;
+  const t = triggers.find(x => String(x.id) === String(triggerViewingId));
   const { error } = await sb.from('radio_notes').insert({
     radio_id:   triggerViewingId,
     note:       noteText,
@@ -9535,31 +9650,77 @@ async function saveTriggerNote() {
   if (error) { alert('Error saving note: ' + error.message); return; }
   document.getElementById('triggerNewNote').value = '';
   await renderTriggerNotes(triggerViewingId);
-  // Reload triggers to refresh note count
+  await logTriggerEvent('NOTE', t?.mdc_id||triggerViewingId, `Note added to MDC ${t?.mdc_id||''}: ${noteText.slice(0,80)}${noteText.length>80?'…':''}`);
   await loadTriggers();
   renderTriggers();
+}
+
+function copyLaricsToOthers() {
+  const val = document.getElementById('te-larics').value.trim();
+  ['te-ici','te-cwirs'].forEach(id => { const el = document.getElementById(id); if (el) { el.value = val; el.style.borderColor = 'var(--accent)'; } });
+  checkTriggerDuplicates();
+}
+
+async function checkTriggerDuplicates() {
+  const serial = document.getElementById('te-serial')?.value.trim();
+  const larics = document.getElementById('te-larics')?.value.trim();
+  const ici    = document.getElementById('te-ici')?.value.trim();
+  const cwirs  = document.getElementById('te-cwirs')?.value.trim();
+  const cris   = document.getElementById('te-cris')?.value.trim();
+
+  const checkField = (val, field, warnId) => {
+    const warnEl = document.getElementById(warnId);
+    if (!warnEl) return;
+    if (!val) { warnEl.textContent = ''; return; }
+    const dup = triggers.find(t =>
+      String(t.id) !== String(triggerEditingId) &&
+      t[field] && t[field].toLowerCase() === val.toLowerCase()
+    );
+    if (dup) {
+      warnEl.innerHTML = `🚨 DUPLICATE — already assigned to MDC <strong>${dup.mdc_id}</strong> (${dup.assignment||'—'})`;
+    } else {
+      warnEl.textContent = '';
+    }
+  };
+
+  checkField(serial, 'serial_number', 'te-serial-warn');
+  checkField(larics, 'larics_id',     'te-larics-warn');
+  checkField(ici,    'ici_id',        'te-ici-warn');
+  checkField(cwirs,  'cwirs_id',      'te-cwirs-warn');
+  checkField(cris,   'cris_id',       'te-cris-warn');
 }
 
 function openTriggerEditForm(id) {
   triggerEditingId = id || null;
   const errEl = document.getElementById('te-error');
   if (errEl) errEl.textContent = '';
+  ['te-serial-warn','te-larics-warn','te-ici-warn','te-cwirs-warn','te-cris-warn'].forEach(wid => {
+    const w = document.getElementById(wid); if (w) w.textContent = '';
+  });
+  populateTriggerDropdowns();
   if (id) {
     const t = triggers.find(x => String(x.id) === String(id));
     if (!t) return;
     document.getElementById('triggerEditTitle').textContent = `Edit — ${t.mdc_id}`;
-    document.getElementById('te-id').value         = t.mdc_id        || '';
-    document.getElementById('te-assignment').value = t.assignment    || '';
-    document.getElementById('te-model').value      = t.radio_model   || '';
-    document.getElementById('te-serial').value     = t.serial_number || '';
-    document.getElementById('te-notes').value      = t.notes         || '';
+    document.getElementById('te-id').value           = t.mdc_id         || '';
+    document.getElementById('te-assignment').value   = t.assignment      || '';
+    document.getElementById('te-serial').value       = t.serial_number   || '';
+    document.getElementById('te-model').value        = t.radio_model     || '';
+    document.getElementById('te-band').value         = t.radio_band      || '';
+    document.getElementById('te-control-top').checked = t.control_top_replaced || false;
+    document.getElementById('te-larics').value       = t.larics_id       || '';
+    document.getElementById('te-ici').value          = t.ici_id          || '';
+    document.getElementById('te-cwirs').value        = t.cwirs_id        || '';
+    document.getElementById('te-cris').value         = t.cris_id         || '';
   } else {
     document.getElementById('triggerEditTitle').textContent = 'Add Radio ID';
-    ['te-id','te-assignment','te-model','te-serial','te-notes'].forEach(fid => {
+    ['te-id','te-assignment','te-serial','te-larics','te-ici','te-cwirs','te-cris'].forEach(fid => {
       const el = document.getElementById(fid); if (el) el.value = '';
     });
+    document.getElementById('te-model').value = '';
+    document.getElementById('te-band').value  = '';
+    document.getElementById('te-control-top').checked = false;
   }
-  // Close detail modal if open
   document.getElementById('triggerModal').classList.remove('open');
   document.getElementById('triggerEditModal').classList.add('open');
 }
@@ -9570,29 +9731,53 @@ function closeTriggerEditModal() {
 }
 
 async function saveTriggerRecord() {
-  const mdcId  = document.getElementById('te-id').value.trim();
+  const mdcId  = document.getElementById('te-id').value.trim().toUpperCase();
   const errEl  = document.getElementById('te-error');
   if (!mdcId) { errEl.textContent = 'MDC ID is required.'; return; }
-  if (!/^\d{4}$/.test(mdcId)) { errEl.textContent = 'MDC ID must be exactly 4 digits.'; return; }
+  if (!/^[0-9A-D]{1,4}$/.test(mdcId)) { errEl.textContent = 'MDC ID: 1–4 characters, digits 0-9 or letters A-D only.'; return; }
+
+  // Block save if any duplicate warnings exist
+  const warnIds = ['te-serial-warn','te-larics-warn','te-ici-warn','te-cwirs-warn','te-cris-warn'];
+  for (const wid of warnIds) {
+    const w = document.getElementById(wid);
+    if (w && w.textContent.includes('DUPLICATE')) { errEl.textContent = '⚠ Resolve duplicate warnings before saving.'; return; }
+  }
 
   const row = {
-    mdc_id:        mdcId,
-    assignment:    document.getElementById('te-assignment').value.trim() || null,
-    radio_model:   document.getElementById('te-model').value.trim()      || null,
-    serial_number: document.getElementById('te-serial').value.trim()     || null,
-    notes:         document.getElementById('te-notes').value.trim()      || null,
-    updated_by:    currentUser?.name || 'Unknown',
-    updated_at:    new Date().toISOString(),
+    mdc_id:              mdcId,
+    assignment:          document.getElementById('te-assignment').value.trim() || null,
+    radio_model:         document.getElementById('te-model').value             || null,
+    radio_band:          document.getElementById('te-band').value              || null,
+    serial_number:       document.getElementById('te-serial').value.trim()    || null,
+    control_top_replaced:document.getElementById('te-control-top').checked,
+    larics_id:           document.getElementById('te-larics').value.trim()    || null,
+    ici_id:              document.getElementById('te-ici').value.trim()        || null,
+    cwirs_id:            document.getElementById('te-cwirs').value.trim()      || null,
+    cris_id:             document.getElementById('te-cris').value.trim()       || null,
+    updated_by:          currentUser?.name || 'Unknown',
+    updated_at:          new Date().toISOString(),
   };
 
   if (triggerEditingId) {
+    const prev = triggers.find(x => String(x.id) === String(triggerEditingId));
     const { error } = await sb.from('radio_ids').update(row).eq('id', triggerEditingId);
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
-    logEvent('user', 'Radio ID Updated', `MDC ${mdcId} — ${row.assignment||''}`, { mdc_id: mdcId });
+    // Log changed fields
+    const changed = [];
+    if (prev) {
+      const fields = [['mdc_id','MDC ID'],['assignment','Assignment'],['serial_number','Serial'],
+        ['radio_model','Model'],['radio_band','Band'],['control_top_replaced','Ctrl Top'],
+        ['larics_id','LARICS'],['ici_id','ICI'],['cwirs_id','CWIRS'],['cris_id','CRIS']];
+      fields.forEach(([key, label]) => {
+        if (String(prev[key]||'') !== String(row[key]||''))
+          changed.push(`${label}: ${prev[key]||'—'} → ${row[key]||'—'}`);
+      });
+    }
+    await logTriggerEvent('EDIT', mdcId, `MDC ${mdcId} updated: ${changed.join(', ')||'record saved'}`);
   } else {
     const { error } = await sb.from('radio_ids').insert(row);
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
-    logEvent('user', 'Radio ID Added', `MDC ${mdcId} — ${row.assignment||''}`, { mdc_id: mdcId });
+    await logTriggerEvent('ADD', mdcId, `MDC ${mdcId} added — ${row.assignment||'no assignment'} — ${row.serial_number||'no serial'}`);
   }
 
   await loadTriggers();
@@ -9602,12 +9787,84 @@ async function saveTriggerRecord() {
 
 async function deleteTriggerRecord() {
   const t = triggers.find(x => String(x.id) === String(triggerViewingId));
-  if (!t || !confirm(`Delete radio ID ${t.mdc_id} — ${t.assignment||''}?`)) return;
+  if (!t || !confirm(`Delete radio ID ${t.mdc_id} — ${t.assignment||''}?
+This also deletes all notes.`)) return;
+  await logTriggerEvent('DELETE', t.mdc_id, `MDC ${t.mdc_id} — ${t.assignment||''} — serial ${t.serial_number||'unknown'} — DELETED`);
   await sb.from('radio_ids').delete().eq('id', t.id);
-  logEvent('user', 'Radio ID Deleted', `MDC ${t.mdc_id} — ${t.assignment||''}`);
   await loadTriggers();
   closeTriggerModal();
   renderTriggers();
+}
+
+// ── Trigger system log ──
+async function logTriggerEvent(action, mdcId, detail) {
+  try {
+    await sb.from('trigger_log').insert({
+      action,
+      mdc_id:    mdcId     || null,
+      detail:    detail    || null,
+      actor:     currentUser?.name || 'Unknown',
+      actor_role:currentUser?.role || null,
+      created_at:new Date().toISOString(),
+    });
+  } catch(e) { /* non-critical */ }
+}
+
+async function loadTriggerLog() {
+  trlogOffset = 0; trlogCache = [];
+  const body = document.getElementById('trlogBody');
+  if (body) body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data } = await sb.from('trigger_log').select('*').order('created_at', { ascending:false }).range(0, TRLOG_PAGE-1);
+    trlogCache = data || [];
+    const btn = document.getElementById('trlogMoreBtn');
+    if (btn) btn.style.display = trlogCache.length === TRLOG_PAGE ? 'inline-flex' : 'none';
+    renderTriggerLog();
+  } catch(e) { if (body) body.innerHTML = `<div style="padding:16px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`; }
+}
+
+async function loadMoreTriggerLog() {
+  trlogOffset += TRLOG_PAGE;
+  const { data } = await sb.from('trigger_log').select('*').order('created_at', { ascending:false }).range(trlogOffset, trlogOffset+TRLOG_PAGE-1);
+  trlogCache = [...trlogCache, ...(data||[])];
+  const btn = document.getElementById('trlogMoreBtn');
+  if (btn) btn.style.display = (data?.length===TRLOG_PAGE) ? 'inline-flex' : 'none';
+  renderTriggerLog();
+}
+
+function renderTriggerLog() {
+  const query = (document.getElementById('trlogSearch')?.value || '').toLowerCase();
+  const body  = document.getElementById('trlogBody');
+  if (!body) return;
+  const filtered = trlogCache.filter(r => !query ||
+    [r.action, r.mdc_id, r.detail, r.actor].some(f => (f||'').toLowerCase().includes(query))
+  );
+  if (!filtered.length) { body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">No log entries.</div>'; return; }
+  const ACTION_COLORS = { ADD:'var(--status-available)', EDIT:'var(--accent)', DELETE:'var(--status-active)', NOTE:'var(--status-reserved)', LOOKUP:'var(--text-dim)', MASS_CTRL_TOP:'var(--status-interop)' };
+  body.innerHTML = filtered.map(r => {
+    const ts = new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    const col = ACTION_COLORS[r.action] || 'var(--text-dim)';
+    return `<div style="display:grid;grid-template-columns:150px 120px 1fr 120px;gap:0;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${ts}</div>
+      <div style="font-family:var(--font-data);font-weight:700;color:var(--accent);">${r.mdc_id||'—'}</div>
+      <div style="color:var(--text-secondary);padding-right:8px;">
+        <span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;border:1px solid ${col}44;color:${col};margin-right:6px;">${r.action||'—'}</span>${r.detail||''}
+      </div>
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${r.actor||'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function exportTriggerLogCSV() {
+  if (!trlogCache.length) { alert('Load the log first (click ↺ Refresh).'); return; }
+  const header = ['Timestamp (PT)','Action','MDC ID','Detail','Actor','Role'];
+  const rows = trlogCache.map(r => [
+    new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles'}),
+    r.action||'', r.mdc_id||'', r.detail||'', r.actor||'', r.actor_role||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','),...rows].join('\n');
+  const a = Object.assign(document.createElement('a'),{href:'data:text/csv;charset=utf-8,'+encodeURIComponent(csv),download:`trigger-log-${new Date().toLocaleDateString('en-CA')}.csv`});
+  a.click();
 }
 
 // Re-render on resize/orientation change
@@ -10123,7 +10380,7 @@ init();
           <input class="form-input" id="lib-designator" placeholder="e.g. VCALL10">
         </div>
         <div class="form-field">
-          <label class="form-label">Frequency (MHz) *</label>
+          <label class="form-label">RX Frequency (MHz) * <span style="font-weight:400;color:var(--text-dim);">Receive / Repeater Output</span></label>
           <input class="form-input" id="lib-freq" placeholder="155.3400">
         </div>
       </div>
@@ -10382,41 +10639,99 @@ init();
 
 <!-- ── TRIGGER EDIT / ADD MODAL ── -->
 <div class="modal-overlay" id="triggerEditModal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-header">
+  <div class="modal" style="max-width:680px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
       <div class="modal-title" id="triggerEditTitle">Add Radio ID</div>
       <button class="modal-close" onclick="closeTriggerEditModal()">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+
+      <!-- Row 1: MDC ID + Assignment -->
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">MDC1200 ID * <span style="font-weight:400;color:var(--text-dim);">4-digit</span></label>
-          <input class="form-input" id="te-id" placeholder="1234" maxlength="4" style="font-family:var(--font-data);font-size:18px;letter-spacing:0.1em;">
+          <label class="form-label">MDC1200 ID * <span style="font-weight:400;color:var(--text-dim);">hex chars 0-9, A-D</span></label>
+          <input class="form-input" id="te-id" placeholder="1A2B" maxlength="4"
+            style="font-family:var(--font-data);font-size:20px;letter-spacing:0.12em;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase().replace(/[^0-9A-D]/g,'')">
         </div>
         <div class="form-field">
           <label class="form-label">Assignment / Unit</label>
           <input class="form-input" id="te-assignment" placeholder="E51, BC1, LAFD Dispatch…">
         </div>
       </div>
+
+      <!-- Row 2: Serial + Model -->
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">Radio Model</label>
-          <input class="form-input" id="te-model" placeholder="Motorola APX 6000, Harris XL-200P…">
-        </div>
-        <div class="form-field">
           <label class="form-label">Serial Number</label>
-          <input class="form-input" id="te-serial" placeholder="123ABC456">
+          <input class="form-input" id="te-serial" placeholder="123ABC456" oninput="checkTriggerDuplicates()">
+          <div id="te-serial-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
         </div>
-      </div>
-      <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">Notes</label>
-          <textarea class="form-textarea" id="te-notes" placeholder="Initial notes, special equipment info…" style="height:64px;"></textarea>
+          <label class="form-label">Radio Model</label>
+          <select class="form-select" id="te-model">
+            <option value="">— Select model —</option>
+          </select>
         </div>
       </div>
+
+      <!-- Row 3: Band + Control Top checkbox -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Radio Band</label>
+          <select class="form-select" id="te-band">
+            <option value="">— Select band —</option>
+          </select>
+        </div>
+        <div class="form-field" style="justify-content:flex-end;padding-bottom:2px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+            <input type="checkbox" id="te-control-top" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <div>
+              <div style="font-size:13px;color:var(--text-primary);font-weight:500;">Control Top Replaced</div>
+              <div style="font-size:10px;color:var(--text-dim);">Mark if control top has been swapped</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- System IDs section -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">System IDs</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">
+              LARICS ID
+              <button onclick="copyLaricsToOthers()" title="Copy to ICI, CWIRS, CRIS"
+                style="background:rgba(30,136,229,0.12);border:1px solid rgba(30,136,229,0.3);color:var(--accent);font-size:10px;padding:1px 7px;border-radius:3px;cursor:pointer;margin-left:6px;font-family:var(--font-data);">
+                ⇢ Copy to ICI/CWIRS/CRIS
+              </button>
+            </label>
+            <input class="form-input" id="te-larics" placeholder="LA-RICS ID" oninput="checkTriggerDuplicates()">
+            <div id="te-larics-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">ICI ID</label>
+            <input class="form-input" id="te-ici" placeholder="ICI system ID" oninput="checkTriggerDuplicates()">
+            <div id="te-ici-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">CWIRS ID</label>
+            <input class="form-input" id="te-cwirs" placeholder="CWIRS system ID" oninput="checkTriggerDuplicates()">
+            <div id="te-cwirs-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">CRIS ID</label>
+            <input class="form-input" id="te-cris" placeholder="CRIS system ID" oninput="checkTriggerDuplicates()">
+            <div id="te-cris-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="modal-footer" style="justify-content:space-between;">
-      <div id="te-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);"></div>
+    <div class="modal-footer" style="flex-shrink:0;justify-content:space-between;">
+      <div id="te-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);flex:1;"></div>
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-secondary" onclick="closeTriggerEditModal()">Cancel</button>
         <button class="btn-primary" onclick="saveTriggerRecord()">Save</button>
