@@ -2206,6 +2206,64 @@
     .res-row > *:nth-child(n+5) { display: none; }
   }
 
+  /* ── ANNOUNCEMENT BANNER ── */
+  #announcementBanner {
+    display: none;
+    background: linear-gradient(90deg, rgba(255,196,0,0.15), rgba(255,196,0,0.08));
+    border-bottom: 1px solid rgba(255,196,0,0.4);
+    padding: 8px 20px;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  #announcementBanner.visible { display: flex; }
+  #announcementBanner .banner-icon { font-size: 16px; flex-shrink: 0; }
+  #announcementBanner .banner-text { flex: 1; line-height: 1.4; }
+  #announcementBanner .banner-dismiss {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 16px; padding: 0 4px; flex-shrink: 0;
+  }
+  #announcementBanner .banner-dismiss:hover { color: var(--text-primary); }
+
+  /* ── TRIGGER LOOKUP ── */
+  .trigger-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 140px 140px 80px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .trigger-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .trigger-id { font-family: var(--font-data); font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; }
+  .trigger-grid-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 140px 140px 80px;
+    gap: 10px;
+    padding: 4px 12px 8px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .trigger-note-row { padding: 7px 14px; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; gap: 12px; align-items: flex-start; }
+  .trigger-note-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 140px; }
+  @media (max-width: 768px) {
+    .trigger-grid-header { display: none; }
+    .trigger-row { grid-template-columns: 80px 1fr; }
+    .trigger-row > *:nth-child(n+4) { display: none; }
+  }
+
   /* ── MODULE LANDING PAGE ── */
   .module-card {
     background: var(--bg-panel);
@@ -2700,6 +2758,14 @@
 
 <!-- MAIN LAYOUT -->
 <div class="layout">
+
+<!-- ANNOUNCEMENT BANNER — shown when active system notice exists -->
+<div id="announcementBanner">
+  <span class="banner-icon">📢</span>
+  <span class="banner-text" id="bannerText"></span>
+  <button class="banner-dismiss" onclick="dismissBanner()" title="Dismiss">✕</button>
+</div>
+
   <!-- MAIN PANEL -->
   <div class="main-panel">
 
@@ -2711,6 +2777,7 @@
       <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
       <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
       <button class="main-view-tab"        id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
+      <button class="main-view-tab"        id="mvtab-triggers"   onclick="switchMainTab('triggers')">🔔 Trigger Lookup</button>
       <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
       <button class="main-view-tab"        id="mvtab-admin"      onclick="switchMainTab('admin')"     style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
     </div>
@@ -3000,6 +3067,28 @@
 
     </div>
 
+    <!-- ── TRIGGER LOOKUP VIEW ── -->
+    <div id="view-triggers" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">TRIGGER LOOKUP</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">MDC1200 Emergency Trigger ID Registry</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input class="search-input" id="triggerSearch" type="text" placeholder="Search ID, assignment, serial…" oninput="renderTriggers()" style="width:240px;">
+          <button class="btn-primary" id="triggerAddBtn" style="display:none;" onclick="openTriggerEditForm(null)">+ Add Radio ID</button>
+        </div>
+      </div>
+      <div class="trigger-grid-header">
+        <span>MDC ID</span><span>Assignment</span><span>Radio Model</span><span>Serial Number</span><span>Notes</span>
+      </div>
+      <div id="triggerGrid"></div>
+      <div id="triggerEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+        <div style="font-size:28px;margin-bottom:10px;">🔔</div>
+        <div style="font-size:13px;color:var(--text-secondary);">No radio IDs registered yet</div>
+      </div>
+    </div>
+
     <!-- ── RESOURCES VIEW ── -->
     <div id="view-resources" style="display:none;">
 
@@ -3168,7 +3257,16 @@
       <!-- System panel -->
       <div id="admin-system-panel" style="display:none;">
 
-        <!-- System Log — full width, filterable -->
+        <!-- System Notices management -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
+          <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📢 System Notices</div>
+            <button class="btn-primary" style="font-size:11px;padding:4px 10px;" onclick="openNoticeEditor(null)">+ New Notice</button>
+          </div>
+          <div id="adminNoticeList" style="padding:12px 18px;max-height:220px;overflow-y:auto;">
+            <div style="color:var(--text-dim);font-size:12px;">Loading…</div>
+          </div>
+        </div>
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
           <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
             <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📋 System Log</div>
@@ -5069,6 +5167,9 @@ async function onLoginSuccess() {
   await loadReservations();
   if (activeMainTab === 'schedule') renderSchedule();
 
+  // Check for active system notices (login popup + banner)
+  checkSystemNotices();
+
   // Show landing page module selector instead of going straight to app
   showLandingPage();
 }
@@ -5142,6 +5243,17 @@ function showLandingPage() {
       accent: '#00bcd4',
       stats: () => `<span class="module-stat">USGS 3DEP · First Fresnel · LOS analysis</span>`,
     },
+    {
+      id: 'triggers',
+      icon: '🔔',
+      title: 'Trigger Lookup',
+      desc: 'MDC1200 emergency trigger ID registry. Look up assignment, radio model, serial number, and notes.',
+      accent: 'var(--status-reserved)',
+      stats: () => {
+        const cnt = window._triggerCount || 0;
+        return `<span class="module-stat"><strong>${cnt}</strong> registered IDs</span>`;
+      },
+    },
     u.canViewResources ? {
       id: 'vehicles',
       icon: '🚒',
@@ -5202,6 +5314,8 @@ function openModule(id) {
     switchMainTab('channels');
   } else if (id === 'rfanalyzer') {
     switchMainTab('rfanalyzer');
+  } else if (id === 'triggers') {
+    switchMainTab('triggers');
   } else if (id === 'vehicles') {
     // Switch to resources tab and pre-filter to Vehicle
     switchMainTab('resources');
@@ -6505,7 +6619,7 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['overview','channels','talkgroups','library','schedule','rfanalyzer','resources','admin'].forEach(t => {
+  ['overview','channels','talkgroups','library','schedule','rfanalyzer','triggers','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
@@ -6515,6 +6629,7 @@ function switchMainTab(tab) {
   if (tab === 'library')     renderLibrary();
   if (tab === 'schedule')    renderSchedule();
   if (tab === 'rfanalyzer')  initRFAnalyzerTab();
+  if (tab === 'triggers')    renderTriggers();
   if (tab === 'resources')   renderResources();
   if (tab === 'admin')       renderAdminView();
 }
@@ -7081,6 +7196,8 @@ function exportSysLogCSV() {
 async function renderAdminSystem() {
   // Load system log on first open
   await loadSysLog();
+  // Load system notices
+  await renderAdminNotices();
 
   // Notification summary
   const notifEl = document.getElementById('adminNotifSummary');
@@ -7149,11 +7266,12 @@ function renderSchedMonth() {
     const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = ds === todayStr;
 
-    // Gather reservations overlapping this day
+    // Gather reservations overlapping this day — boundaries in PT
     const dayRes = reservations.filter(r => {
-      const rs = new Date(r.start), re = new Date(r.end);
-      const ds2 = new Date(ds), de = new Date(ds + 'T23:59:59');
-      return rs <= de && re >= ds2;
+      // Convert r.start and r.end to PT date strings for comparison
+      const rsDate = new Date(r.start).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      const reDate = new Date(r.end).toLocaleDateString('en-CA',   { timeZone:'America/Los_Angeles' });
+      return rsDate <= ds && reDate >= ds;
     }).sort((a,b) => new Date(a.start) - new Date(b.start));
 
     const MAX_VISIBLE = 4;
@@ -7597,12 +7715,16 @@ function renderSchedWeek() {
   // Day columns with events
   const dayCols = days.map(d => {
     const dStr = d.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
-    // Get reservations that overlap this day
+
+    // Build PT midnight for this day by parsing the ISO date as PT using ptInputToISO
+    const ptMidnight    = new Date(ptInputToISO(`${dStr}T00:00`));
+    const ptNextMidnight = new Date(ptMidnight.getTime() + 86400000);
+
+    // Get reservations that overlap this PT day
     const dayRes = reservations.filter(r => {
-      const rs = new Date(r.start), re = new Date(r.end);
-      const ds = new Date(dStr), de = new Date(dStr);
-      de.setDate(de.getDate() + 1);
-      return rs < de && re > ds;
+      const rsDate = new Date(r.start).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      const reDate = new Date(r.end  ).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      return rsDate <= dStr && reDate >= dStr;
     });
 
     const hourCells = HOURS.map(h =>
@@ -7611,11 +7733,12 @@ function renderSchedWeek() {
 
     const events = dayRes.map(r => {
       const rs = new Date(r.start), re = new Date(r.end);
-      const dayMidnight = new Date(dStr);
-      const startOfDay = Math.max(rs, dayMidnight);
-      const endOfDay   = Math.min(re, new Date(new Date(dStr).setDate(new Date(dStr).getDate()+1)));
-      const startMins  = (startOfDay - dayMidnight) / 60000;
-      const durMins    = (endOfDay - startOfDay) / 60000;
+      // Clamp to PT day boundaries
+      const startOfDay = rs < ptMidnight     ? ptMidnight     : rs;
+      const endOfDay   = re > ptNextMidnight ? ptNextMidnight : re;
+      // Minutes from PT midnight
+      const startMins = (startOfDay - ptMidnight) / 60000;
+      const durMins   = (endOfDay - startOfDay) / 60000;
       const top    = (startMins / 60) * PX_PER_HOUR;
       const height = Math.max(18, (durMins / 60) * PX_PER_HOUR - 2);
       const col    = SCHED_COLORS[r.priority] || SCHED_COLORS.Normal;
@@ -9088,6 +9211,7 @@ async function init() {
   const hasSession = await checkExistingSession();
   await loadChannels();
   await loadTalkgroups();
+  await loadTriggers();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
@@ -9095,6 +9219,395 @@ async function init() {
   checkLowAvailability();
   applyScheduledReservations();
   checkOverdueResources();
+}
+
+// ─────────────────────────────────────────────
+// SYSTEM NOTICES — Login popup + Banner
+// ─────────────────────────────────────────────
+let _noticeDismissedIds = new Set(
+  JSON.parse(sessionStorage.getItem('dismissedNotices') || '[]')
+);
+
+async function checkSystemNotices() {
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await sb.from('system_notices')
+      .select('*')
+      .eq('active', true)
+      .or(`expires.is.null,expires.gt.${now}`)
+      .order('created_at', { ascending: false });
+    if (error || !data?.length) return;
+
+    data.forEach(notice => {
+      if (_noticeDismissedIds.has(String(notice.id))) return;
+      if (notice.show_popup)  showLoginNotice(notice);
+      if (notice.show_banner) showBanner(notice);
+    });
+  } catch(e) { /* non-critical */ }
+}
+
+function showLoginNotice(notice) {
+  const typeIcon = { info:'ℹ️', warning:'⚠️', critical:'🚨' }[notice.type] || 'ℹ️';
+  document.getElementById('loginNoticeTitle').textContent = `${typeIcon} ${notice.title}`;
+  document.getElementById('loginNoticeBody').textContent  = notice.message;
+  const ts = new Date(notice.created_at).toLocaleString('en-US',
+    { timeZone:'America/Los_Angeles', month:'short', day:'numeric', year:'numeric',
+      hour:'2-digit', minute:'2-digit', hour12:true });
+  document.getElementById('loginNoticeFooter').textContent =
+    `Posted by ${notice.posted_by || 'Admin'} · ${ts}`;
+  document.getElementById('loginNoticeModal').classList.add('open');
+  document.getElementById('loginNoticeModal').dataset.noticeId = notice.id;
+
+  // Update border color by type
+  const borderColors = { info:'var(--accent)', warning:'var(--status-reserved)', critical:'var(--status-active)' };
+  const modal = document.querySelector('#loginNoticeModal .modal');
+  if (modal) modal.style.borderTopColor = borderColors[notice.type] || 'var(--accent)';
+}
+
+function dismissLoginNotice() {
+  const el = document.getElementById('loginNoticeModal');
+  const id = el.dataset.noticeId;
+  if (id) {
+    _noticeDismissedIds.add(String(id));
+    sessionStorage.setItem('dismissedNotices', JSON.stringify([..._noticeDismissedIds]));
+  }
+  el.classList.remove('open');
+}
+
+function showBanner(notice) {
+  const banner = document.getElementById('announcementBanner');
+  const textEl = document.getElementById('bannerText');
+  if (!banner || !textEl) return;
+  const typeIcon = { info:'📢', warning:'⚠️', critical:'🚨' }[notice.type] || '📢';
+  const borderColors = { info:'rgba(30,136,229,0.4)', warning:'rgba(255,196,0,0.4)', critical:'rgba(255,82,82,0.5)' };
+  const bgColors     = { info:'rgba(30,136,229,0.08)', warning:'rgba(255,196,0,0.1)', critical:'rgba(255,82,82,0.1)' };
+  banner.style.borderBottomColor = borderColors[notice.type] || borderColors.info;
+  banner.style.background        = bgColors[notice.type]     || bgColors.info;
+  banner.dataset.noticeId = notice.id;
+  document.querySelector('#announcementBanner .banner-icon').textContent = typeIcon;
+  textEl.innerHTML = `<strong>${notice.title}:</strong> ${notice.message}`;
+  banner.classList.add('visible');
+}
+
+function dismissBanner() {
+  const banner = document.getElementById('announcementBanner');
+  const id = banner?.dataset.noticeId;
+  if (id) {
+    _noticeDismissedIds.add(String(id));
+    sessionStorage.setItem('dismissedNotices', JSON.stringify([..._noticeDismissedIds]));
+  }
+  banner?.classList.remove('visible');
+}
+
+// ── Notice admin functions ──
+let noticeEditingId = null;
+
+function openNoticeEditor(id) {
+  noticeEditingId = id || null;
+  const errEl = document.getElementById('ne-error');
+  if (errEl) errEl.textContent = '';
+  if (id) {
+    // Load existing notice from Supabase
+    sb.from('system_notices').select('*').eq('id', id).single().then(({ data }) => {
+      if (!data) return;
+      document.getElementById('noticeEditorTitle').textContent = 'Edit Notice';
+      document.getElementById('ne-title').value   = data.title   || '';
+      document.getElementById('ne-message').value = data.message || '';
+      document.getElementById('ne-type').value    = data.type    || 'info';
+      document.getElementById('ne-expires').value = data.expires
+        ? toLocalDatetimeInput(data.expires) : '';
+      document.getElementById('ne-show-popup').checked  = data.show_popup  ?? true;
+      document.getElementById('ne-show-banner').checked = data.show_banner ?? false;
+      document.getElementById('ne-active').checked      = data.active      ?? true;
+      document.getElementById('noticeEditorModal').classList.add('open');
+    });
+  } else {
+    document.getElementById('noticeEditorTitle').textContent = 'New Notice';
+    document.getElementById('ne-title').value   = '';
+    document.getElementById('ne-message').value = '';
+    document.getElementById('ne-type').value    = 'info';
+    document.getElementById('ne-expires').value = '';
+    document.getElementById('ne-show-popup').checked  = true;
+    document.getElementById('ne-show-banner').checked = false;
+    document.getElementById('ne-active').checked      = true;
+    document.getElementById('noticeEditorModal').classList.add('open');
+  }
+}
+
+function closeNoticeEditor() {
+  document.getElementById('noticeEditorModal').classList.remove('open');
+  noticeEditingId = null;
+}
+
+async function saveNotice() {
+  const title   = document.getElementById('ne-title').value.trim();
+  const message = document.getElementById('ne-message').value.trim();
+  const errEl   = document.getElementById('ne-error');
+  if (!title || !message) { errEl.textContent = 'Title and message are required.'; return; }
+  const expiresVal = document.getElementById('ne-expires').value;
+
+  const row = {
+    title,
+    message,
+    type:        document.getElementById('ne-type').value,
+    expires:     expiresVal ? ptInputToISO(expiresVal) : null,
+    show_popup:  document.getElementById('ne-show-popup').checked,
+    show_banner: document.getElementById('ne-show-banner').checked,
+    active:      document.getElementById('ne-active').checked,
+    posted_by:   currentUser?.name || 'Admin',
+    updated_at:  new Date().toISOString(),
+  };
+
+  if (noticeEditingId) {
+    const { error } = await sb.from('system_notices').update(row).eq('id', noticeEditingId);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+  } else {
+    const { error } = await sb.from('system_notices').insert(row);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+  }
+
+  closeNoticeEditor();
+  renderAdminNotices();
+  logEvent('system', noticeEditingId ? 'Notice Updated' : 'Notice Created', title);
+}
+
+async function renderAdminNotices() {
+  const el = document.getElementById('adminNoticeList');
+  if (!el) return;
+  try {
+    const { data } = await sb.from('system_notices').select('*').order('created_at', { ascending: false }).limit(20);
+    if (!data?.length) { el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">No notices yet.</div>'; return; }
+    el.innerHTML = data.map(n => {
+      const typeIcon  = { info:'ℹ️', warning:'⚠️', critical:'🚨' }[n.type] || 'ℹ️';
+      const statusTag = n.active
+        ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(0,230,118,0.12);color:var(--status-available);border:1px solid rgba(0,230,118,0.3);">ACTIVE</span>`
+        : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(120,120,120,0.12);color:var(--text-dim);border:1px solid var(--border);">INACTIVE</span>`;
+      const ts = new Date(n.created_at).toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric' });
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:14px;">${typeIcon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;color:var(--text-primary);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
+          <div style="font-size:10px;color:var(--text-dim);">${ts} · ${n.show_popup?'Popup ':''}${n.show_banner?'Banner ':''}</div>
+        </div>
+        ${statusTag}
+        <button class="btn-secondary" style="font-size:10px;padding:2px 8px;" onclick="openNoticeEditor('${n.id}')">Edit</button>
+        <button class="btn-danger" style="font-size:10px;padding:2px 8px;" onclick="deleteNotice('${n.id}')">✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Error loading notices.</div>'; }
+}
+
+async function deleteNotice(id) {
+  if (!confirm('Delete this notice?')) return;
+  await sb.from('system_notices').delete().eq('id', id);
+  renderAdminNotices();
+}
+
+// ─────────────────────────────────────────────
+// TRIGGER LOOKUP MODULE
+// ─────────────────────────────────────────────
+let triggers = [];
+let triggerEditingId = null;
+let triggerViewingId = null;
+
+async function loadTriggers() {
+  try {
+    const { data, error } = await sb.from('radio_ids').select('*').order('mdc_id');
+    if (error) { console.warn('loadTriggers:', error.message); return; }
+    triggers = data || [];
+    window._triggerCount = triggers.length;
+  } catch(e) { console.warn('loadTriggers:', e.message); }
+}
+
+function renderTriggers() {
+  const query  = (document.getElementById('triggerSearch')?.value || '').toLowerCase();
+  const grid   = document.getElementById('triggerGrid');
+  const empty  = document.getElementById('triggerEmpty');
+  const addBtn = document.getElementById('triggerAddBtn');
+  if (!grid) return;
+
+  // Show add button for admins/comms only
+  if (addBtn) addBtn.style.display = (currentUser?.role === 'admin' || currentUser?.role === 'comms') ? 'inline-flex' : 'none';
+
+  const filtered = triggers.filter(t => !query ||
+    [t.mdc_id, t.assignment, t.serial_number, t.radio_model, t.notes]
+      .some(f => (f||'').toLowerCase().includes(query))
+  );
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(t => `
+    <div class="trigger-row" onclick="openTriggerModal('${t.id}')">
+      <div class="trigger-id">${escHtml(t.mdc_id)}</div>
+      <div style="font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.assignment||'—')}</div>
+      <div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.radio_model||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${escHtml(t.serial_number||'—')}</div>
+      <div style="font-size:11px;color:var(--text-dim);">${t.note_count > 0 ? `${t.note_count} note${t.note_count!==1?'s':''}` : '—'}</div>
+    </div>`).join('');
+}
+
+async function openTriggerModal(id) {
+  triggerViewingId = id;
+  const t = triggers.find(x => String(x.id) === String(id));
+  if (!t) return;
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'comms';
+  document.getElementById('triggerModalTitle').textContent = `ID: ${t.mdc_id}`;
+  document.getElementById('triggerModalAdminBtns').style.display = isAdmin ? 'flex' : 'none';
+
+  document.getElementById('triggerDetailSection').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+      <div>
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">MDC1200 ID</div>
+        <div style="font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--accent);letter-spacing:0.1em;">${escHtml(t.mdc_id)}</div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Assignment</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text-primary);">${escHtml(t.assignment||'—')}</div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Radio Model</div>
+        <div style="font-size:13px;color:var(--text-secondary);">${escHtml(t.radio_model||'—')}</div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Serial Number</div>
+        <div style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);">${escHtml(t.serial_number||'—')}</div>
+      </div>
+    </div>
+    ${t.notes ? `<div style="font-size:12px;color:var(--text-secondary);padding:10px 12px;background:var(--bg-deep);border-radius:var(--radius);margin-top:4px;line-height:1.6;">${escHtml(t.notes)}</div>` : ''}
+  `;
+
+  // Load notes log
+  await renderTriggerNotes(id);
+
+  document.getElementById('triggerNewNote').value = '';
+  document.getElementById('triggerModal').classList.add('open');
+  logEvent('system', 'Trigger Lookup', `MDC ID ${t.mdc_id} — ${t.assignment||''}`, { mdc_id: t.mdc_id });
+}
+
+function closeTriggerModal() {
+  document.getElementById('triggerModal').classList.remove('open');
+  triggerViewingId = null;
+}
+
+async function renderTriggerNotes(radioId) {
+  const el = document.getElementById('triggerNotesLog');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data, error } = await sb.from('radio_notes')
+      .select('*').eq('radio_id', radioId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data?.length) {
+      el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">No notes yet. Be the first to add one.</div>';
+      return;
+    }
+    el.innerHTML = data.map(n => {
+      const ts = new Date(n.created_at).toLocaleString('en-US', {
+        timeZone:'America/Los_Angeles', month:'short', day:'numeric',
+        year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
+      });
+      return `<div class="trigger-note-row">
+        <div class="trigger-note-meta">${ts}<br>${escHtml(n.author||'Unknown')}</div>
+        <div style="flex:1;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${escHtml(n.note)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Error loading notes.</div>';
+  }
+}
+
+async function saveTriggerNote() {
+  const noteText = document.getElementById('triggerNewNote').value.trim();
+  if (!noteText) return;
+  const { error } = await sb.from('radio_notes').insert({
+    radio_id:   triggerViewingId,
+    note:       noteText,
+    author:     currentUser?.name || 'Unknown',
+    created_at: new Date().toISOString(),
+  });
+  if (error) { alert('Error saving note: ' + error.message); return; }
+  document.getElementById('triggerNewNote').value = '';
+  await renderTriggerNotes(triggerViewingId);
+  // Reload triggers to refresh note count
+  await loadTriggers();
+  renderTriggers();
+}
+
+function openTriggerEditForm(id) {
+  triggerEditingId = id || null;
+  const errEl = document.getElementById('te-error');
+  if (errEl) errEl.textContent = '';
+  if (id) {
+    const t = triggers.find(x => String(x.id) === String(id));
+    if (!t) return;
+    document.getElementById('triggerEditTitle').textContent = `Edit — ${t.mdc_id}`;
+    document.getElementById('te-id').value         = t.mdc_id        || '';
+    document.getElementById('te-assignment').value = t.assignment    || '';
+    document.getElementById('te-model').value      = t.radio_model   || '';
+    document.getElementById('te-serial').value     = t.serial_number || '';
+    document.getElementById('te-notes').value      = t.notes         || '';
+  } else {
+    document.getElementById('triggerEditTitle').textContent = 'Add Radio ID';
+    ['te-id','te-assignment','te-model','te-serial','te-notes'].forEach(fid => {
+      const el = document.getElementById(fid); if (el) el.value = '';
+    });
+  }
+  // Close detail modal if open
+  document.getElementById('triggerModal').classList.remove('open');
+  document.getElementById('triggerEditModal').classList.add('open');
+}
+
+function closeTriggerEditModal() {
+  document.getElementById('triggerEditModal').classList.remove('open');
+  triggerEditingId = null;
+}
+
+async function saveTriggerRecord() {
+  const mdcId  = document.getElementById('te-id').value.trim();
+  const errEl  = document.getElementById('te-error');
+  if (!mdcId) { errEl.textContent = 'MDC ID is required.'; return; }
+  if (!/^\d{4}$/.test(mdcId)) { errEl.textContent = 'MDC ID must be exactly 4 digits.'; return; }
+
+  const row = {
+    mdc_id:        mdcId,
+    assignment:    document.getElementById('te-assignment').value.trim() || null,
+    radio_model:   document.getElementById('te-model').value.trim()      || null,
+    serial_number: document.getElementById('te-serial').value.trim()     || null,
+    notes:         document.getElementById('te-notes').value.trim()      || null,
+    updated_by:    currentUser?.name || 'Unknown',
+    updated_at:    new Date().toISOString(),
+  };
+
+  if (triggerEditingId) {
+    const { error } = await sb.from('radio_ids').update(row).eq('id', triggerEditingId);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+    logEvent('user', 'Radio ID Updated', `MDC ${mdcId} — ${row.assignment||''}`, { mdc_id: mdcId });
+  } else {
+    const { error } = await sb.from('radio_ids').insert(row);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+    logEvent('user', 'Radio ID Added', `MDC ${mdcId} — ${row.assignment||''}`, { mdc_id: mdcId });
+  }
+
+  await loadTriggers();
+  closeTriggerEditModal();
+  renderTriggers();
+}
+
+async function deleteTriggerRecord() {
+  const t = triggers.find(x => String(x.id) === String(triggerViewingId));
+  if (!t || !confirm(`Delete radio ID ${t.mdc_id} — ${t.assignment||''}?`)) return;
+  await sb.from('radio_ids').delete().eq('id', t.id);
+  logEvent('user', 'Radio ID Deleted', `MDC ${t.mdc_id} — ${t.assignment||''}`);
+  await loadTriggers();
+  closeTriggerModal();
+  renderTriggers();
 }
 
 // Re-render on resize/orientation change
@@ -9810,6 +10323,162 @@ init();
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-secondary" onclick="closeResourceModal()">Cancel</button>
         <button class="btn-primary" onclick="saveResource()">Save Resource</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN NOTICE MODAL ── -->
+<div class="modal-overlay" id="loginNoticeModal">
+  <div class="modal" style="max-width:480px;border-top:3px solid var(--status-reserved);">
+    <div class="modal-header">
+      <div class="modal-title">📢 <span id="loginNoticeTitle">System Notice</span></div>
+      <button class="modal-close" onclick="dismissLoginNotice()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="loginNoticeBody" style="font-size:13px;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;"></div>
+      <div id="loginNoticeFooter" style="font-size:11px;color:var(--text-dim);font-family:var(--font-data);margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" style="margin-left:auto;" onclick="dismissLoginNotice()">Acknowledge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRIGGER LOOKUP MODAL ── -->
+<div class="modal-overlay" id="triggerModal">
+  <div class="modal" style="max-width:680px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title" id="triggerModalTitle">Radio ID</div>
+      <button class="modal-close" onclick="closeTriggerModal()">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+      <div id="triggerDetailSection">
+        <!-- Filled dynamically -->
+      </div>
+      <!-- Notes section -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Notes Log</div>
+        <div id="triggerNotesLog" style="max-height:220px;overflow-y:auto;margin-bottom:12px;background:var(--bg-deep);border-radius:var(--radius);"></div>
+        <!-- Add note — shown to all authenticated users -->
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div class="form-field" style="flex:1;">
+            <label class="form-label">Add Note</label>
+            <textarea class="form-textarea" id="triggerNewNote" placeholder="Enter note…" style="height:56px;" onkeydown="if(event.ctrlKey&&event.key==='Enter')saveTriggerNote()"></textarea>
+          </div>
+          <button class="btn-primary" style="padding:7px 14px;flex-shrink:0;margin-bottom:1px;" onclick="saveTriggerNote()">Post</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;justify-content:space-between;">
+      <div id="triggerModalAdminBtns" style="display:none;gap:8px;display:flex;">
+        <button class="btn-secondary" style="font-size:12px;" onclick="openTriggerEditForm()">✏ Edit Record</button>
+        <button class="btn-danger"    style="font-size:12px;" onclick="deleteTriggerRecord()">✕ Delete</button>
+      </div>
+      <button class="btn-secondary" style="margin-left:auto;" onclick="closeTriggerModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRIGGER EDIT / ADD MODAL ── -->
+<div class="modal-overlay" id="triggerEditModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title" id="triggerEditTitle">Add Radio ID</div>
+      <button class="modal-close" onclick="closeTriggerEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">MDC1200 ID * <span style="font-weight:400;color:var(--text-dim);">4-digit</span></label>
+          <input class="form-input" id="te-id" placeholder="1234" maxlength="4" style="font-family:var(--font-data);font-size:18px;letter-spacing:0.1em;">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Assignment / Unit</label>
+          <input class="form-input" id="te-assignment" placeholder="E51, BC1, LAFD Dispatch…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Radio Model</label>
+          <input class="form-input" id="te-model" placeholder="Motorola APX 6000, Harris XL-200P…">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Serial Number</label>
+          <input class="form-input" id="te-serial" placeholder="123ABC456">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="te-notes" placeholder="Initial notes, special equipment info…" style="height:64px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div id="te-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);"></div>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeTriggerEditModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveTriggerRecord()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SYSTEM NOTICE EDITOR ── -->
+<div class="modal-overlay" id="noticeEditorModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title" id="noticeEditorTitle">New System Notice</div>
+      <button class="modal-close" onclick="closeNoticeEditor()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Title *</label>
+          <input class="form-input" id="ne-title" placeholder="e.g. Scheduled Maintenance — Sunday 0200–0400">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Message *</label>
+          <textarea class="form-textarea" id="ne-message" placeholder="Message shown to users on login and/or as a banner…" style="height:100px;"></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Type</label>
+          <select class="form-select" id="ne-type">
+            <option value="info">ℹ Info</option>
+            <option value="warning">⚠ Warning</option>
+            <option value="critical">🚨 Critical</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Expires</label>
+          <input class="form-input" id="ne-expires" type="datetime-local">
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;padding:10px 0;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="ne-show-popup" style="accent-color:var(--accent);width:14px;height:14px;" checked>
+          Show as login popup
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="ne-show-banner" style="accent-color:var(--accent);width:14px;height:14px;">
+          Show as top banner
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="ne-active" style="accent-color:var(--accent);width:14px;height:14px;" checked>
+          Active
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div id="ne-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);"></div>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeNoticeEditor()">Cancel</button>
+        <button class="btn-primary" onclick="saveNotice()">Save Notice</button>
       </div>
     </div>
   </div>
