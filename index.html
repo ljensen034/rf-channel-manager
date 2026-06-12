@@ -3001,27 +3001,63 @@
 
       <!-- System panel -->
       <div id="admin-system-panel" style="display:none;">
+
+        <!-- System Log — full width, filterable -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
+          <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📋 System Log</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input class="search-input" id="syslogSearch" type="text" placeholder="Search log…" oninput="renderSysLog()" style="width:180px;font-size:12px;">
+              <select class="form-select" id="syslogCategory" onchange="renderSysLog()" style="width:150px;font-size:12px;padding:5px 8px;">
+                <option value="all">All Categories</option>
+                <option value="auth">Auth</option>
+                <option value="channel">Channels</option>
+                <option value="reservation">Reservations</option>
+                <option value="talkgroup">Talkgroups</option>
+                <option value="resource">Resources</option>
+                <option value="user">Users</option>
+                <option value="risk">RF Risk</option>
+                <option value="system">System</option>
+              </select>
+              <select class="form-select" id="syslogDateFilter" onchange="renderSysLog()" style="width:120px;font-size:12px;padding:5px 8px;">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+              </select>
+              <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="loadSysLog()">↺ Refresh</button>
+              <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="exportSysLogCSV()">⬇ CSV</button>
+            </div>
+          </div>
+          <div id="syslogCount" style="padding:4px 18px;font-family:var(--font-data);font-size:10px;color:var(--text-dim);border-bottom:1px solid var(--border);"></div>
+
+          <!-- Column headers -->
+          <div style="display:grid;grid-template-columns:140px 80px 100px 1fr 120px;gap:0;padding:6px 18px;background:var(--bg-deep);font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+            <span>Timestamp (PT)</span><span>Category</span><span>Action</span><span>Detail</span><span>Actor</span>
+          </div>
+
+          <div id="syslogBody" style="max-height:520px;overflow-y:auto;"></div>
+
+          <!-- Load more -->
+          <div style="padding:10px 18px;border-top:1px solid var(--border);text-align:center;">
+            <button class="btn-secondary" id="syslogMoreBtn" style="font-size:11px;padding:4px 14px;display:none;" onclick="loadMoreSysLog()">Load more entries</button>
+          </div>
+        </div>
+
+        <!-- Bottom row: Notifications + Release Notes -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">🕐 Recent Audit</div>
-              <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openAuditModal()">Full Trail</button>
-            </div>
-            <div id="adminAuditPreview" style="padding:12px 18px;max-height:320px;overflow-y:auto;"></div>
-          </div>
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
               <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">🔔 Notifications</div>
               <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openNotifSettings()">Configure</button>
             </div>
             <div style="padding:14px 18px;"><div id="adminNotifSummary" style="font-size:12px;color:var(--text-secondary);line-height:1.7;"></div></div>
           </div>
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
               <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📝 Release Notes</div>
               <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="openReleaseNoteEditor(null)">+ Add Entry</button>
             </div>
-            <div id="adminReleasePreview" style="padding:12px 18px;max-height:320px;overflow-y:auto;"></div>
+            <div id="adminReleasePreview" style="padding:12px 18px;max-height:280px;overflow-y:auto;"></div>
           </div>
         </div>
       </div>
@@ -3434,10 +3470,57 @@ function logActivityLocal(text) {
   renderLog();
 }
 
+// Structured event logger — writes rich row to activity_log
+// category: 'auth' | 'channel' | 'reservation' | 'talkgroup' | 'resource' | 'user' | 'system' | 'risk'
+async function logEvent(category, action, detail, extra = {}) {
+  const who      = currentUser?.name  || extra.actor || 'System';
+  const whoRole  = currentUser?.role  || extra.role  || '';
+  const message  = `[${category.toUpperCase()}] ${action}${detail ? ' — ' + detail : ''}`;
+
+  logActivityLocal(message);
+
+  try {
+    await sb.from('activity_log').insert({
+      message,
+      category,
+      action,
+      detail:     detail     || null,
+      actor:      who,
+      actor_role: whoRole    || null,
+      extra:      Object.keys(extra).length ? JSON.stringify(extra) : null,
+    });
+  } catch(e) { /* non-critical */ }
+}
+
+// Legacy wrapper — keep all existing logActivity(text) calls working
 async function logActivity(text) {
+  // Infer category from message content for structured logging
+  let category = 'system';
+  const t = text.toLowerCase();
+  if (t.includes('signed in') || t.includes('sign'))   category = 'auth';
+  else if (t.includes('channel') || t.includes('designator')) category = 'channel';
+  else if (t.includes('reservation'))                   category = 'reservation';
+  else if (t.includes('talkgroup'))                     category = 'talkgroup';
+  else if (t.includes('resource'))                      category = 'resource';
+  else if (t.includes('user'))                          category = 'user';
+  else if (t.includes('simplex') || t.includes('risk')) category = 'risk';
+  else if (t.includes('report') || t.includes('audit')) category = 'system';
+
+  const who     = currentUser?.name || 'System';
+  const whoRole = currentUser?.role || '';
+  // Strip HTML tags for the plain action text
+  const plain   = text.replace(/<[^>]+>/g, '');
   logActivityLocal(text);
   try {
-    await sb.from('activity_log').insert({ message: text });
+    await sb.from('activity_log').insert({
+      message:    text,
+      category,
+      action:     plain,
+      detail:     null,
+      actor:      who,
+      actor_role: whoRole || null,
+      extra:      null,
+    });
   } catch(e) { /* non-critical */ }
 }
 
@@ -4331,6 +4414,10 @@ async function doLogin() {
 
 // ── SIGN OUT ──
 async function doLogout() {
+  // Log before clearing currentUser
+  if (currentUser) {
+    await logEvent('auth', 'Sign Out', `${currentUser.name} signed out`, { role: currentUser.role });
+  }
   await sb.auth.signOut();
   currentUser = null;
   document.body.classList.remove('readonly');
@@ -4356,7 +4443,7 @@ async function doLogout() {
 }
 
 // ── POST-LOGIN UI UPDATE ──
-function onLoginSuccess() {
+async function onLoginSuccess() {
   const match = currentUser;
   document.getElementById('loginScreen').classList.add('hidden');
 
@@ -4393,7 +4480,13 @@ function onLoginSuccess() {
     `;
   }
 
-  logActivity(`<span class="log-ch">${match.name}</span> signed in as ${match.roleLabel}`);
+  logEvent('auth', 'Sign In', `${match.name} signed in as ${match.roleLabel}`, {
+    role: match.role, viewMode: match.viewMode, email: match.email
+  });
+
+  // Load reservations now that we're authenticated — RLS requires a valid session
+  await loadReservations();
+  if (activeMainTab === 'schedule') renderSchedule();
 
   // Show landing page module selector instead of going straight to app
   showLandingPage();
@@ -6238,30 +6331,164 @@ async function adminDeleteUser(id) {
 }
 
 // ── ADMIN: SYSTEM PANEL ──
-async function renderAdminSystem() {
-  // Audit preview
-  const auditEl = document.getElementById('adminAuditPreview');
-  if (auditEl) {
-    try {
-      const { data } = await sb.from('channel_history').select('*').order('created_at', { ascending:false }).limit(15);
-      if (!data || !data.length) {
-        auditEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">No audit records yet.</div>';
-      } else {
-        auditEl.innerHTML = data.map(r => `
-          <div style="display:flex;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;">
-            <span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;white-space:nowrap;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.25);flex-shrink:0;">${r.action||'edit'}</span>
-            <div style="flex:1;min-width:0;">
-              <span style="font-family:var(--font-data);font-weight:700;color:var(--text-primary);">${r.designator||'—'}</span>
-              ${r.field ? `<span style="color:var(--text-dim);"> · ${r.field}</span>` : ''}
-              ${r.new_value ? `<span style="color:var(--status-available);"> → ${r.new_value}</span>` : ''}
-            </div>
-            <span style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);white-space:nowrap;">${fmtAuditTS(r.created_at)}</span>
-          </div>`).join('');
-      }
-    } catch(e) {
-      auditEl.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Audit table not yet created.</div>';
-    }
+let sysLogCache = [];
+let sysLogOffset = 0;
+const SYSLOG_PAGE = 100;
+
+const SYSLOG_CATEGORY_STYLE = {
+  auth:        { bg:'rgba(0,230,118,0.12)',  color:'var(--status-available)', label:'AUTH'        },
+  channel:     { bg:'rgba(30,136,229,0.12)', color:'var(--accent)',           label:'CHANNEL'     },
+  reservation: { bg:'rgba(255,196,0,0.12)',  color:'var(--status-reserved)',  label:'RESERVATION' },
+  talkgroup:   { bg:'rgba(206,147,216,0.12)',color:'var(--status-interop)',   label:'TALKGROUP'   },
+  resource:    { bg:'rgba(255,152,0,0.12)',  color:'#ff9800',                 label:'RESOURCE'    },
+  user:        { bg:'rgba(255,82,82,0.12)',  color:'var(--status-active)',    label:'USER'        },
+  risk:        { bg:'rgba(0,188,212,0.12)',  color:'#00bcd4',                 label:'RF RISK'     },
+  system:      { bg:'rgba(120,120,120,0.12)',color:'var(--text-dim)',         label:'SYSTEM'      },
+};
+
+function syslogCategoryChip(category) {
+  const s = SYSLOG_CATEGORY_STYLE[category] || SYSLOG_CATEGORY_STYLE.system;
+  return `<span style="font-family:var(--font-data);font-size:9px;font-weight:700;letter-spacing:0.06em;padding:2px 6px;border-radius:2px;background:${s.bg};color:${s.color};white-space:nowrap;">${s.label}</span>`;
+}
+
+function fmtSyslogTS(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', {
+    timeZone:'America/Los_Angeles',
+    month:'short', day:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit',
+    hour12:false
+  });
+}
+
+async function loadSysLog() {
+  sysLogOffset = 0;
+  sysLogCache  = [];
+  const btn = document.getElementById('syslogMoreBtn');
+  const body = document.getElementById('syslogBody');
+  if (body) body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data, error } = await sb
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(0, SYSLOG_PAGE - 1);
+    if (error) throw error;
+    sysLogCache = data || [];
+    if (btn) btn.style.display = sysLogCache.length === SYSLOG_PAGE ? 'inline-flex' : 'none';
+    renderSysLog();
+  } catch(e) {
+    if (body) body.innerHTML = `<div style="padding:20px;color:var(--text-dim);font-size:12px;">Error loading log: ${e.message}</div>`;
   }
+}
+
+async function loadMoreSysLog() {
+  sysLogOffset += SYSLOG_PAGE;
+  const btn = document.getElementById('syslogMoreBtn');
+  if (btn) btn.textContent = 'Loading…';
+  try {
+    const { data } = await sb
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(sysLogOffset, sysLogOffset + SYSLOG_PAGE - 1);
+    sysLogCache = [...sysLogCache, ...(data || [])];
+    if (btn) {
+      btn.textContent = 'Load more entries';
+      btn.style.display = (data?.length === SYSLOG_PAGE) ? 'inline-flex' : 'none';
+    }
+    renderSysLog();
+  } catch(e) { if (btn) { btn.textContent = 'Load more entries'; } }
+}
+
+function renderSysLog() {
+  const query    = (document.getElementById('syslogSearch')?.value || '').toLowerCase();
+  const catFilt  = document.getElementById('syslogCategory')?.value || 'all';
+  const dateFilt = document.getElementById('syslogDateFilter')?.value || 'all';
+  const body     = document.getElementById('syslogBody');
+  const countEl  = document.getElementById('syslogCount');
+  if (!body) return;
+
+  const now      = new Date();
+  const todayStr = now.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const weekAgo  = new Date(now - 7 * 86400000);
+
+  const filtered = sysLogCache.filter(r => {
+    if (catFilt !== 'all' && r.category !== catFilt) return false;
+    if (dateFilt === 'today') {
+      const d = new Date(r.created_at).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      if (d !== todayStr) return false;
+    }
+    if (dateFilt === 'week' && new Date(r.created_at) < weekAgo) return false;
+    if (query) {
+      return [r.action, r.detail, r.actor, r.category, r.message, r.extra]
+        .some(f => (f || '').toLowerCase().includes(query));
+    }
+    return true;
+  });
+
+  if (countEl) countEl.textContent = `${filtered.length.toLocaleString()} entr${filtered.length !== 1 ? 'ies' : 'y'} shown`;
+
+  if (!filtered.length) {
+    body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-dim);font-size:12px;">No log entries match the current filters.</div>';
+    return;
+  }
+
+  body.innerHTML = filtered.map(r => {
+    const ts        = fmtSyslogTS(r.created_at);
+    const chip      = syslogCategoryChip(r.category || 'system');
+    const action    = r.action  || r.message?.replace(/<[^>]+>/g,'') || '—';
+    const detail    = r.detail  || '';
+    const actor     = r.actor   || '—';
+    const role      = r.actor_role ? `<span style="font-size:10px;color:var(--text-dim);"> · ${r.actor_role}</span>` : '';
+    // Parse extra JSON for additional detail
+    let extraHtml = '';
+    if (r.extra) {
+      try {
+        const ex = JSON.parse(r.extra);
+        const parts = Object.entries(ex)
+          .filter(([k,v]) => v && v !== 'auto')
+          .map(([k,v]) => `<span style="color:var(--text-dim);">${k}:</span> ${v}`)
+          .join('  ·  ');
+        if (parts) extraHtml = `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${parts}</div>`;
+      } catch(e) {}
+    }
+    return `<div style="display:grid;grid-template-columns:140px 80px 100px 1fr 120px;gap:0;padding:7px 18px;border-bottom:1px solid var(--border);font-size:11px;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);padding-right:8px;line-height:1.5;">${ts}</div>
+      <div style="padding-right:8px;">${chip}</div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">${action.split(' — ')[0] || action}</div>
+      <div style="color:var(--text-secondary);padding-right:8px;min-width:0;">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detail || action}</div>
+        ${extraHtml}
+      </div>
+      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-secondary);">${actor}${role}</div>
+    </div>`;
+  }).join('');
+}
+
+function exportSysLogCSV() {
+  if (!sysLogCache.length) { alert('Load the log first (click ↺ Refresh).'); return; }
+  const header = ['Timestamp (PT)', 'Category', 'Action', 'Detail', 'Actor', 'Role', 'Extra'];
+  const rows   = sysLogCache.map(r => [
+    fmtSyslogTS(r.created_at),
+    r.category || 'system',
+    (r.action  || r.message || '').replace(/<[^>]+>/g,''),
+    r.detail   || '',
+    r.actor    || '',
+    r.actor_role || '',
+    r.extra    || '',
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href:     'data:text/csv;charset=utf-8,' + encodeURIComponent(csv),
+    download: `comm-center-log-${new Date().toLocaleDateString('en-CA')}.csv`,
+  });
+  a.click();
+}
+
+async function renderAdminSystem() {
+  // Load system log on first open
+  await loadSysLog();
 
   // Notification summary
   const notifEl = document.getElementById('adminNotifSummary');
@@ -6648,9 +6875,15 @@ const SCHED_COLORS = {
 async function loadReservations() {
   try {
     const { data, error } = await sb.from('reservations').select('*').order('start', { ascending: true });
-    if (error) { console.warn('loadReservations error:', error.message); return; }
+    if (error) {
+      console.error('loadReservations error:', error.message);
+      logActivityLocal(`⚠ Reservations failed to load: ${error.message}`);
+      return;
+    }
     reservations = (data || []).map(rowToReservation);
-  } catch(e) { console.warn('loadReservations failed:', e.message); }
+  } catch(e) {
+    console.error('loadReservations exception:', e.message);
+  }
 }
 
 function rowToReservation(row) {
@@ -7627,11 +7860,17 @@ async function saveReservation() {
   if (schedEditingId) {
     const { error } = await sb.from('reservations').update(row).eq('id', schedEditingId);
     if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
-    logActivity(`Reservation "<span class="log-ch">${title}</span>" updated`);
+    logEvent('reservation', 'Updated', `"${title}" · ${channelDesignators.join(', ')} · ${data.start} → ${data.end}`, {
+      channels: channelDesignators, requestor: data.requestor, agency: data.agency,
+      priority: data.priority, lat: data.lat, lon: data.lon, city: data.city
+    });
   } else {
     const { error } = await sb.from('reservations').insert(row);
     if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
-    logActivity(`Reservation "<span class="log-ch">${title}</span>" scheduled — ${channelDesignators.join(', ')}`);
+    logEvent('reservation', 'Created', `"${title}" · ${channelDesignators.join(', ')} · ${data.start} → ${data.end}`, {
+      channels: channelDesignators, requestor: data.requestor, agency: data.agency,
+      priority: data.priority, lat: data.lat, lon: data.lon, city: data.city, coml: data.coml
+    });
   }
 
   await loadReservations();
@@ -7645,7 +7884,9 @@ async function deleteReservation(id) {
   if (!r || !confirm(`Delete reservation "${r.title}"?`)) return;
   const { error } = await sb.from('reservations').delete().eq('id', id);
   if (error) { alert('Error deleting reservation: ' + error.message); return; }
-  logActivity(`Reservation "<span class="log-ch">${r.title}</span>" deleted`);
+  logEvent('reservation', 'Deleted', `"${r.title}" · ${r.channelDesignator || '—'} · was ${r.start} → ${r.end}`, {
+    channels: r.channelDesignator, requestor: r.requestor, agency: r.agency
+  });
   await loadReservations();
   closeSchedModal();
   renderSchedule();
@@ -7669,32 +7910,43 @@ function ptInputToISO(localStr) {
 // Auto-activate/release channels based on schedules — called on init and every minute
 function applyScheduledReservations() {
   const now = Date.now();
-  let changed = false;
 
   reservations.forEach(r => {
     const start = new Date(r.start).getTime();
     const end   = new Date(r.end).getTime();
-    const ch    = channels.find(c => c.id == r.channelId);
-    if (!ch) return;
 
-    if (start <= now && end > now) {
-      // Should be active now — set to reserved (marks it as in-use)
-      if (ch.status === 'available') {
+    // ── Activation: reservation window just started ──
+    (r.channelIds || (r.channelId ? [r.channelId] : [])).forEach(chId => {
+      const ch = channels.find(c => c.id == chId);
+      if (!ch) return;
+
+      if (start <= now && end > now && ch.status === 'available') {
         sb.from('channels').update({
-          status: 'reserved',
-          function: r.title,
-          agency:   r.agency || ch.agency,
+          status:     'reserved',
+          function:   r.title,
+          agency:     r.agency || ch.agency,
           updated_by: 'Schedule',
           updated_at: new Date().toISOString()
         }).eq('id', ch.id).then(({ error }) => {
           if (!error) {
-            logActivityLocal(`⏰ Schedule activated: <span class="log-ch">${ch.designator}</span> → Reserved for "${r.title}"`);
-            pushNotification('reserved', `⏰ Scheduled reservation started: ${ch.designator} — ${r.title}`);
+            logEvent('reservation', 'Activated',
+              `"${r.title}" started — ${ch.designator} set to Reserved`,
+              { channel: ch.designator, requestor: r.requestor, agency: r.agency,
+                coml: r.coml, city: r.city, start: r.start, end: r.end });
+            pushNotification('reserved', `⏰ Reservation started: ${ch.designator} — ${r.title}`);
           }
         });
-        changed = true;
       }
-    }
+
+      // ── Expiry: reservation window just ended, flag it once ──
+      if (end <= now && !r._expiredLogged) {
+        r._expiredLogged = true;
+        logEvent('reservation', 'Expired',
+          `"${r.title}" window ended — ${ch.designator} may need release`,
+          { channel: ch.designator, requestor: r.requestor, agency: r.agency, end: r.end });
+        pushNotification('available', `⏱ Reservation ended: ${ch.designator} — ${r.title}`);
+      }
+    });
   });
 }
 
@@ -8207,7 +8459,6 @@ async function init() {
   const hasSession = await checkExistingSession();
   await loadChannels();
   await loadTalkgroups();
-  await loadReservations();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
