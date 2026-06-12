@@ -2752,7 +2752,7 @@
         <span id="filterLabel">All Channels</span>
         <span id="channelCount" style="font-size:10px;"></span>
       </div>
-      <div class="channel-grid-header">
+      <div class="channel-grid-header" id="channelGridHeader">
         <span></span>
         <span>Designator</span>
         <span>Frequency</span>
@@ -2929,10 +2929,61 @@
 
       <!-- Users panel -->
       <div id="admin-users-panel" style="display:none;">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-          <button class="btn-primary" style="font-size:12px;" onclick="openUserAdmin()">Manage Users →</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+          <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">User Accounts</div>
+          <button class="btn-primary" style="font-size:12px;padding:5px 14px;" onclick="openAdminUserForm(null)">+ Add User</button>
         </div>
-        <div id="adminUserList" style="max-height:480px;overflow-y:auto;"></div>
+        <div id="adminUserList" style="max-height:440px;overflow-y:auto;margin-bottom:16px;"></div>
+
+        <!-- Inline user form inside admin panel -->
+        <div id="adminUserFormSection" style="display:none;background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;padding:18px 20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div id="adminUserFormTitle" style="font-family:var(--font-data);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-primary);">Add User</div>
+            <button onclick="closeAdminUserForm()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+          </div>
+          <div style="background:rgba(30,136,229,0.08);border:1px solid rgba(30,136,229,0.2);border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;" id="adminUfInstructions">
+            <strong style="color:var(--accent);">Step 1:</strong> Create the auth account in <strong>Supabase → Authentication → Users → Add User</strong> (set email + password there).<br>
+            <strong style="color:var(--accent);">Step 2:</strong> Fill this form — the app links the profile automatically by email.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div class="form-field"><label class="form-label">Full Name *</label><input class="form-input" id="auf-name" placeholder="First Last"></div>
+            <div class="form-field"><label class="form-label">Email Address *</label><input class="form-input" id="auf-email" type="email" placeholder="user@agency.gov"></div>
+            <div class="form-field">
+              <label class="form-label">Role *</label>
+              <select class="form-select" id="auf-role">
+                <option value="admin">Dispatch Admin — full access + user mgmt</option>
+                <option value="comms">Comms Unit Leader — full channel access</option>
+                <option value="viewer" selected>View Only — read-only</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">View Mode</label>
+              <select class="form-select" id="auf-viewmode">
+                <option value="coml">COML — full technical detail (freq, TGID, tone, enc)</option>
+                <option value="dispatcher">Dispatcher — operational view (name, status, agency)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Avatar Color</label>
+              <input type="color" id="auf-color" value="#1e88e5" style="width:40px;height:34px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);cursor:pointer;padding:2px;">
+            </div>
+            <div class="form-field" style="justify-content:flex-end;padding-top:8px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="auf-can-resources" style="width:14px;height:14px;accent-color:var(--accent);">
+                <span style="font-size:12px;color:var(--text-primary);">🚒 Resources access</span>
+              </label>
+            </div>
+          </div>
+          <div id="auf-uuid-row" style="display:none;margin-bottom:10px;">
+            <div style="font-size:12px;color:var(--status-reserved);margin-bottom:6px;">⚠ Auth user not found. Paste UUID from Supabase Dashboard → Authentication → Users:</div>
+            <input class="form-input" id="auf-uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:var(--font-data);font-size:12px;">
+          </div>
+          <div id="auf-error" style="min-height:16px;font-size:12px;font-family:var(--font-data);margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="saveAdminUserForm()">Save User</button>
+            <button class="btn-secondary" onclick="closeAdminUserForm()">Cancel</button>
+          </div>
+        </div>
       </div>
 
       <!-- System panel -->
@@ -3670,14 +3721,13 @@ function renderChannels() {
   }
 
   if (isMobile()) {
-    // Mobile card layout
+    // Mobile card layout — always shows operational fields only
     grid.innerHTML = filtered.map(ch => `
       <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
         <div class="status-bar ${ch.status}"></div>
         <div style="padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px;align-items:start;">
           <div>
             <div class="ch-designator">${ch.designator}</div>
-            <div class="ch-freq" style="margin-top:2px;">${ch.freq} MHz</div>
             ${ch.function && ch.function !== '—' ? `<div class="ch-function" style="margin-top:2px;">${ch.function}</div>` : ''}
             ${ch.agency && ch.agency !== '—' ? `<div style="font-size:11px;color:var(--text-dim);font-family:var(--font-data);margin-top:2px;">${ch.agency}</div>` : ''}
           </div>
@@ -3686,24 +3736,52 @@ function renderChannels() {
       </div>
     `).join('');
   } else {
-    // Desktop table layout
+    const isDispatcher = currentUser?.viewMode === 'dispatcher';
+
+    // Update grid header to match view mode
+    const hdr = document.getElementById('channelGridHeader');
+    if (hdr) {
+      hdr.innerHTML = isDispatcher
+        ? `<span></span><span>Channel</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Notes</span><span></span><span></span>`
+        : `<span></span><span>Designator</span><span>Frequency</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Tone / NAC</span><span>Mode</span>`;
+    }
+
     grid.innerHTML = filtered.map(ch => {
       const conflicts = ch.status !== 'available' && ch.conflictCheck !== false
         ? checkFrequencyConflict(ch.freq, ch.rxFreq, ch.id) : [];
-      return `
-      <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
-        <div class="status-bar ${ch.status}"></div>
-        <div class="ch-designator-wrap">
-          <span class="ch-designator">${ch.designator}</span>
-          ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
-        </div>
-        <div class="ch-freq">${ch.freq} MHz</div>
-        <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
-        <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
-        <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
-        <div class="ch-tone">${ch.tone || '—'}</div>
-        <div class="ch-mode">${ch.mode}</div>
-      </div>`;
+
+      if (isDispatcher) {
+        // Dispatcher view: no frequency, tone, mode — operational fields only
+        return `
+        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
+          <div class="status-bar ${ch.status}"></div>
+          <div class="ch-designator-wrap">
+            <span class="ch-designator">${ch.designator}</span>
+            ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict">⚠ CONFLICT</span>` : ''}
+          </div>
+          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
+          <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
+          <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
+          <div style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.notes || '—'}</div>
+          <div></div><div></div>
+        </div>`;
+      } else {
+        // COML view: full technical detail
+        return `
+        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
+          <div class="status-bar ${ch.status}"></div>
+          <div class="ch-designator-wrap">
+            <span class="ch-designator">${ch.designator}</span>
+            ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
+          </div>
+          <div class="ch-freq">${ch.freq} MHz</div>
+          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
+          <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
+          <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
+          <div class="ch-tone">${ch.tone || '—'}</div>
+          <div class="ch-mode">${ch.mode}</div>
+        </div>`;
+      }
     }).join('');
   }
 
@@ -4200,6 +4278,7 @@ async function doLogin() {
     color:            profile.color || '#1e88e5',
     active:           profile.active,
     canViewResources: profile.can_view_resources === true || profile.role === 'admin',
+    viewMode:         profile.view_mode || 'coml',
   };
 
   onLoginSuccess();
@@ -4250,10 +4329,13 @@ function onLoginSuccess() {
   if (adminTab) adminTab.style.display = match.role === 'admin' ? '' : 'none';
 
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const viewModeTag = match.viewMode === 'dispatcher'
+    ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,196,0,0.12);color:var(--status-reserved);border:1px solid rgba(255,196,0,0.3);">DISPATCHER</span>`
+    : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.3);">COML</span>`;
   document.getElementById('topbarUser').innerHTML = `
     <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
     <div>
-      <div style="color:var(--text-primary);font-size:12px;">${match.name}</div>
+      <div style="color:var(--text-primary);font-size:12px;display:flex;align-items:center;gap:6px;">${match.name} ${viewModeTag}</div>
       <div style="font-size:10px;color:var(--text-dim);">${match.roleLabel}</div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -4438,6 +4520,7 @@ async function checkExistingSession() {
     color:            profile.color || '#1e88e5',
     active:           profile.active,
     canViewResources: profile.can_view_resources === true || profile.role === 'admin',
+    viewMode:         profile.view_mode || 'coml',
   };
   onLoginSuccess();
   return true;
@@ -5774,9 +5857,10 @@ let activeAdminTab = 'channels';
 function switchAdminTab(tab) {
   activeAdminTab = tab;
   ['channels','talkgroups','users','system'].forEach(t => {
-    document.getElementById(`astab-${t}`)?.classList.toggle('active', t === tab);
+    const btn = document.getElementById(`astab-${t}`);
     const panel = document.getElementById(`admin-${t}-panel`);
-    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    if (btn)   btn.classList.toggle('active', t === tab);
+    if (panel) panel.style.display = (t === tab) ? 'block' : 'none';
   });
   if (tab === 'channels')   renderAdminChannels();
   if (tab === 'talkgroups') renderAdminTalkgroups();
@@ -5785,7 +5869,6 @@ function switchAdminTab(tab) {
 }
 
 async function renderAdminView() {
-  // Always start on channels tab when admin view is opened
   switchAdminTab(activeAdminTab);
 }
 
@@ -5912,29 +5995,167 @@ async function adminDeleteAllTalkgroups() {
 }
 
 // ── ADMIN: USERS PANEL ──
+let adminUserEditingId = null;
+
 async function renderAdminUsers() {
   await loadAllProfiles();
   const el = document.getElementById('adminUserList');
   if (!el) return;
-  if (!allProfiles.length) { el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:16px 0;">No users found.</div>'; return; }
+  if (!allProfiles.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:16px 0;">No users yet — click + Add User to create the first one.</div>';
+    return;
+  }
   const roleColors = { admin:'var(--status-active)', comms:'var(--accent)', viewer:'var(--text-dim)' };
   el.innerHTML = allProfiles.map(u => {
-    const initials = u.name ? u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : '??';
+    const initials  = (u.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const roleColor = roleColors[u.role] || 'var(--text-dim)';
+    const isMe      = currentUser?.id === u.id;
     const statusDot = u.active === false
-      ? `<span style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;margin-left:6px;" title="Inactive"></span>`
-      : `<span style="width:7px;height:7px;border-radius:50%;background:var(--status-available);display:inline-block;margin-left:6px;" title="Active"></span>`;
+      ? `<span style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;" title="Inactive"></span>`
+      : `<span style="width:7px;height:7px;border-radius:50%;background:var(--status-available);display:inline-block;" title="Active"></span>`;
+    const viewModeTag = u.view_mode === 'dispatcher'
+      ? `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(255,196,0,0.1);color:var(--status-reserved);border:1px solid rgba(255,196,0,0.25);">DISPATCHER</span>`
+      : `<span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;background:rgba(30,136,229,0.1);color:var(--accent);border:1px solid rgba(30,136,229,0.25);">COML</span>`;
     return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
       <div style="width:32px;height:32px;border-radius:50%;background:${(u.color||'#1e88e5')}22;color:${u.color||'#1e88e5'};border:1px solid ${(u.color||'#1e88e5')}44;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--font-data);flex-shrink:0;">${initials}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;color:var(--text-primary);font-weight:500;">${u.name||'—'}${statusDot}</div>
+        <div style="font-size:13px;color:var(--text-primary);font-weight:500;display:flex;align-items:center;gap:6px;">${u.name||'—'}${statusDot}${isMe?`<span style="font-size:10px;color:var(--accent);">(you)</span>`:''}
+        </div>
         <div style="font-size:11px;color:var(--text-dim);">${u.email||'—'}</div>
       </div>
-      <span style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:${roleColor};border:1px solid ${roleColor}44;padding:2px 6px;border-radius:2px;white-space:nowrap;">${u.role||'?'}</span>
-      <span style="font-size:10px;color:var(--text-dim);">${u.canViewResources?'Resources ✓':''}</span>
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openUserForm('${u.id}');openUserAdmin();">Edit</button>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+        ${viewModeTag}
+        <span style="font-family:var(--font-data);font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:${roleColor};border:1px solid ${roleColor}44;padding:2px 6px;border-radius:2px;">${u.role||'?'}</span>
+        ${u.can_view_resources||u.role==='admin'?`<span style="font-family:var(--font-data);font-size:9px;color:var(--text-dim);">🚒</span>`:''}
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openAdminUserForm('${u.id}')">Edit</button>
+        ${!isMe ? `<button class="btn-secondary" style="font-size:11px;padding:3px 10px;color:${u.active!==false?'var(--status-reserved)':'var(--status-available)'};" onclick="adminToggleUserActive('${u.id}')">${u.active!==false?'Disable':'Enable'}</button>` : ''}
+        ${!isMe ? `<button class="btn-danger" style="font-size:11px;padding:3px 10px;" onclick="adminDeleteUser('${u.id}')">Remove</button>` : ''}
+      </div>
     </div>`;
   }).join('');
+}
+
+function openAdminUserForm(userId) {
+  adminUserEditingId = userId || null;
+  const sect = document.getElementById('adminUserFormSection');
+  const inst = document.getElementById('adminUfInstructions');
+  if (!sect) return;
+  sect.style.display = 'block';
+  document.getElementById('auf-error').textContent = '';
+  document.getElementById('auf-uuid-row').style.display = 'none';
+  if (userId) {
+    const u = allProfiles.find(x => x.id === userId);
+    if (!u) return;
+    document.getElementById('adminUserFormTitle').textContent = 'Edit User';
+    document.getElementById('auf-name').value              = u.name  || '';
+    document.getElementById('auf-email').value             = u.email || '';
+    document.getElementById('auf-email').readOnly          = true;
+    document.getElementById('auf-email').style.opacity     = '0.5';
+    document.getElementById('auf-role').value              = u.role  || 'viewer';
+    document.getElementById('auf-viewmode').value          = u.view_mode || 'coml';
+    document.getElementById('auf-color').value             = u.color || '#1e88e5';
+    document.getElementById('auf-can-resources').checked   = u.can_view_resources || u.role === 'admin' || false;
+    if (inst) inst.style.display = 'none';
+  } else {
+    document.getElementById('adminUserFormTitle').textContent = 'Add New User';
+    document.getElementById('auf-name').value              = '';
+    document.getElementById('auf-email').value             = '';
+    document.getElementById('auf-email').readOnly          = false;
+    document.getElementById('auf-email').style.opacity     = '1';
+    document.getElementById('auf-role').value              = 'viewer';
+    document.getElementById('auf-viewmode').value          = 'coml';
+    document.getElementById('auf-color').value             = '#1e88e5';
+    document.getElementById('auf-can-resources').checked   = false;
+    if (document.getElementById('auf-uuid')) document.getElementById('auf-uuid').value = '';
+    if (inst) inst.style.display = 'block';
+  }
+  sect.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function closeAdminUserForm() {
+  document.getElementById('adminUserFormSection').style.display = 'none';
+  document.getElementById('auf-email').readOnly = false;
+  document.getElementById('auf-email').style.opacity = '1';
+  adminUserEditingId = null;
+}
+
+async function saveAdminUserForm() {
+  const name      = document.getElementById('auf-name').value.trim();
+  const email     = document.getElementById('auf-email').value.trim().toLowerCase();
+  const role      = document.getElementById('auf-role').value;
+  const viewMode  = document.getElementById('auf-viewmode').value;
+  const color     = document.getElementById('auf-color').value;
+  const canRes    = document.getElementById('auf-can-resources').checked;
+  const errEl     = document.getElementById('auf-error');
+  errEl.textContent = ''; errEl.style.color = 'var(--status-active)';
+
+  if (!name || !email) { errEl.textContent = 'Name and email are required.'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email.'; return; }
+
+  if (adminUserEditingId) {
+    const { error } = await sb.from('profiles').update({
+      name, role, color, view_mode: viewMode, can_view_resources: canRes
+    }).eq('id', adminUserEditingId);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+    logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser?.name||'Admin'}`);
+  } else {
+    // Check for existing profile
+    const { data: existing } = await sb.from('profiles').select('id').eq('email', email);
+    if (existing?.length) { errEl.textContent = '⚠ A profile with this email already exists.'; return; }
+
+    // Look up UUID from Supabase auth users endpoint (anon key only)
+    let userId = document.getElementById('auf-uuid')?.value.trim();
+    if (!userId || !/^[0-9a-f-]{36}$/i.test(userId)) {
+      userId = null;
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+        });
+        if (res.ok) {
+          const d = await res.json();
+          const match = (d.users||[]).find(u => u.email === email);
+          if (match) userId = match.id;
+        }
+      } catch(e) {}
+    }
+    if (!userId) {
+      errEl.style.color = 'var(--status-reserved)';
+      errEl.textContent = '⚠ Auth user not found. Create in Supabase → Auth → Users first, then paste UUID:';
+      document.getElementById('auf-uuid-row').style.display = 'block';
+      return;
+    }
+    const { error } = await sb.from('profiles').insert({
+      id: userId, name, role, color, email, active: true,
+      view_mode: viewMode, can_view_resources: canRes
+    });
+    if (error) { errEl.textContent = 'Profile save failed: ' + error.message; return; }
+    logActivity(`User <span class="log-ch">${name}</span> added by ${currentUser?.name||'Admin'}`);
+  }
+
+  await loadAllProfiles();
+  closeAdminUserForm();
+  renderAdminUsers();
+}
+
+async function adminToggleUserActive(id) {
+  const u = allProfiles.find(x => x.id === id);
+  if (!u) return;
+  const newState = u.active === false;
+  const { error } = await sb.from('profiles').update({ active: newState }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  logActivity(`User <span class="log-ch">${u.name}</span> ${newState?'enabled':'disabled'} by ${currentUser?.name||'Admin'}`);
+  await loadAllProfiles();
+  renderAdminUsers();
+}
+
+async function adminDeleteUser(id) {
+  const u = allProfiles.find(x => x.id === id);
+  if (!u || !confirm(`Remove user "${u.name}"? This deletes their profile but not their auth account.`)) return;
+  const { error } = await sb.from('profiles').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  logActivity(`User <span class="log-ch">${u.name}</span> removed by ${currentUser?.name||'Admin'}`);
+  await loadAllProfiles();
+  renderAdminUsers();
 }
 
 // ── ADMIN: SYSTEM PANEL ──
@@ -6820,18 +7041,37 @@ function talkgroupToRow(tg, who) {
 
 function renderTalkgroups() {
   const query = (document.getElementById('tgSearchBox')?.value || '').toLowerCase();
+  const isDispatcher = currentUser?.viewMode === 'dispatcher';
   const grid = document.getElementById('talkgroupGrid');
   if (!grid) return;
   let filtered = talkgroups.filter(tg =>
     !query || tg.tgId.toLowerCase().includes(query) || tg.name.toLowerCase().includes(query) ||
     tg.system.toLowerCase().includes(query) || (tg.agency||'').toLowerCase().includes(query)
   );
+
+  // Update talkgroup grid header
+  const tgHdr = document.querySelector('#view-talkgroups .channel-grid-header');
+  if (tgHdr) {
+    tgHdr.innerHTML = isDispatcher
+      ? `<span></span><span>Name</span><span>Status</span><span>Agency</span><span></span><span></span><span></span><span></span>`
+      : `<span></span><span>TG ID</span><span>System</span><span>Name / Function</span><span>Status</span><span>Agency</span><span>Encryption</span><span>Priority</span>`;
+  }
+
   if (!filtered.length) {
     grid.innerHTML = `<div class="no-data-row">No talkgroups found</div>`;
     return;
   }
   grid.innerHTML = filtered.map(tg => {
     const pc = TG_PRIORITY_COLOR[tg.priority] || 'var(--text-dim)';
+    if (isDispatcher) {
+      return `<div class="tg-row" onclick="openTalkgroupModal('${tg.id}')">
+        <div class="status-bar ${tg.status}" style="width:3px;height:28px;border-radius:2px;flex-shrink:0;"></div>
+        <div style="font-size:13px;color:var(--text-primary);grid-column:span 3;">${escHtml(tg.name)}</div>
+        <div><span class="status-pill ${tg.status}">${statusLabels[tg.status]||tg.status}</span></div>
+        <div style="font-size:12px;color:var(--text-secondary);">${escHtml(tg.agency||'—')}</div>
+        <div></div><div></div>
+      </div>`;
+    }
     return `<div class="tg-row" onclick="openTalkgroupModal('${tg.id}')">
       <div class="status-bar ${tg.status}" style="width:3px;height:28px;border-radius:2px;flex-shrink:0;"></div>
       <div style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(tg.tgId)}</div>
