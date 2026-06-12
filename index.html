@@ -2206,7 +2206,51 @@
     .res-row > *:nth-child(n+5) { display: none; }
   }
 
-  /* ── ANNOUNCEMENT BANNER ── */
+  /* ── RADIO INVENTORY ── */
+  .inv-status-chip {
+    display: inline-flex; align-items: center;
+    font-family: var(--font-data); font-size: 9px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 2px; white-space: nowrap;
+  }
+  .inv-status-chip.in-stock      { background:rgba(0,230,118,0.12); color:var(--status-available); border:1px solid rgba(0,230,118,0.3); }
+  .inv-status-chip.assigned      { background:rgba(30,136,229,0.12); color:var(--accent);          border:1px solid rgba(30,136,229,0.3); }
+  .inv-status-chip.signed-out    { background:rgba(255,196,0,0.12);  color:var(--status-reserved); border:1px solid rgba(255,196,0,0.3); }
+  .inv-status-chip.maintenance   { background:rgba(156,39,176,0.12); color:#ce93d8;                border:1px solid rgba(156,39,176,0.3); }
+  .inv-status-chip.out-of-service{ background:rgba(255,82,82,0.12);  color:var(--status-active);   border:1px solid rgba(255,82,82,0.3); }
+  .inv-status-chip.retired       { background:rgba(120,120,120,0.12);color:#888;                   border:1px solid rgba(120,120,120,0.3); }
+  .inv-cond-chip {
+    display: inline-flex; font-family: var(--font-data); font-size: 9px;
+    padding: 1px 5px; border-radius: 2px; border: 1px solid; white-space: nowrap;
+  }
+  .inv-cond-chip.new  { color:#00e676; border-color:rgba(0,230,118,0.4); }
+  .inv-cond-chip.good { color:var(--accent); border-color:rgba(30,136,229,0.4); }
+  .inv-cond-chip.fair { color:var(--status-reserved); border-color:rgba(255,196,0,0.4); }
+  .inv-cond-chip.poor { color:var(--status-active); border-color:rgba(255,82,82,0.4); }
+  .inv-row {
+    display: grid;
+    grid-template-columns: 28px 120px 1fr 130px 100px 120px 90px 70px;
+    align-items: center; gap: 8px; padding: 9px 12px;
+    background: var(--bg-card); border: 1px solid transparent;
+    border-radius: var(--radius); margin-bottom: 3px;
+    cursor: pointer; transition: var(--transition);
+  }
+  .inv-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .inv-row.retired { opacity: 0.55; }
+  .inv-grid-header {
+    display: grid;
+    grid-template-columns: 28px 120px 1fr 130px 100px 120px 90px 70px;
+    gap: 8px; padding: 4px 12px 8px;
+    font-family: var(--font-data); font-size: 10px;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .inv-custody-row { padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; font-size: 12px; }
+  .inv-custody-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 150px; }
+  @media (max-width: 768px) {
+    .inv-grid-header { display: none; }
+    .inv-row { grid-template-columns: 24px 100px 1fr auto; }
+    .inv-row > *:nth-child(n+5) { display: none; }
+  }
   #announcementBanner {
     display: none;
     background: linear-gradient(90deg, rgba(255,196,0,0.15), rgba(255,196,0,0.08));
@@ -2232,7 +2276,7 @@
   /* ── TRIGGER LOOKUP ── */
   .trigger-row {
     display: grid;
-    grid-template-columns: 30px 80px 1fr 110px 120px 100px 70px 70px;
+    grid-template-columns: 30px 80px 1fr 120px 120px 100px 70px 70px;
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
@@ -2248,7 +2292,7 @@
   .trigger-id { font-family: var(--font-data); font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; }
   .trigger-grid-header {
     display: grid;
-    grid-template-columns: 30px 80px 1fr 110px 120px 100px 70px 70px;
+    grid-template-columns: 30px 80px 1fr 120px 120px 100px 70px 70px;
     gap: 8px;
     padding: 4px 12px 8px;
     font-family: var(--font-data);
@@ -2779,6 +2823,7 @@
       <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
       <button class="main-view-tab"        id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
       <button class="main-view-tab"        id="mvtab-triggers"   onclick="switchMainTab('triggers')">🔔 Trigger Lookup</button>
+      <button class="main-view-tab"        id="mvtab-inventory"  onclick="switchMainTab('inventory')">📦 Inventory</button>
       <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
       <button class="main-view-tab"        id="mvtab-admin"      onclick="switchMainTab('admin')"     style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
     </div>
@@ -3119,6 +3164,86 @@
       </div>
     </div>
 
+    <!-- ── RADIO INVENTORY VIEW ── -->
+    <div id="view-inventory" style="display:none;">
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <button class="admin-sub-tab active" id="invtab-list"    onclick="switchInventoryTab('list')">📦 All Radios</button>
+        <button class="admin-sub-tab"        id="invtab-custody" onclick="switchInventoryTab('custody')">🔄 Chain of Custody</button>
+        <button class="admin-sub-tab"        id="invtab-log"     onclick="switchInventoryTab('log')">🕐 System Log</button>
+      </div>
+
+      <!-- List panel -->
+      <div id="inv-list-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="invSearch" type="text" placeholder="Search serial, model, unit, person…" oninput="renderInventory()" style="width:260px;">
+            <select class="form-select" id="invStatusFilter" onchange="renderInventory()" style="width:160px;font-size:12px;padding:5px 8px;">
+              <option value="all">All Statuses</option>
+              <option value="in-stock">In Stock</option>
+              <option value="assigned">Assigned to Unit</option>
+              <option value="signed-out">Assigned to Person</option>
+              <option value="out-of-service">Out of Service</option>
+              <option value="retired">Retired</option>
+            </select>
+            <select class="form-select" id="invModelFilter" onchange="renderInventory()" style="width:150px;font-size:12px;padding:5px 8px;">
+              <option value="all">All Models</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" id="invExportBtn" style="font-size:12px;" onclick="exportInventoryCSV()">⬇ CSV</button>
+            <button class="btn-primary"   id="invAddBtn"    style="font-size:12px;" onclick="openInventoryForm(null)">+ Add Radio</button>
+          </div>
+        </div>
+
+        <!-- Summary strip -->
+        <div id="invSummaryStrip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+        <div class="inv-grid-header">
+          <span></span><span>Serial Number</span><span>Model / Band</span><span>Status</span><span>Condition</span><span>Assigned To</span><span>Location</span><span>MDC ID</span>
+        </div>
+        <div id="inventoryGrid"></div>
+        <div id="inventoryEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">📦</div>
+          <div style="font-size:13px;color:var(--text-secondary);">No radios in inventory yet</div>
+          <div style="font-size:12px;margin-top:4px;">Click + Add Radio to get started</div>
+        </div>
+      </div>
+
+      <!-- Chain of custody panel -->
+      <div id="inv-custody-panel" style="display:none;">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <input class="search-input" id="invCustodySearch" type="text" placeholder="Search serial, unit, person…" oninput="renderCustodyLog()" style="width:260px;">
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="loadCustodyLog()">↺ Refresh</button>
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="exportCustodyCSV()">⬇ CSV</button>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:150px 120px 90px 1fr 120px;gap:0;padding:6px 14px;background:var(--bg-deep);font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+            <span>Timestamp</span><span>Serial</span><span>Action</span><span>Detail</span><span>Actor</span>
+          </div>
+          <div id="custodyLogBody" style="max-height:520px;overflow-y:auto;"></div>
+          <div style="padding:8px 14px;border-top:1px solid var(--border);text-align:center;">
+            <button class="btn-secondary" id="custodyMoreBtn" style="font-size:11px;padding:4px 12px;display:none;" onclick="loadMoreCustodyLog()">Load more</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory system log panel -->
+      <div id="inv-log-panel" style="display:none;">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+          <input class="search-input" id="invLogSearch" type="text" placeholder="Search log…" oninput="renderInventoryLog()" style="width:260px;">
+          <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="loadInventoryLog()">↺ Refresh</button>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:150px 120px 1fr 120px;gap:0;padding:6px 14px;background:var(--bg-deep);font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+            <span>Timestamp</span><span>Serial</span><span>Event</span><span>Actor</span>
+          </div>
+          <div id="invLogBody" style="max-height:520px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── RESOURCES VIEW ── -->
     <div id="view-resources" style="display:none;">
 
@@ -3310,6 +3435,8 @@
                 <option value="talkgroup">Talkgroups</option>
                 <option value="resource">Resources</option>
                 <option value="user">Users</option>
+                <option value="trigger">Trigger Lookup</option>
+                <option value="inventory">Radio Inventory</option>
                 <option value="risk">RF Risk</option>
                 <option value="system">System</option>
               </select>
@@ -5284,6 +5411,19 @@ function showLandingPage() {
         return `<span class="module-stat"><strong>${cnt}</strong> registered IDs</span>`;
       },
     },
+    {
+      id: 'inventory',
+      icon: '📦',
+      title: 'Radio Inventory',
+      desc: 'Full lifecycle tracking for physical radios — status, assignment, condition, chain of custody, and linked MDC IDs.',
+      accent: '#9c27b0',
+      stats: () => {
+        const cnt     = window._inventoryCount || 0;
+        const active  = window._inventoryActive || 0;
+        const maint   = window._inventoryMaint  || 0;
+        return `<span class="module-stat"><strong>${cnt}</strong> radios</span><span class="module-stat"><strong>${active}</strong> deployed</span>${maint?`<span class="module-stat" style="color:var(--status-reserved);"><strong>${maint}</strong> in maintenance</span>`:''}`;
+      },
+    },
     u.canViewResources ? {
       id: 'vehicles',
       icon: '🚒',
@@ -5346,6 +5486,8 @@ function openModule(id) {
     switchMainTab('rfanalyzer');
   } else if (id === 'triggers') {
     switchMainTab('triggers');
+  } else if (id === 'inventory') {
+    switchMainTab('inventory');
   } else if (id === 'vehicles') {
     // Switch to resources tab and pre-filter to Vehicle
     switchMainTab('resources');
@@ -6649,7 +6791,7 @@ let activeMainTab = 'channels';
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['overview','channels','talkgroups','library','schedule','rfanalyzer','triggers','resources','admin'].forEach(t => {
+  ['overview','channels','talkgroups','library','schedule','rfanalyzer','triggers','inventory','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
@@ -6660,6 +6802,7 @@ function switchMainTab(tab) {
   if (tab === 'schedule')    renderSchedule();
   if (tab === 'rfanalyzer')  initRFAnalyzerTab();
   if (tab === 'triggers')    renderTriggers();
+  if (tab === 'inventory')   renderInventory();
   if (tab === 'resources')   renderResources();
   if (tab === 'admin')       renderAdminView();
 }
@@ -7080,6 +7223,8 @@ const SYSLOG_CATEGORY_STYLE = {
   resource:    { bg:'rgba(255,152,0,0.12)',  color:'#ff9800',                 label:'RESOURCE'    },
   user:        { bg:'rgba(255,82,82,0.12)',  color:'var(--status-active)',    label:'USER'        },
   risk:        { bg:'rgba(0,188,212,0.12)',  color:'#00bcd4',                 label:'RF RISK'     },
+  trigger:     { bg:'rgba(255,196,0,0.12)',  color:'#ffd54f',                 label:'TRIGGER'     },
+  inventory:   { bg:'rgba(156,39,176,0.12)', color:'#ce93d8',                 label:'INVENTORY'   },
   system:      { bg:'rgba(120,120,120,0.12)',color:'var(--text-dim)',         label:'SYSTEM'      },
 };
 
@@ -9243,6 +9388,7 @@ async function init() {
   await loadTalkgroups();
   await loadTriggers();
   await loadTriggerLookups();
+  await loadInventory();
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
@@ -9798,16 +9944,30 @@ This also deletes all notes.`)) return;
 
 // ── Trigger system log ──
 async function logTriggerEvent(action, mdcId, detail) {
+  const actor     = currentUser?.name || 'Unknown';
+  const actorRole = currentUser?.role || null;
+  const now       = new Date().toISOString();
+  // Write to trigger-specific log
   try {
     await sb.from('trigger_log').insert({
-      action,
-      mdc_id:    mdcId     || null,
-      detail:    detail    || null,
-      actor:     currentUser?.name || 'Unknown',
-      actor_role:currentUser?.role || null,
-      created_at:new Date().toISOString(),
+      action, mdc_id: mdcId || null, detail: detail || null,
+      actor, actor_role: actorRole, created_at: now,
     });
   } catch(e) { /* non-critical */ }
+  // Also write to master activity_log so admins see it in the system log
+  if (action !== 'LOOKUP') { // skip routine lookups from master log to reduce noise
+    try {
+      await sb.from('activity_log').insert({
+        message:    `[TRIGGER] ${action}${mdcId ? ' · MDC ' + mdcId : ''} — ${detail || ''}`,
+        category:   'trigger',
+        action:     `Trigger ${action}`,
+        detail:     detail || null,
+        actor,
+        actor_role: actorRole,
+        extra:      mdcId ? JSON.stringify({ mdc_id: mdcId }) : null,
+      });
+    } catch(e) { /* non-critical */ }
+  }
 }
 
 async function loadTriggerLog() {
@@ -9864,6 +10024,542 @@ function exportTriggerLogCSV() {
   ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
   const csv = [header.join(','),...rows].join('\n');
   const a = Object.assign(document.createElement('a'),{href:'data:text/csv;charset=utf-8,'+encodeURIComponent(csv),download:`trigger-log-${new Date().toLocaleDateString('en-CA')}.csv`});
+  a.click();
+}
+
+// ─────────────────────────────────────────────
+// RADIO INVENTORY MODULE
+// ─────────────────────────────────────────────
+let inventory       = [];
+let inventoryEditingId = null;
+let currentInvId    = null;
+let custodyCache    = [];
+let custodyOffset   = 0;
+let invLogCache     = [];
+const INV_PAGE      = 100;
+
+const INV_STATUS_LABELS = {
+  'in-stock':       'In Stock',
+  'assigned':       'Assigned to Unit',
+  'signed-out':     'Assigned to Person',
+  'out-of-service': 'Out of Service',
+  'retired':        'Retired',
+};
+const INV_STATUS_KEYS = Object.keys(INV_STATUS_LABELS);
+
+async function loadInventory() {
+  try {
+    const { data, error } = await sb.from('radio_inventory').select('*').order('serial_number');
+    if (error) { console.warn('loadInventory:', error.message); return; }
+    inventory = data || [];
+    window._inventoryCount  = inventory.length;
+    window._inventoryActive = inventory.filter(r => r.status === 'assigned' || r.status === 'signed-out').length;
+    window._inventoryMaint  = 0; // maintenance status removed
+  } catch(e) { console.warn('loadInventory:', e.message); }
+}
+
+function switchInventoryTab(tab) {
+  ['list','custody','log'].forEach(t => {
+    document.getElementById(`invtab-${t}`)?.classList.toggle('active', t === tab);
+    const panel = document.getElementById(`inv-${t}-panel`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'custody') loadCustodyLog();
+  if (tab === 'log')     loadInventoryLog();
+}
+
+function renderInventory() {
+  const query       = (document.getElementById('invSearch')?.value || '').toLowerCase();
+  const statusFilt  = document.getElementById('invStatusFilter')?.value || 'all';
+  const modelFilt   = document.getElementById('invModelFilter')?.value  || 'all';
+  const grid        = document.getElementById('inventoryGrid');
+  const empty       = document.getElementById('inventoryEmpty');
+  if (!grid) return;
+
+  // Populate model filter
+  const modelSel = document.getElementById('invModelFilter');
+  if (modelSel && modelSel.options.length <= 1) {
+    const models = [...new Set(inventory.map(r => r.radio_model).filter(Boolean))].sort();
+    models.forEach(m => {
+      const o = document.createElement('option'); o.value = m; o.textContent = m;
+      modelSel.appendChild(o);
+    });
+  }
+
+  const filtered = inventory.filter(r => {
+    if (statusFilt !== 'all' && r.status !== statusFilt) return false;
+    if (modelFilt  !== 'all' && r.radio_model !== modelFilt) return false;
+    if (query) return [r.serial_number, r.radio_model, r.radio_band, r.assigned_unit,
+      r.assigned_person, r.agency, r.firmware_version, r.mdc_id_ref]
+      .some(f => (f||'').toLowerCase().includes(query));
+    return true;
+  });
+
+  // Summary strip
+  const strip = document.getElementById('invSummaryStrip');
+  if (strip) {
+    const counts = {};
+    INV_STATUS_KEYS.forEach(k => { counts[k] = inventory.filter(r => r.status === k).length; });
+    strip.innerHTML = INV_STATUS_KEYS.filter(k => counts[k] > 0).map(k => `
+      <div class="inv-status-chip ${k}" style="font-size:11px;padding:4px 10px;gap:6px;">
+        <span style="font-size:15px;font-weight:700;">${counts[k]}</span>
+        ${INV_STATUS_LABELS[k]}
+      </div>`).join('');
+  }
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Find linked MDC IDs from triggers array
+  const getMDC = r => {
+    if (r.radio_id) {
+      const t = triggers.find(t => String(t.id) === String(r.radio_id));
+      return t?.mdc_id || '—';
+    }
+    return r.mdc_id_ref || '—';
+  };
+
+  grid.innerHTML = filtered.map(r => `
+    <div class="inv-row${r.status==='retired'?' retired':''}" onclick="openInventoryModal('${r.id}')">
+      <div style="width:4px;height:32px;border-radius:2px;background:${invStatusColor(r.status)};flex-shrink:0;"></div>
+      <div style="font-family:var(--font-data);font-size:12px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(r.serial_number||'')}">${escHtml(r.serial_number||'—')}</div>
+      <div style="min-width:0;">
+        <div style="font-size:12px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.radio_model||'—')}</div>
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-data);">${escHtml(r.radio_band||'—')}</div>
+      </div>
+      <div><span class="inv-status-chip ${r.status}">${INV_STATUS_LABELS[r.status]||r.status}</span></div>
+      <div><span class="inv-cond-chip ${r.condition||'good'}">${r.condition||'—'}</span></div>
+      <div style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.assigned_unit||r.assigned_person||'—')}</div>
+      <div style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.agency||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:12px;font-weight:700;color:var(--accent);">${getMDC(r)}</div>
+    </div>`).join('');
+}
+
+function invStatusColor(status) {
+  return { 'in-stock':'var(--status-available)', 'assigned':'var(--accent)',
+    'signed-out':'var(--status-reserved)',
+    'out-of-service':'var(--status-active)', 'retired':'#555' }[status] || 'var(--border)';
+}
+
+async function openInventoryModal(id) {
+  currentInvId = id;
+  const r = inventory.find(x => String(x.id) === String(id));
+  if (!r) return;
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'comms';
+  document.getElementById('invModalTitle').textContent = r.serial_number || 'Radio Detail';
+  document.getElementById('invModalAdminBtns').style.display = isAdmin ? 'flex' : 'none';
+
+  // Find linked trigger record
+  const trigger = r.radio_id ? triggers.find(t => String(t.id) === String(r.radio_id)) : null;
+  const mdcBlock = trigger ? `
+    <div style="background:rgba(30,136,229,0.06);border:1px solid rgba(30,136,229,0.2);border-radius:4px;padding:10px 14px;margin-top:8px;cursor:pointer;" onclick="closeInventoryModal();openTriggerModal('${trigger.id}')">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">🔗 Linked Trigger Record</div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span style="font-family:var(--font-data);font-size:22px;font-weight:700;color:var(--accent);">${trigger.mdc_id}</span>
+        <span style="font-size:12px;color:var(--text-secondary);">${trigger.assignment||'—'}</span>
+        ${trigger.larics_id?`<span style="font-size:11px;color:var(--text-dim);">LARICS: ${trigger.larics_id}</span>`:''}
+        <span style="font-size:10px;color:var(--accent);font-family:var(--font-data);">Click to open →</span>
+      </div>
+    </div>` : '';
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric'}) : '—';
+  const field = (label, val) => val ? `<div><div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">${label}</div><div style="font-size:13px;color:var(--text-secondary);">${escHtml(String(val))}</div></div>` : '';
+
+  document.getElementById('invDetailSection').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="font-family:var(--font-data);font-size:24px;font-weight:700;color:var(--text-primary);">${escHtml(r.serial_number||'—')}</div>
+      <span class="inv-status-chip ${r.status}">${INV_STATUS_LABELS[r.status]||r.status}</span>
+      <span class="inv-cond-chip ${r.condition||'good'}">${r.condition||'—'}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+      ${field('Radio Model',   r.radio_model)}
+      ${field('Radio Band',    r.radio_band)}
+      ${field('Agency',        r.agency)}
+      ${field('Assigned Unit', r.assigned_unit)}
+      ${field('Assigned Person', r.assigned_person)}
+      ${field('Firmware',      r.firmware_version)}
+      ${field('Purchase Date', fmtDate(r.purchase_date))}
+      ${field('Last PM',       fmtDate(r.last_pm_date))}
+    </div>
+    ${r.notes ? `<div style="font-size:12px;color:var(--text-secondary);padding:10px 12px;background:var(--bg-deep);border-radius:var(--radius);line-height:1.6;margin-bottom:8px;">${escHtml(r.notes)}</div>` : ''}
+    ${mdcBlock}`;
+
+  await loadCustodyForRadio(id);
+  document.getElementById('invNewNote').value = '';
+  document.getElementById('inventoryModal').classList.add('open');
+  await logInventoryEvent('VIEW', r.serial_number, `Viewed by ${currentUser?.name||'Unknown'}`);
+}
+
+function closeInventoryModal() {
+  document.getElementById('inventoryModal').classList.remove('open');
+  currentInvId = null;
+}
+
+async function loadCustodyForRadio(inventoryId) {
+  const el = document.getElementById('invCustodyDetail');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data } = await sb.from('inventory_custody').select('*').eq('inventory_id', inventoryId).order('created_at', { ascending: false });
+    if (!data?.length) { el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">No history recorded yet.</div>'; return; }
+    el.innerHTML = data.map(e => {
+      const ts = new Date(e.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+      const actionColor = { 'NOTE':'var(--text-dim)', 'STATUS_CHANGE':'var(--accent)', 'ADD':'var(--status-available)', 'EDIT':'var(--status-reserved)' }[e.action]||'var(--text-dim)';
+      return `<div class="inv-custody-row">
+        <div class="inv-custody-meta">${ts}<br><strong>${escHtml(e.actor||'Unknown')}</strong><br><span style="font-family:var(--font-data);font-size:9px;padding:1px 4px;border-radius:2px;border:1px solid ${actionColor}44;color:${actionColor};">${e.action||'NOTE'}</span></div>
+        <div style="flex:1;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${escHtml(e.detail||'')}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`; }
+}
+
+async function saveInventoryNote() {
+  const note = document.getElementById('invNewNote').value.trim();
+  if (!note || !currentInvId) return;
+  const r = inventory.find(x => String(x.id) === String(currentInvId));
+  await logCustodyEvent(currentInvId, 'NOTE', note);
+  await logInventoryEvent('NOTE', r?.serial_number||currentInvId, note);
+  document.getElementById('invNewNote').value = '';
+  await loadCustodyForRadio(currentInvId);
+}
+
+function openStatusChangeModal() {
+  const r = inventory.find(x => String(x.id) === String(currentInvId));
+  if (!r) return;
+  document.getElementById('invStatusCurrent').textContent = `Current: ${INV_STATUS_LABELS[r.status]||r.status} · Condition: ${r.condition||'—'}`;
+  document.getElementById('isc-status').value    = r.status;
+  document.getElementById('isc-condition').value = r.condition || 'good';
+  document.getElementById('isc-unit').value      = r.assigned_unit   || '';
+  document.getElementById('isc-person').value    = r.assigned_person || '';
+  document.getElementById('isc-notes').value     = '';
+  document.getElementById('invStatusModal').classList.add('open');
+}
+
+async function saveStatusChange() {
+  const r = inventory.find(x => String(x.id) === String(currentInvId));
+  if (!r) return;
+  const newStatus    = document.getElementById('isc-status').value;
+  const newCondition = document.getElementById('isc-condition').value;
+  const unit         = document.getElementById('isc-unit').value.trim();
+  const person       = document.getElementById('isc-person').value.trim();
+  const notes        = document.getElementById('isc-notes').value.trim();
+  const who          = currentUser?.name || 'Unknown';
+
+  const { error } = await sb.from('radio_inventory').update({
+    status: newStatus, condition: newCondition,
+    assigned_unit: unit || null, assigned_person: person || null,
+    updated_by: who, updated_at: new Date().toISOString()
+  }).eq('id', currentInvId);
+  if (error) { alert('Error: ' + error.message); return; }
+
+  const detail = `Status: ${INV_STATUS_LABELS[r.status]} → ${INV_STATUS_LABELS[newStatus]}` +
+    (unit   ? ` · Unit: ${unit}` : '') + (person ? ` · Person: ${person}` : '') +
+    (notes  ? `\n${notes}` : '');
+  await logCustodyEvent(currentInvId, 'STATUS_CHANGE', detail);
+  await logInventoryEvent('STATUS', r.serial_number, detail);
+
+  document.getElementById('invStatusModal').classList.remove('open');
+  await loadInventory();
+  renderInventory();
+  await openInventoryModal(currentInvId);
+}
+
+// ── Inventory add/edit form ──
+async function openInventoryForm(id) {
+  inventoryEditingId = id || null;
+  const errEl = document.getElementById('ie-error');
+  if (errEl) errEl.textContent = '';
+  const warnEl = document.getElementById('ie-serial-warn');
+  if (warnEl) warnEl.textContent = '';
+
+  // Populate model/band dropdowns from shared lists
+  const modelSel = document.getElementById('ie-model');
+  const bandSel  = document.getElementById('ie-band');
+  if (modelSel) {
+    modelSel.innerHTML = '<option value="">— Select model —</option>' +
+      triggerModels.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+  }
+  if (bandSel) {
+    bandSel.innerHTML = '<option value="">— Select band —</option>' +
+      triggerBands.map(b => `<option value="${escHtml(b)}">${escHtml(b)}</option>`).join('');
+  }
+
+  // Populate MDC link dropdown from triggers
+  const mdcSel = document.getElementById('ie-radio-id');
+  if (mdcSel) {
+    mdcSel.innerHTML = '<option value="">— Link to trigger record —</option>' +
+      triggers.map(t => `<option value="${t.id}">${t.mdc_id}${t.assignment?' — '+t.assignment:''}</option>`).join('');
+  }
+
+  if (id) {
+    // Try local cache first, fall back to Supabase fetch
+    let r = inventory.find(x => String(x.id) === String(id));
+    if (!r) {
+      try {
+        const { data } = await sb.from('radio_inventory').select('*').eq('id', id).single();
+        if (data) r = data;
+      } catch(e) {}
+    }
+    if (!r) { alert('Could not load radio record. Please try again.'); return; }
+
+    document.getElementById('invEditTitle').textContent = `Edit — ${r.serial_number}`;
+    document.getElementById('ie-serial').value        = r.serial_number    || '';
+    document.getElementById('ie-status').value        = r.status           || 'in-stock';
+    document.getElementById('ie-condition').value     = r.condition        || 'good';
+    document.getElementById('ie-unit').value          = r.assigned_unit    || '';
+    document.getElementById('ie-person').value        = r.assigned_person  || '';
+    document.getElementById('ie-firmware').value      = r.firmware_version || '';
+    document.getElementById('ie-agency').value        = r.agency           || '';
+    document.getElementById('ie-purchase-date').value = r.purchase_date    || '';
+    document.getElementById('ie-pm-date').value       = r.last_pm_date     || '';
+    document.getElementById('ie-notes').value         = r.notes            || '';
+    // Set dropdowns AFTER populating their options
+    setTimeout(() => {
+      if (r.radio_model && modelSel) modelSel.value = r.radio_model;
+      if (r.radio_band  && bandSel)  bandSel.value  = r.radio_band;
+      if (r.radio_id    && mdcSel)   mdcSel.value   = String(r.radio_id);
+    }, 0);
+  } else {
+    document.getElementById('invEditTitle').textContent = 'Add Radio';
+    ['ie-serial','ie-firmware','ie-agency','ie-unit','ie-person','ie-notes'].forEach(fid => {
+      const el = document.getElementById(fid); if (el) el.value = '';
+    });
+    if (modelSel) modelSel.value = '';
+    if (bandSel)  bandSel.value  = '';
+    document.getElementById('ie-status').value        = 'in-stock';
+    document.getElementById('ie-condition').value     = 'good';
+    document.getElementById('ie-purchase-date').value = '';
+    document.getElementById('ie-pm-date').value       = '';
+    if (mdcSel) mdcSel.value = '';
+  }
+  document.getElementById('inventoryModal').classList.remove('open');
+  document.getElementById('inventoryEditModal').classList.add('open');
+}
+
+function closeInventoryForm() {
+  document.getElementById('inventoryEditModal').classList.remove('open');
+  inventoryEditingId = null;
+}
+
+function checkInventorySerial() {
+  const val   = document.getElementById('ie-serial').value.trim();
+  const warn  = document.getElementById('ie-serial-warn');
+  if (!val || !warn) return;
+  const dup   = inventory.find(r => String(r.id) !== String(inventoryEditingId) && (r.serial_number||'').toLowerCase() === val.toLowerCase());
+  warn.innerHTML = dup ? `🚨 DUPLICATE serial — already registered (${INV_STATUS_LABELS[dup.status]})` : '';
+}
+
+async function saveInventoryRecord() {
+  const serial = document.getElementById('ie-serial').value.trim();
+  const errEl  = document.getElementById('ie-error');
+  if (!serial) { errEl.textContent = 'Serial number is required.'; return; }
+
+  const dup = inventory.find(r => String(r.id) !== String(inventoryEditingId) && (r.serial_number||'').toLowerCase() === serial.toLowerCase());
+  if (dup) { errEl.textContent = '⚠ Duplicate serial number. Each radio must have a unique serial.'; return; }
+
+  const who = currentUser?.name || 'Unknown';
+  const row = {
+    serial_number:    serial,
+    radio_model:      document.getElementById('ie-model').value      || null,
+    radio_band:       document.getElementById('ie-band').value       || null,
+    status:           document.getElementById('ie-status').value     || 'in-stock',
+    condition:        document.getElementById('ie-condition').value  || 'good',
+    assigned_unit:    document.getElementById('ie-unit').value.trim()   || null,
+    assigned_person:  document.getElementById('ie-person').value.trim() || null,
+    firmware_version: document.getElementById('ie-firmware').value.trim() || null,
+    agency:           document.getElementById('ie-agency').value.trim()   || null,
+    purchase_date:    document.getElementById('ie-purchase-date').value   || null,
+    last_pm_date:     document.getElementById('ie-pm-date').value         || null,
+    notes:            document.getElementById('ie-notes').value.trim()    || null,
+    radio_id:         document.getElementById('ie-radio-id').value        || null,
+    updated_by:       who,
+    updated_at:       new Date().toISOString(),
+  };
+
+  if (inventoryEditingId) {
+    const prev = inventory.find(x => String(x.id) === String(inventoryEditingId));
+    const { error } = await sb.from('radio_inventory').update(row).eq('id', inventoryEditingId);
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+    // Diff log
+    const changed = [];
+    if (prev) {
+      [['serial_number','Serial'],['radio_model','Model'],['radio_band','Band'],
+       ['status','Status'],['condition','Condition'],['assigned_unit','Unit'],
+       ['assigned_person','Person'],['firmware_version','Firmware'],['agency','Agency']
+      ].forEach(([key,label]) => {
+        if (String(prev[key]||'') !== String(row[key]||''))
+          changed.push(`${label}: ${prev[key]||'—'} → ${row[key]||'—'}`);
+      });
+    }
+    await logCustodyEvent(inventoryEditingId, 'EDIT', `Record edited: ${changed.join(', ')||'saved'}`);
+    await logInventoryEvent('EDIT', serial, changed.join(', ')||'record saved');
+  } else {
+    const { data: inserted, error } = await sb.from('radio_inventory').insert(row).select('id').single();
+    if (error) { errEl.textContent = 'Error: ' + error.message; return; }
+    const newId = inserted?.id;
+    if (newId) await logCustodyEvent(newId, 'ADD', `Radio added to inventory — ${row.radio_model||'—'} · ${row.radio_band||'—'} · Status: ${INV_STATUS_LABELS[row.status]}`);
+    await logInventoryEvent('ADD', serial, `Added — model: ${row.radio_model||'—'} · status: ${INV_STATUS_LABELS[row.status]}`);
+  }
+
+  await loadInventory();
+  closeInventoryForm();
+  renderInventory();
+}
+
+async function deleteInventoryRecord() {
+  const r = inventory.find(x => String(x.id) === String(currentInvId));
+  if (!r || !confirm(`Permanently delete radio ${r.serial_number}?\nAll custody history will also be deleted.`)) return;
+  await logInventoryEvent('DELETE', r.serial_number, `Deleted — ${r.radio_model||'—'} · ${r.status}`);
+  await sb.from('radio_inventory').delete().eq('id', currentInvId);
+  await loadInventory();
+  closeInventoryModal();
+  renderInventory();
+}
+
+// ── Custody log ──
+async function logCustodyEvent(inventoryId, action, detail) {
+  try {
+    await sb.from('inventory_custody').insert({
+      inventory_id: inventoryId, action, detail,
+      actor: currentUser?.name || 'Unknown',
+      created_at: new Date().toISOString(),
+    });
+  } catch(e) {}
+}
+
+async function logInventoryEvent(action, serial, detail) {
+  const actor     = currentUser?.name || 'Unknown';
+  const actorRole = currentUser?.role || null;
+  const now       = new Date().toISOString();
+  // Write to inventory-specific log
+  try {
+    await sb.from('inventory_log').insert({
+      action, serial_number: serial, detail, actor, actor_role: actorRole, created_at: now,
+    });
+  } catch(e) {}
+  // Also write to master activity_log (skip routine views to reduce noise)
+  if (action !== 'VIEW') {
+    try {
+      await sb.from('activity_log').insert({
+        message:    `[INVENTORY] ${action}${serial ? ' · ' + serial : ''} — ${detail || ''}`,
+        category:   'inventory',
+        action:     `Inventory ${action}`,
+        detail:     detail || null,
+        actor,
+        actor_role: actorRole,
+        extra:      serial ? JSON.stringify({ serial_number: serial }) : null,
+      });
+    } catch(e) {}
+  }
+}
+
+async function loadCustodyLog() {
+  custodyOffset = 0; custodyCache = [];
+  const body = document.getElementById('custodyLogBody');
+  if (body) body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data } = await sb.from('inventory_custody').select('*, radio_inventory(serial_number)').order('created_at', { ascending:false }).range(0, INV_PAGE-1);
+    custodyCache = data || [];
+    const btn = document.getElementById('custodyMoreBtn');
+    if (btn) btn.style.display = custodyCache.length === INV_PAGE ? 'inline-flex' : 'none';
+    renderCustodyLog();
+  } catch(e) { if (body) body.innerHTML = `<div style="padding:16px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`; }
+}
+
+async function loadMoreCustodyLog() {
+  custodyOffset += INV_PAGE;
+  const { data } = await sb.from('inventory_custody').select('*, radio_inventory(serial_number)').order('created_at', { ascending:false }).range(custodyOffset, custodyOffset+INV_PAGE-1);
+  custodyCache = [...custodyCache, ...(data||[])];
+  const btn = document.getElementById('custodyMoreBtn');
+  if (btn) btn.style.display = (data?.length===INV_PAGE) ? 'inline-flex' : 'none';
+  renderCustodyLog();
+}
+
+function renderCustodyLog() {
+  const query = (document.getElementById('invCustodySearch')?.value || '').toLowerCase();
+  const body  = document.getElementById('custodyLogBody');
+  if (!body) return;
+  const filtered = custodyCache.filter(r => !query ||
+    [r.action, r.detail, r.actor, r.radio_inventory?.serial_number].some(f => (f||'').toLowerCase().includes(query))
+  );
+  if (!filtered.length) { body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">No entries.</div>'; return; }
+  const ACTION_COLORS = { ADD:'var(--status-available)', EDIT:'var(--accent)', STATUS_CHANGE:'var(--status-reserved)', NOTE:'var(--text-dim)', DELETE:'var(--status-active)' };
+  body.innerHTML = filtered.map(r => {
+    const ts  = new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+    const col = ACTION_COLORS[r.action] || 'var(--text-dim)';
+    const serial = r.radio_inventory?.serial_number || '—';
+    return `<div style="display:grid;grid-template-columns:150px 120px 90px 1fr 120px;gap:0;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${ts}</div>
+      <div style="font-family:var(--font-data);font-size:11px;font-weight:600;color:var(--text-primary);">${escHtml(serial)}</div>
+      <div><span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;border:1px solid ${col}44;color:${col};">${r.action||'—'}</span></div>
+      <div style="color:var(--text-secondary);padding:0 8px;white-space:pre-wrap;line-height:1.4;">${escHtml(r.detail||'')}</div>
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${escHtml(r.actor||'—')}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadInventoryLog() {
+  const body = document.getElementById('invLogBody');
+  if (body) body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data } = await sb.from('inventory_log').select('*').order('created_at', { ascending:false }).limit(200);
+    invLogCache = data || [];
+    renderInventoryLog();
+  } catch(e) { if (body) body.innerHTML = `<div style="padding:16px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`; }
+}
+
+function renderInventoryLog() {
+  const query = (document.getElementById('invLogSearch')?.value || '').toLowerCase();
+  const body  = document.getElementById('invLogBody');
+  if (!body) return;
+  const filtered = invLogCache.filter(r => !query || [r.action, r.serial_number, r.detail, r.actor].some(f => (f||'').toLowerCase().includes(query)));
+  if (!filtered.length) { body.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:12px;">No entries.</div>'; return; }
+  const ACTION_COLORS = { ADD:'var(--status-available)', EDIT:'var(--accent)', STATUS:'var(--status-reserved)', NOTE:'var(--text-dim)', VIEW:'var(--text-dim)', DELETE:'var(--status-active)' };
+  body.innerHTML = filtered.map(r => {
+    const ts  = new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    const col = ACTION_COLORS[r.action] || 'var(--text-dim)';
+    return `<div style="display:grid;grid-template-columns:150px 120px 1fr 120px;gap:0;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${ts}</div>
+      <div style="font-family:var(--font-data);font-weight:700;color:var(--text-primary);">${escHtml(r.serial_number||'—')}</div>
+      <div style="color:var(--text-secondary);padding-right:8px;"><span style="font-family:var(--font-data);font-size:9px;padding:1px 5px;border-radius:2px;border:1px solid ${col}44;color:${col};margin-right:6px;">${r.action||'—'}</span>${escHtml(r.detail||'')}</div>
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${escHtml(r.actor||'—')}</div>
+    </div>`;
+  }).join('');
+}
+
+function exportInventoryCSV() {
+  if (!inventory.length) { alert('No inventory data to export.'); return; }
+  const header = ['Serial Number','Model','Band','Status','Condition','Assigned Unit','Assigned Person','Agency','Firmware','Purchase Date','Last PM','MDC ID','Notes'];
+  const getMDC = r => {
+    const t = r.radio_id ? triggers.find(x => String(x.id) === String(r.radio_id)) : null;
+    return t?.mdc_id || r.mdc_id_ref || '';
+  };
+  const rows = inventory.map(r => [
+    r.serial_number||'', r.radio_model||'', r.radio_band||'',
+    INV_STATUS_LABELS[r.status]||r.status, r.condition||'',
+    r.assigned_unit||'', r.assigned_person||'', r.agency||'',
+    r.firmware_version||'', r.purchase_date||'', r.last_pm_date||'',
+    getMDC(r), r.notes||''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','),...rows].join('\n');
+  const a = Object.assign(document.createElement('a'),{href:'data:text/csv;charset=utf-8,'+encodeURIComponent(csv),download:`radio-inventory-${new Date().toLocaleDateString('en-CA')}.csv`});
+  a.click();
+}
+
+function exportCustodyCSV() {
+  if (!custodyCache.length) { alert('Load the chain of custody first.'); return; }
+  const header = ['Timestamp (PT)','Serial Number','Action','Detail','Actor'];
+  const rows = custodyCache.map(r => [
+    new Date(r.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles'}),
+    r.radio_inventory?.serial_number||'', r.action||'', r.detail||'', r.actor||''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','),...rows].join('\n');
+  const a = Object.assign(document.createElement('a'),{href:'data:text/csv;charset=utf-8,'+encodeURIComponent(csv),download:`chain-of-custody-${new Date().toLocaleDateString('en-CA')}.csv`});
   a.click();
 }
 
@@ -10794,6 +11490,206 @@ init();
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-secondary" onclick="closeNoticeEditor()">Cancel</button>
         <button class="btn-primary" onclick="saveNotice()">Save Notice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── INVENTORY DETAIL MODAL ── -->
+<div class="modal-overlay" id="inventoryModal">
+  <div class="modal" style="max-width:720px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title" id="invModalTitle">Radio Detail</div>
+      <button class="modal-close" onclick="closeInventoryModal()">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+      <div id="invDetailSection"></div>
+      <!-- Chain of custody for this radio -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Chain of Custody</div>
+        <div id="invCustodyDetail" style="max-height:200px;overflow-y:auto;background:var(--bg-deep);border-radius:var(--radius);margin-bottom:12px;"></div>
+        <!-- Add custody event / note -->
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div class="form-field" style="flex:1;">
+            <label class="form-label">Add Note / Transfer Record</label>
+            <textarea class="form-textarea" id="invNewNote" placeholder="Enter note, transfer details, maintenance record…" style="height:52px;" onkeydown="if(event.ctrlKey&&event.key==='Enter')saveInventoryNote()"></textarea>
+          </div>
+          <button class="btn-primary" style="padding:7px 14px;flex-shrink:0;margin-bottom:1px;" onclick="saveInventoryNote()">Post</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;justify-content:space-between;">
+      <div id="invModalAdminBtns" style="display:flex;gap:8px;">
+        <button class="btn-secondary" style="font-size:12px;" onclick="openInventoryForm(currentInvId)">✏ Edit</button>
+        <button class="btn-secondary" style="font-size:12px;" onclick="openStatusChangeModal()">⇄ Change Status</button>
+        <button class="btn-danger"    style="font-size:12px;" onclick="deleteInventoryRecord()">✕ Delete</button>
+      </div>
+      <button class="btn-secondary" style="margin-left:auto;" onclick="closeInventoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── INVENTORY STATUS CHANGE MODAL ── -->
+<div class="modal-overlay" id="invStatusModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">Change Status</div>
+      <button class="modal-close" onclick="document.getElementById('invStatusModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="invStatusCurrent" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;font-family:var(--font-data);"></div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">New Status *</label>
+          <select class="form-select" id="isc-status">
+            <option value="in-stock">In Stock</option>
+            <option value="assigned">Assigned to Unit</option>
+            <option value="signed-out">Assigned to Person</option>
+            <option value="out-of-service">Out of Service</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Condition</label>
+          <select class="form-select" id="isc-condition">
+            <option value="new">New</option>
+            <option value="good">Good</option>
+            <option value="fair">Fair</option>
+            <option value="poor">Poor</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Assigned Unit / Location</label>
+          <input class="form-input" id="isc-unit" placeholder="E51, Station 7, Cache…">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Assigned Person</label>
+          <input class="form-input" id="isc-person" placeholder="Name of person signing out">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Reason / Notes</label>
+          <textarea class="form-textarea" id="isc-notes" placeholder="Reason for status change, transfer details…" style="height:56px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('invStatusModal').classList.remove('open')">Cancel</button>
+      <button class="btn-primary" onclick="saveStatusChange()">Save Status Change</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── INVENTORY ADD/EDIT MODAL ── -->
+<div class="modal-overlay" id="inventoryEditModal">
+  <div class="modal" style="max-width:680px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title" id="invEditTitle">Add Radio</div>
+      <button class="modal-close" onclick="closeInventoryForm()">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+
+      <!-- Core identity -->
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Serial Number *</label>
+          <input class="form-input" id="ie-serial" placeholder="Unique serial number" oninput="checkInventorySerial()">
+          <div id="ie-serial-warn" style="font-size:11px;color:var(--status-active);min-height:14px;margin-top:2px;font-family:var(--font-data);"></div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Link to MDC / Trigger ID <span style="font-weight:400;color:var(--text-dim);">optional</span></label>
+          <select class="form-select" id="ie-radio-id">
+            <option value="">— Link to trigger record —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Radio Model</label>
+          <select class="form-select" id="ie-model">
+            <option value="">— Select model —</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Radio Band</label>
+          <select class="form-select" id="ie-band">
+            <option value="">— Select band —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="ie-status">
+            <option value="in-stock">In Stock</option>
+            <option value="assigned">Assigned to Unit</option>
+            <option value="signed-out">Assigned to Person</option>
+            <option value="out-of-service">Out of Service</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Condition</label>
+          <select class="form-select" id="ie-condition">
+            <option value="new">New</option>
+            <option value="good" selected>Good</option>
+            <option value="fair">Fair</option>
+            <option value="poor">Poor</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Assigned Unit / Location</label>
+          <input class="form-input" id="ie-unit" placeholder="E51, Station 7, Main Cache…">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Assigned Person</label>
+          <input class="form-input" id="ie-person" placeholder="Name if signed out">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Purchase / Issue Date</label>
+          <input class="form-input" id="ie-purchase-date" type="date">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Last PM Date</label>
+          <input class="form-input" id="ie-pm-date" type="date">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Firmware Version</label>
+          <input class="form-input" id="ie-firmware" placeholder="e.g. R26.00.00">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Agency / Owner</label>
+          <input class="form-input" id="ie-agency" placeholder="LAFD, LAPD, OES…">
+        </div>
+      </div>
+
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="ie-notes" placeholder="Additional details, history, special notes…" style="height:60px;"></textarea>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="flex-shrink:0;justify-content:space-between;">
+      <div id="ie-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);flex:1;"></div>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeInventoryForm()">Cancel</button>
+        <button class="btn-primary" onclick="saveInventoryRecord()">Save</button>
       </div>
     </div>
   </div>
