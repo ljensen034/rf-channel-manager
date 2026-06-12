@@ -2968,10 +2968,21 @@
               <input type="color" id="auf-color" value="#1e88e5" style="width:40px;height:34px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-card);cursor:pointer;padding:2px;">
             </div>
             <div class="form-field" style="justify-content:flex-end;padding-top:8px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="auf-can-resources" style="width:14px;height:14px;accent-color:var(--accent);">
-                <span style="font-size:12px;color:var(--text-primary);">🚒 Resources access</span>
-              </label>
+              <label style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;display:block;">Module Access</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-freq"      style="accent-color:var(--accent);" checked> 📻 Freq Mgmt
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-vehicles"  style="accent-color:var(--accent);"> 🚒 Vehicles
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-equipment" style="accent-color:var(--accent);"> 📦 Equipment
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-admin"     style="accent-color:var(--accent);"> ⚙ Admin
+                </label>
+              </div>
             </div>
           </div>
           <div id="auf-uuid-row" style="display:none;margin-bottom:10px;">
@@ -4277,7 +4288,11 @@ async function doLogin() {
     roleLabel:        ROLE_DEFS[profile.role]?.label || profile.role,
     color:            profile.color || '#1e88e5',
     active:           profile.active,
-    canViewResources: profile.can_view_resources === true || profile.role === 'admin',
+    canFreq:          profile.can_freq      !== false  || profile.role === 'admin',
+    canVehicles:      profile.can_vehicles  === true   || profile.role === 'admin',
+    canEquipment:     profile.can_equipment === true   || profile.role === 'admin',
+    canAdmin:         profile.can_admin     === true   || profile.role === 'admin',
+    canViewResources: profile.can_vehicles === true || profile.can_equipment === true || profile.role === 'admin',
     viewMode:         profile.view_mode || 'coml',
   };
 
@@ -4320,13 +4335,11 @@ function onLoginSuccess() {
   const mAdminBtn = document.getElementById('mobileAdminBtn');
   if (mAdminBtn) mAdminBtn.style.display = match.role === 'admin' ? 'block' : 'none';
 
-  // Show/hide Resources tab based on per-user permission
-  const resTab = document.getElementById('mvtab-resources');
-  if (resTab) resTab.style.display = match.canViewResources ? '' : 'none';
-
-  // Show Admin tab for admins only
+  // Show/hide tabs based on per-user module permissions
+  const resTab   = document.getElementById('mvtab-resources');
   const adminTab = document.getElementById('mvtab-admin');
-  if (adminTab) adminTab.style.display = match.role === 'admin' ? '' : 'none';
+  if (resTab)   resTab.style.display   = match.canViewResources ? '' : 'none';
+  if (adminTab) adminTab.style.display = (match.canAdmin || match.role === 'admin') ? '' : 'none';
 
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const viewModeTag = match.viewMode === 'dispatcher'
@@ -4519,7 +4532,11 @@ async function checkExistingSession() {
     roleLabel:        ROLE_DEFS[profile.role]?.label || profile.role,
     color:            profile.color || '#1e88e5',
     active:           profile.active,
-    canViewResources: profile.can_view_resources === true || profile.role === 'admin',
+    canFreq:          profile.can_freq      !== false  || profile.role === 'admin',
+    canVehicles:      profile.can_vehicles  === true   || profile.role === 'admin',
+    canEquipment:     profile.can_equipment === true   || profile.role === 'admin',
+    canAdmin:         profile.can_admin     === true   || profile.role === 'admin',
+    canViewResources: profile.can_vehicles === true || profile.can_equipment === true || profile.role === 'admin',
     viewMode:         profile.view_mode || 'coml',
   };
   onLoginSuccess();
@@ -4616,7 +4633,10 @@ function openUserForm(userId) {
     document.getElementById('uf-username').value = u.email || '';
     document.getElementById('uf-role').value     = u.role  || 'viewer';
     document.getElementById('uf-color').value    = u.color || '#1e88e5';
-    document.getElementById('uf-can-resources').checked = u.canViewResources || u.role === 'admin' || false;
+    document.getElementById('uf-can-freq').checked      = u.canFreq      !== false || u.role === 'admin';
+    document.getElementById('uf-can-vehicles').checked   = u.canVehicles  === true  || u.role === 'admin';
+    document.getElementById('uf-can-equipment').checked  = u.canEquipment === true  || u.role === 'admin';
+    document.getElementById('uf-can-admin').checked      = u.canAdmin     === true  || u.role === 'admin';
     document.getElementById('userFormTitle').textContent = 'Edit User';
     document.getElementById('uf-username').readOnly = true;
     document.getElementById('uf-username').style.opacity = '0.5';
@@ -4627,7 +4647,10 @@ function openUserForm(userId) {
     document.getElementById('uf-username').value = '';
     document.getElementById('uf-role').value     = 'viewer';
     document.getElementById('uf-color').value    = '#1e88e5';
-    document.getElementById('uf-can-resources').checked = false;
+    document.getElementById('uf-can-freq').checked      = true;
+    document.getElementById('uf-can-vehicles').checked   = false;
+    document.getElementById('uf-can-equipment').checked  = false;
+    document.getElementById('uf-can-admin').checked      = false;
     if (document.getElementById('uf-uuid')) document.getElementById('uf-uuid').value = '';
     document.getElementById('userFormTitle').textContent = 'Add New User';
     document.getElementById('uf-username').readOnly = false;
@@ -4664,7 +4687,13 @@ async function saveUserForm() {
   try {
     if (userEditingId) {
       // ── EDIT: update profile fields only ──
-      const updates = { name, role, color, can_view_resources: document.getElementById('uf-can-resources').checked };
+      const canFreq      = document.getElementById('uf-can-freq').checked;
+      const canVehicles  = document.getElementById('uf-can-vehicles').checked;
+      const canEquipment = document.getElementById('uf-can-equipment').checked;
+      const canAdmin     = document.getElementById('uf-can-admin').checked;
+      const updates = { name, role, color,
+        can_freq: canFreq, can_vehicles: canVehicles, can_equipment: canEquipment, can_admin: canAdmin,
+        can_view_resources: canVehicles || canEquipment };
       const { error: profErr } = await sb.from('profiles').update(updates).eq('id', userEditingId);
       if (profErr) { errEl.textContent = 'Error: ' + profErr.message; return; }
       logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser.name}`);
@@ -4714,7 +4743,13 @@ async function saveUserForm() {
         return;
       }
 
-      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true, can_view_resources: document.getElementById('uf-can-resources').checked });
+      const canFreqN      = document.getElementById('uf-can-freq').checked;
+      const canVehiclesN  = document.getElementById('uf-can-vehicles').checked;
+      const canEquipmentN = document.getElementById('uf-can-equipment').checked;
+      const canAdminN     = document.getElementById('uf-can-admin').checked;
+      const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true,
+        can_freq: canFreqN, can_vehicles: canVehiclesN, can_equipment: canEquipmentN, can_admin: canAdminN,
+        can_view_resources: canVehiclesN || canEquipmentN });
       if (profErr) { errEl.textContent = 'Profile save failed: ' + profErr.message; return; }
 
       logActivity(`User <span class="log-ch">${name}</span> added by ${currentUser.name}`);
@@ -6054,7 +6089,10 @@ function openAdminUserForm(userId) {
     document.getElementById('auf-role').value              = u.role  || 'viewer';
     document.getElementById('auf-viewmode').value          = u.view_mode || 'coml';
     document.getElementById('auf-color').value             = u.color || '#1e88e5';
-    document.getElementById('auf-can-resources').checked   = u.can_view_resources || u.role === 'admin' || false;
+    document.getElementById('auf-can-freq').checked        = u.can_freq      !== false || u.role === 'admin';
+    document.getElementById('auf-can-vehicles').checked    = u.can_vehicles  === true  || u.role === 'admin';
+    document.getElementById('auf-can-equipment').checked   = u.can_equipment === true  || u.role === 'admin';
+    document.getElementById('auf-can-admin').checked       = u.can_admin     === true  || u.role === 'admin';
     if (inst) inst.style.display = 'none';
   } else {
     document.getElementById('adminUserFormTitle').textContent = 'Add New User';
@@ -6065,7 +6103,10 @@ function openAdminUserForm(userId) {
     document.getElementById('auf-role').value              = 'viewer';
     document.getElementById('auf-viewmode').value          = 'coml';
     document.getElementById('auf-color').value             = '#1e88e5';
-    document.getElementById('auf-can-resources').checked   = false;
+    document.getElementById('auf-can-freq').checked        = true;
+    document.getElementById('auf-can-vehicles').checked    = false;
+    document.getElementById('auf-can-equipment').checked   = false;
+    document.getElementById('auf-can-admin').checked       = false;
     if (document.getElementById('auf-uuid')) document.getElementById('auf-uuid').value = '';
     if (inst) inst.style.display = 'block';
   }
@@ -6085,16 +6126,24 @@ async function saveAdminUserForm() {
   const role      = document.getElementById('auf-role').value;
   const viewMode  = document.getElementById('auf-viewmode').value;
   const color     = document.getElementById('auf-color').value;
-  const canRes    = document.getElementById('auf-can-resources').checked;
+  const canFreq   = document.getElementById('auf-can-freq')?.checked      ?? true;
+  const canVeh    = document.getElementById('auf-can-vehicles')?.checked  ?? false;
+  const canEquip  = document.getElementById('auf-can-equipment')?.checked ?? false;
+  const canAdm    = document.getElementById('auf-can-admin')?.checked     ?? false;
   const errEl     = document.getElementById('auf-error');
   errEl.textContent = ''; errEl.style.color = 'var(--status-active)';
 
   if (!name || !email) { errEl.textContent = 'Name and email are required.'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email.'; return; }
 
+  const modulePerms = {
+    can_freq: canFreq, can_vehicles: canVeh, can_equipment: canEquip, can_admin: canAdm,
+    can_view_resources: canVeh || canEquip
+  };
+
   if (adminUserEditingId) {
     const { error } = await sb.from('profiles').update({
-      name, role, color, view_mode: viewMode, can_view_resources: canRes
+      name, role, color, view_mode: viewMode, ...modulePerms
     }).eq('id', adminUserEditingId);
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
     logActivity(`User <span class="log-ch">${name}</span> updated by ${currentUser?.name||'Admin'}`);
@@ -6126,7 +6175,7 @@ async function saveAdminUserForm() {
     }
     const { error } = await sb.from('profiles').insert({
       id: userId, name, role, color, email, active: true,
-      view_mode: viewMode, can_view_resources: canRes
+      view_mode: viewMode, ...modulePerms
     });
     if (error) { errEl.textContent = 'Profile save failed: ' + error.message; return; }
     logActivity(`User <span class="log-ch">${name}</span> added by ${currentUser?.name||'Admin'}`);
@@ -6773,8 +6822,14 @@ function openSchedModal(id) {
   // Populate multi-select channel list
   const sel = document.getElementById('sr-channel');
   sel.innerHTML = channels.map(c =>
-    `<option value="${c.id}" data-designator="${c.designator}">${c.designator} — ${c.freq} MHz</option>`
+    `<option value="${c.id}" data-designator="${c.designator}" data-freq="${c.freq}">${c.designator} — ${c.freq} MHz</option>`
   ).join('');
+
+  const clearRisk = () => {
+    document.getElementById('sr-risk-panel').style.display = 'none';
+    document.getElementById('sr-time-conflict').style.display = 'none';
+    document.getElementById('sr-conflict-warn').style.display = 'none';
+  };
 
   if (id) {
     const r = reservations.find(x => x.id === id);
@@ -6790,7 +6845,11 @@ function openSchedModal(id) {
     document.getElementById('sr-coml-notified').checked      = r.comlNotified || false;
     document.getElementById('sr-start').value                = toLocalDatetimeInput(r.start);
     document.getElementById('sr-end').value                  = toLocalDatetimeInput(r.end);
-    // Restore multi-channel selection — channelIds is an array; channelId is legacy single
+    document.getElementById('sr-lat').value                  = r.lat   || '';
+    document.getElementById('sr-lon').value                  = r.lon   || '';
+    document.getElementById('sr-elev').value                 = r.elev  || '';
+    document.getElementById('sr-radius').value               = r.radius || 5;
+    document.getElementById('sr-band').value                 = r.band  || 'auto';
     const ids = r.channelIds || (r.channelId ? [r.channelId] : []);
     [...sel.options].forEach(o => { o.selected = ids.includes(o.value); });
     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
@@ -6804,6 +6863,11 @@ function openSchedModal(id) {
     document.getElementById('sr-notes').value                = '';
     document.getElementById('sr-205-emailed').checked        = false;
     document.getElementById('sr-coml-notified').checked      = false;
+    document.getElementById('sr-lat').value                  = '';
+    document.getElementById('sr-lon').value                  = '';
+    document.getElementById('sr-elev').value                 = '';
+    document.getElementById('sr-radius').value               = 5;
+    document.getElementById('sr-band').value                 = 'auto';
     [...sel.options].forEach(o => { o.selected = false; });
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -6812,13 +6876,412 @@ function openSchedModal(id) {
     document.getElementById('sr-end').value   = `${ds}T17:00`;
     if (deleteBtn) deleteBtn.style.display = 'none';
   }
-  document.getElementById('sr-conflict-warn').style.display = 'none';
+  clearRisk();
   document.getElementById('schedModal').classList.add('open');
+  // Run risk engine on open if editing
+  if (id) { checkTimeConflicts(); runSimplexRiskEngine(); }
 }
 
 function closeSchedModal() {
   document.getElementById('schedModal').classList.remove('open');
   schedEditingId = null;
+}
+
+// ─────────────────────────────────────────────
+// LIVE TIME CONFLICT CHECKER
+// ─────────────────────────────────────────────
+function checkTimeConflicts() {
+  const el    = document.getElementById('sr-time-conflict');
+  const sel   = document.getElementById('sr-channel');
+  const startV = document.getElementById('sr-start').value;
+  const endV   = document.getElementById('sr-end').value;
+  if (!startV || !endV || !sel) { if (el) el.style.display = 'none'; return; }
+
+  const startISO = ptInputToISO(startV);
+  const endISO   = ptInputToISO(endV);
+  if (new Date(endISO) <= new Date(startISO)) { if (el) el.style.display = 'none'; return; }
+
+  const channelIds = [...sel.options].filter(o => o.selected).map(o => o.value);
+  const conflicts = [];
+  channelIds.forEach(chId => {
+    reservations.filter(r =>
+      r.id !== schedEditingId &&
+      (r.channelIds || [r.channelId]).includes(chId) &&
+      new Date(r.start) < new Date(endISO) &&
+      new Date(r.end)   > new Date(startISO)
+    ).forEach(r => {
+      const ch = channels.find(c => c.id == chId);
+      const fmtT = d => new Date(d).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+      conflicts.push(`${ch?.designator||chId} overlaps <strong>${r.title}</strong> (${fmtT(r.start)}–${fmtT(r.end)})`);
+    });
+  });
+
+  if (!el) return;
+  if (conflicts.length) {
+    el.innerHTML = '⚠ Time conflict: ' + conflicts.join('<br>');
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────
+// SIMPLEX REUSE RISK ENGINE
+// ─────────────────────────────────────────────
+
+// Haversine distance between two lat/lon points in miles
+// ─────────────────────────────────────────────
+// SIMPLEX REUSE RISK ENGINE  — v2
+// USGS 3DEP EPQS elevation  +  Fresnel zone
+// ─────────────────────────────────────────────
+
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R    = 3958.8;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function detectBand(freqStr) {
+  const f = parseFloat(freqStr);
+  if (!f) return 'UHF';
+  if (f >= 136 && f <= 174)  return 'VHF';
+  if (f >= 400 && f <= 512)  return 'UHF';
+  if (f >= 764 && f <= 806)  return '700';
+  if (f >= 806 && f <= 869)  return '800';
+  return 'UHF';
+}
+
+// Effective frequency (MHz) for Fresnel/propagation math — mid-band representative
+function bandFreqMHz(band) {
+  return { VHF: 155, UHF: 460, '700': 769, '800': 851 }[band] || 460;
+}
+
+const BAND_THRESHOLDS = {
+  VHF:  { safe: 20, caution: 8  },
+  UHF:  { safe: 12, caution: 4  },
+  '700':{ safe: 8,  caution: 3  },
+  '800':{ safe: 8,  caution: 3  },
+};
+
+// ── USGS 3DEP EPQS — single point elevation (feet) ──
+async function fetchElevationUSGS(lat, lon) {
+  try {
+    const url = `https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&units=Feet&includeDate=false`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return null;
+    const d = await r.json();
+    // EPQS returns { value: "1234.56" } or { value: -1000000 } for ocean/error
+    const v = parseFloat(d.value);
+    return (isFinite(v) && v > -9000) ? Math.round(v) : null;
+  } catch(e) { return null; }
+}
+
+// ── USGS 3DEP EPQS — elevation profile along a path ──
+// Returns array of { lat, lon, elevFt, distMiles } sampled evenly between A and B
+async function fetchElevationProfile(lat1, lon1, lat2, lon2, nSamples = 12) {
+  const points = [];
+  const totalDist = haversineMiles(lat1, lon1, lat2, lon2);
+  for (let i = 0; i <= nSamples; i++) {
+    const t   = i / nSamples;
+    const lat = lat1 + t * (lat2 - lat1);
+    const lon = lon1 + t * (lon2 - lon1);
+    points.push({ lat, lon, t, distMiles: t * totalDist });
+  }
+
+  // Fetch all points in parallel (EPQS has no batch endpoint — parallel point queries)
+  const results = await Promise.all(
+    points.map(async p => {
+      const elev = await fetchElevationUSGS(p.lat, p.lon);
+      return { ...p, elevFt: elev ?? null };
+    })
+  );
+
+  return results;
+}
+
+// ── Fresnel zone first-radius at a point along a path ──
+// d1 = distance from point to site A (miles), d2 = distance to site B (miles)
+// freqMHz = operating frequency, returns radius in feet
+function fresnelRadius1(d1Miles, d2Miles, freqMHz) {
+  // r1 = sqrt(λ * d1 * d2 / D)  where all in same units
+  // λ = c / f;  using miles for distance then convert to feet
+  const d1 = d1Miles * 5280; // feet
+  const d2 = d2Miles * 5280;
+  const D  = d1 + d2;
+  const lambda = 984_000_000 / (freqMHz * 1e6); // feet  (c = 984,000,000 ft/s)
+  return Math.sqrt(lambda * d1 * d2 / D);        // feet
+}
+
+// ── Terrain + Fresnel path analysis ──
+// Returns { losStatus, fresnelStatus, blockedAt, fresnelDetail, profile }
+// losStatus: 'clear' | 'blocked' | 'marginal'
+// fresnelStatus: 'clear' | 'partial' | 'obstructed'
+async function analyzeTerrainPath(lat1, lon1, elev1Ft, lat2, lon2, elev2Ft, freqMHz) {
+  const ANTENNA_FT = 10; // assumed above ground
+  const hA = elev1Ft + ANTENNA_FT;
+  const hB = elev2Ft + ANTENNA_FT;
+  const D  = haversineMiles(lat1, lon1, lat2, lon2);
+
+  if (D < 0.1) {
+    return { losStatus:'clear', fresnelStatus:'clear', blockedAt:null,
+             fresnelDetail:'Same location', profile:[], D };
+  }
+
+  const profile = await fetchElevationProfile(lat1, lon1, lat2, lon2, 12);
+
+  // Fill in nulls with linear interpolation between known points
+  for (let i = 0; i < profile.length; i++) {
+    if (profile[i].elevFt === null) {
+      // find nearest known neighbors
+      let prev = i - 1, next = i + 1;
+      while (prev >= 0 && profile[prev].elevFt === null) prev--;
+      while (next < profile.length && profile[next].elevFt === null) next++;
+      if (prev >= 0 && next < profile.length) {
+        const span = next - prev;
+        profile[i].elevFt = profile[prev].elevFt +
+          ((profile[next].elevFt - profile[prev].elevFt) / span) * (i - prev);
+      } else if (prev >= 0) profile[i].elevFt = profile[prev].elevFt;
+      else if (next < profile.length) profile[i].elevFt = profile[next].elevFt;
+      else profile[i].elevFt = (elev1Ft + elev2Ft) / 2;
+    }
+  }
+
+  let losBlocked = false, fresnelViolations = 0, blockedAt = null;
+  const FRESNEL_CLEARANCE = 0.6; // 60% first Fresnel zone clearance required
+
+  for (const p of profile) {
+    if (p.t === 0 || p.t === 1) continue; // skip endpoints
+    const d1 = p.t * D;
+    const d2 = (1 - p.t) * D;
+
+    // LOS height at this point on the straight line between A and B antennas
+    const losHeight = hA + (hB - hA) * p.t;
+
+    // Check direct LOS
+    if (p.elevFt > losHeight) {
+      losBlocked = true;
+      if (!blockedAt) blockedAt = p;
+    }
+
+    // Check Fresnel clearance
+    const r1  = fresnelRadius1(d1, d2, freqMHz);             // ft
+    const clr = FRESNEL_CLEARANCE * r1;                       // required clearance ft
+    const headroom = losHeight - p.elevFt;                    // terrain below LOS line
+    if (headroom < clr) fresnelViolations++;
+  }
+
+  const interiorCount = profile.length - 2;
+  const fresnelRatio  = fresnelViolations / Math.max(interiorCount, 1);
+
+  const losStatus     = losBlocked ? 'blocked' : 'clear';
+  let fresnelStatus;
+  if (fresnelRatio === 0)       fresnelStatus = 'clear';
+  else if (fresnelRatio < 0.4)  fresnelStatus = 'partial';
+  else                          fresnelStatus = 'obstructed';
+
+  return { losStatus, fresnelStatus, blockedAt, fresnelViolations, interiorCount, profile, D, freqMHz };
+}
+
+// ── Main risk engine (async, DEM-backed) ──
+async function runSimplexRiskEngine() {
+  const panel = document.getElementById('sr-risk-panel');
+  if (!panel) return;
+
+  const latV    = parseFloat(document.getElementById('sr-lat').value);
+  const lonV    = parseFloat(document.getElementById('sr-lon').value);
+  const elevV   = parseFloat(document.getElementById('sr-elev').value);
+  const radiusV = parseFloat(document.getElementById('sr-radius').value) || 5;
+  const bandSel = document.getElementById('sr-band').value;
+
+  const sel     = document.getElementById('sr-channel');
+  const selOpts = sel ? [...sel.options].filter(o => o.selected) : [];
+  let band = bandSel !== 'auto' ? bandSel : null;
+  if (!band && selOpts.length) {
+    const freq = channels.find(c => c.id == selOpts[0].value)?.freq;
+    if (freq) band = detectBand(freq);
+  }
+  if (!band) band = 'UHF';
+
+  if (!latV || !lonV) { panel.style.display = 'none'; return; }
+
+  panel.style.display = 'block';
+  panel.innerHTML = `<div style="padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--text-dim);">⏳ Fetching USGS 3DEP elevation &amp; analyzing terrain path…</div>`;
+
+  // Fetch my elevation from USGS if not provided
+  let myElev = elevV || null;
+  let elevAutoFetched = false;
+  if (!myElev) {
+    panel.innerHTML = panel.innerHTML.replace('⏳', '📡');
+    const fetched = await fetchElevationUSGS(latV, lonV);
+    if (fetched !== null) {
+      myElev = fetched;
+      elevAutoFetched = true;
+      document.getElementById('sr-elev').value = myElev;
+      document.getElementById('sr-elev').style.borderColor = 'var(--accent)';
+    } else {
+      myElev = 500;
+    }
+  }
+
+  const startV   = document.getElementById('sr-start').value;
+  const endV     = document.getElementById('sr-end').value;
+  const startISO = startV ? ptInputToISO(startV) : null;
+  const endISO   = endV   ? ptInputToISO(endV)   : null;
+
+  const selectedChIds = selOpts.map(o => o.value);
+  const thresholds    = BAND_THRESHOLDS[band] || BAND_THRESHOLDS.UHF;
+  const freqMHz       = bandFreqMHz(band);
+
+  // Gather competing reservations (share channel + time overlap + have location)
+  const allCompeting = reservations.filter(r => {
+    if (r.id === schedEditingId) return false;
+    if (!r.lat || !r.lon) return false;
+    const sharesChannel = selectedChIds.some(id =>
+      (r.channelIds || [r.channelId]).includes(id)
+    );
+    const timeOverlap = (!startISO || !endISO)
+      ? isActiveNow(r)
+      : (new Date(r.start) < new Date(endISO) && new Date(r.end) > new Date(startISO));
+    return sharesChannel && (timeOverlap || isActiveNow(r));
+  });
+
+  if (!allCompeting.length) {
+    panel.innerHTML = `
+      <div style="padding:10px 14px;background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.25);border-radius:4px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">✅</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--status-available);">Safe to Use</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+            No competing assignments found. Band: ${band} · My elevation: ${myElev} ft ASL${elevAutoFetched?' (USGS 3DEP)':''}.
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Update status while running terrain analysis
+  panel.innerHTML = `<div style="padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--text-dim);">🗻 Running terrain path analysis for ${allCompeting.length} competing assignment${allCompeting.length!==1?'s':''}…</div>`;
+
+  // Run full terrain analysis for each competing reservation
+  const results = await Promise.all(allCompeting.map(async r => {
+    const dist       = haversineMiles(latV, lonV, r.lat, r.lon);
+    const theirElev  = r.elev || (await fetchElevationUSGS(r.lat, r.lon)) || 500;
+    const terrain    = await analyzeTerrainPath(latV, lonV, myElev, r.lat, r.lon, theirElev, freqMHz);
+
+    let riskScore = 0;
+
+    // ── Distance component ──
+    let distNote = '';
+    if (dist < thresholds.caution) {
+      riskScore += 3;
+      distNote = `${dist.toFixed(1)} mi — within conflict threshold (<${thresholds.caution} mi)`;
+    } else if (dist < thresholds.safe) {
+      riskScore += 1;
+      distNote = `${dist.toFixed(1)} mi — caution zone (${thresholds.caution}–${thresholds.safe} mi)`;
+    } else {
+      distNote = `${dist.toFixed(1)} mi — beyond separation threshold (>${thresholds.safe} mi)`;
+    }
+
+    // ── LOS component: clear LOS = higher interference risk ──
+    let losNote = '', fresnelNote = '';
+    if (terrain.losStatus === 'clear') {
+      riskScore += 2;
+      losNote = '📡 Direct LOS: clear — high interference potential';
+    } else if (terrain.losStatus === 'blocked') {
+      riskScore -= 1; // terrain blocking reduces risk
+      const bkm = terrain.blockedAt ? `${(terrain.blockedAt.distMiles).toFixed(1)} mi` : '';
+      losNote = `🏔 LOS obstructed by terrain${bkm ? ` at ~${bkm}` : ''} — attenuation expected`;
+    }
+
+    // ── Fresnel zone component ──
+    if (terrain.fresnelStatus === 'clear') {
+      riskScore += 1;
+      fresnelNote = `Fresnel zone clear (${terrain.fresnelViolations||0}/${terrain.interiorCount} samples violated)`;
+    } else if (terrain.fresnelStatus === 'partial') {
+      fresnelNote = `Fresnel zone partially obstructed (${terrain.fresnelViolations}/${terrain.interiorCount} samples <60% clearance)`;
+    } else {
+      riskScore -= 1; // heavy Fresnel obstruction reduces risk
+      fresnelNote = `Fresnel zone heavily obstructed (${terrain.fresnelViolations}/${terrain.interiorCount} samples) — significant diffraction loss`;
+    }
+
+    // ── VHF diffraction penalty: VHF bends/diffracts more ──
+    if (band === 'VHF' && terrain.losStatus !== 'clear') {
+      riskScore += 1; // VHF can diffract over terrain — adds uncertainty
+      fresnelNote += ' ⚠ VHF diffraction: may propagate beyond terrain obstruction';
+    }
+
+    // ── Operating radius overlap ──
+    const radiiOverlap = (radiusV + (r.radius || 5)) > dist;
+    if (radiiOverlap) riskScore += 1;
+
+    riskScore = Math.max(0, riskScore); // floor at 0
+
+    let verdict, icon, color, bg, border;
+    if (riskScore >= 4) {
+      verdict='DO NOT REUSE';    icon='🔴'; color='var(--status-active)';
+      bg='rgba(255,82,82,0.08)'; border='rgba(255,82,82,0.3)';
+    } else if (riskScore >= 2) {
+      verdict='USE CAUTION';      icon='⚠️'; color='var(--status-reserved)';
+      bg='rgba(255,196,0,0.08)';  border='rgba(255,196,0,0.3)';
+    } else {
+      verdict='LIKELY REUSABLE';  icon='✅'; color='var(--status-available)';
+      bg='rgba(0,230,118,0.08)';  border='rgba(0,230,118,0.25)';
+    }
+
+    return { r, dist, distNote, losNote, fresnelNote, verdict, icon, color, bg, border, riskScore, radiiOverlap, theirElev, terrain };
+  }));
+
+  // Overall worst verdict
+  const worstScore = Math.max(...results.map(x => x.riskScore));
+  let oIcon, oVerdict, oColor, oBg, oBorder;
+  if (worstScore >= 4) {
+    oIcon='🔴'; oVerdict='DO NOT REUSE'; oColor='var(--status-active)';
+    oBg='rgba(255,82,82,0.1)'; oBorder='rgba(255,82,82,0.4)';
+  } else if (worstScore >= 2) {
+    oIcon='⚠️'; oVerdict='USE CAUTION'; oColor='var(--status-reserved)';
+    oBg='rgba(255,196,0,0.1)'; oBorder='rgba(255,196,0,0.4)';
+  } else {
+    oIcon='✅'; oVerdict='SAFE TO USE'; oColor='var(--status-available)';
+    oBg='rgba(0,230,118,0.08)'; oBorder='rgba(0,230,118,0.3)';
+  }
+
+  const details = results.map(x => `
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border);font-size:11px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:600;color:var(--text-primary);font-size:12px;">${x.r.title}</span>
+        <span>${x.icon} <span style="color:${x.color};font-weight:700;font-size:12px;">${x.verdict}</span></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;color:var(--text-secondary);">
+        <div>📏 ${x.distNote}</div>
+        <div>${x.losNote}</div>
+        <div style="color:var(--text-dim);">🌀 ${x.fresnelNote}</div>
+        ${x.radiiOverlap ? `<div style="color:var(--status-reserved);">⚠ Coverage radii overlap (my ${radiusV} mi + their ${x.r.radius||5} mi vs ${x.dist.toFixed(1)} mi separation)</div>` : ''}
+        <div style="color:var(--text-dim);">📡 Band ${band} · ${freqMHz} MHz · Their elev: ${x.theirElev} ft ASL · ${x.terrain.interiorCount} DEM samples</div>
+        <div style="color:var(--text-dim);">📋 ${x.r.channelDesignator||'—'} · Risk score: ${x.riskScore}</div>
+      </div>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div style="border:1px solid ${oBorder};border-radius:4px;overflow:hidden;background:${oBg};">
+      <div style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid ${oBorder};">
+        <span style="font-size:22px;">${oIcon}</span>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:${oColor};">Simplex Reuse: ${oVerdict}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+            ${results.length} competing assignment${results.length!==1?'s':''} · Band: ${band} (${freqMHz} MHz) · My site: ${myElev} ft ASL${elevAutoFetched?' <span style="color:var(--accent);">[USGS 3DEP]</span>':''}
+            · Thresholds: safe &gt;${thresholds.safe} mi, caution ${thresholds.caution}–${thresholds.safe} mi
+          </div>
+        </div>
+      </div>
+      ${details}
+      <div style="padding:8px 12px;font-size:10px;color:var(--text-dim);">
+        Terrain: USGS 3DEP EPQS (3DEP 1/3 arc-second, ~10m horizontal, CONUS). Antenna height: 10 ft AGL assumed.
+        Fresnel: 60% first-zone clearance. VHF diffraction uncertainty applied.
+        Score factors: distance (0–3) + LOS (±2) + Fresnel (±1) + VHF diffraction (+1) + radius overlap (+1).
+      </div>
+    </div>`;
 }
 
 // Convert an ISO string to the value format for datetime-local input (YYYY-MM-DDTHH:MM) in PT
@@ -6879,8 +7342,8 @@ function saveReservation() {
 
   const data = {
     title,
-    channelIds,                              // new: array
-    channelId: channelIds[0] || '',          // legacy compat: keep first for week-view rendering
+    channelIds,
+    channelId: channelIds[0] || '',
     channelDesignator: channelDesignators.join(', '),
     start:          startISO,
     end:            endISO,
@@ -6891,6 +7354,11 @@ function saveReservation() {
     emailed205:     document.getElementById('sr-205-emailed').checked,
     comlNotified:   document.getElementById('sr-coml-notified').checked,
     notes:          document.getElementById('sr-notes').value.trim(),
+    lat:            parseFloat(document.getElementById('sr-lat').value)    || null,
+    lon:            parseFloat(document.getElementById('sr-lon').value)    || null,
+    elev:           parseFloat(document.getElementById('sr-elev').value)   || null,
+    radius:         parseFloat(document.getElementById('sr-radius').value) || 5,
+    band:           document.getElementById('sr-band').value || 'auto',
   };
 
   if (schedEditingId) {
@@ -7563,18 +8031,37 @@ init();
         <!-- Module Permissions -->
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
           <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Module Access</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
               <div>
-                <div style="font-size:13px;color:var(--text-primary);font-weight:500;">🚒 Resources Tab</div>
-                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Vehicle, cache &amp; equipment status tracking</div>
+                <div style="font-size:12px;color:var(--text-primary);font-weight:500;">📻 Frequency Mgmt</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">Channels, talkgroups, schedule</div>
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="uf-can-resources" onchange="">
-                <span class="toggle-slider"></span>
-              </label>
+              <label class="toggle-switch"><input type="checkbox" id="uf-can-freq" checked onchange=""><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+              <div>
+                <div style="font-size:12px;color:var(--text-primary);font-weight:500;">🚒 Vehicles</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">Response vehicle status tracking</div>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="uf-can-vehicles" onchange=""><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+              <div>
+                <div style="font-size:12px;color:var(--text-primary);font-weight:500;">📦 Equipment &amp; Cache</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">Cache, radios, support gear</div>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="uf-can-equipment" onchange=""><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+              <div>
+                <div style="font-size:12px;color:var(--text-primary);font-weight:500;">⚙ Administration</div>
+                <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">Users, audit, system settings</div>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="uf-can-admin" onchange=""><span class="toggle-slider"></span></label>
             </div>
           </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:8px;">Note: Dispatch Admin role automatically has access to all modules.</div>
         </div>
 
         <div id="uf-error" style="color:var(--status-active);font-size:12px;font-family:var(--font-data);margin-top:8px;min-height:18px;"></div>
@@ -7792,70 +8279,109 @@ init();
 
 <!-- ── SCHEDULE RESERVATION MODAL ── -->
 <div class="modal-overlay" id="schedModal">
-  <div class="modal" style="max-width:620px;">
+  <div class="modal" style="max-width:700px;">
     <div class="modal-header">
       <div class="modal-title" id="schedModalTitle">New Reservation</div>
       <button class="modal-close" onclick="closeSchedModal()">✕</button>
     </div>
     <div class="modal-body">
 
-      <!-- Row 1: Title -->
+      <!-- Title + Channel -->
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Incident / Event Title *</label>
-          <input class="form-input" id="sr-title" placeholder="e.g. Malibu Marathon, Strike Team Staging">
+          <input class="form-input" id="sr-title" placeholder="e.g. Malibu Creek Fire, Strike Team Staging">
         </div>
       </div>
-
-      <!-- Row 1b: Multi-channel selector -->
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Channels * <span style="font-weight:400;color:var(--text-dim);">(hold Ctrl/Cmd to select multiple)</span></label>
-          <select class="form-select" id="sr-channel" multiple style="height:110px;font-family:var(--font-data);font-size:12px;"></select>
+          <select class="form-select" id="sr-channel" multiple style="height:100px;font-family:var(--font-data);font-size:12px;" onchange="runSimplexRiskEngine()"></select>
         </div>
       </div>
 
-      <!-- Row 2: Dates -->
+      <!-- Dates -->
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Start Date &amp; Time *</label>
-          <input class="form-input" id="sr-start" type="datetime-local">
+          <input class="form-input" id="sr-start" type="datetime-local" onchange="checkTimeConflicts()">
         </div>
         <div class="form-field">
           <label class="form-label">End Date &amp; Time *</label>
-          <input class="form-input" id="sr-end" type="datetime-local">
+          <input class="form-input" id="sr-end" type="datetime-local" onchange="checkTimeConflicts()">
         </div>
       </div>
 
-      <!-- Row 3: Requestor + Agency -->
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Requestor</label>
-          <input class="form-input" id="sr-requestor" placeholder="Name or unit making the request">
+      <!-- Time conflict warning (live) -->
+      <div id="sr-time-conflict" style="display:none;padding:8px 12px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);border-radius:4px;font-size:12px;color:var(--status-active);margin-bottom:8px;"></div>
+
+      <!-- Location section -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">📍 Incident Location &amp; RF Parameters</div>
+        <div class="form-row triple">
+          <div class="form-field">
+            <label class="form-label">Latitude <span style="font-weight:400;color:var(--text-dim);">decimal deg</span></label>
+            <input class="form-input" id="sr-lat" type="number" step="0.0001" placeholder="34.0522" onchange="runSimplexRiskEngine()">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Longitude <span style="font-weight:400;color:var(--text-dim);">decimal deg</span></label>
+            <input class="form-input" id="sr-lon" type="number" step="0.0001" placeholder="-118.2437" onchange="runSimplexRiskEngine()">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Elevation <span style="font-weight:400;color:var(--text-dim);">feet ASL</span></label>
+            <input class="form-input" id="sr-elev" type="number" step="1" placeholder="1200" onchange="runSimplexRiskEngine()">
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-label">Agency</label>
-          <input class="form-input" id="sr-agency" placeholder="LAFD, CalFire, Special Events…">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Expected Operating Radius <span style="font-weight:400;color:var(--text-dim);">miles</span></label>
+            <input class="form-input" id="sr-radius" type="number" step="0.5" min="0.5" value="5" placeholder="5" onchange="runSimplexRiskEngine()">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Primary Band <span style="font-weight:400;color:var(--text-dim);">auto-detected from channels</span></label>
+            <select class="form-select" id="sr-band">
+              <option value="auto">Auto-detect from channels</option>
+              <option value="VHF">VHF (136–174 MHz)</option>
+              <option value="UHF">UHF (400–512 MHz)</option>
+              <option value="700">700 MHz</option>
+              <option value="800">800 MHz</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <!-- Row 4: COML Assigning + Priority -->
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">COML Assigning</label>
-          <input class="form-input" id="sr-coml" placeholder="Name of COML assigning this request">
+      <!-- Simplex risk engine result -->
+      <div id="sr-risk-panel" style="display:none;margin:4px 0 8px;"></div>
+
+      <!-- Requestor + Agency + COML + Priority -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Requestor</label>
+            <input class="form-input" id="sr-requestor" placeholder="Name or unit making the request">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Agency</label>
+            <input class="form-input" id="sr-agency" placeholder="LAFD, CalFire, Special Events…">
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-label">Priority</label>
-          <select class="form-select" id="sr-priority">
-            <option value="Normal">Normal</option>
-            <option value="High">High</option>
-            <option value="Emergency">Emergency</option>
-          </select>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">COML Assigning</label>
+            <input class="form-input" id="sr-coml" placeholder="Name of COML assigning this request">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Priority</label>
+            <select class="form-select" id="sr-priority">
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+              <option value="Emergency">Emergency</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <!-- Row 5: Checkboxes -->
+      <!-- Checkboxes -->
       <div style="display:flex;gap:24px;align-items:center;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:4px 0;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="checkbox" id="sr-205-emailed" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
@@ -7873,11 +8399,11 @@ init();
         </label>
       </div>
 
-      <!-- Row 6: Comments -->
+      <!-- Comments -->
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Comments</label>
-          <textarea class="form-textarea" id="sr-notes" placeholder="Special instructions, contact info, frequency plan notes, restrictions…" style="height:72px;"></textarea>
+          <textarea class="form-textarea" id="sr-notes" placeholder="Special instructions, contact info, frequency plan notes, restrictions…" style="height:60px;"></textarea>
         </div>
       </div>
 
