@@ -3826,6 +3826,7 @@ async function releaseChannel(id) {
     field: 'Status', oldValue: statusLabels[old], newValue: 'Available', changedBy: who,
   });
   logActivity(`<span class="log-ch">${ch.designator}</span> released by ${who} — ${statusLabels[old]} → Available`);
+  if (activeMainTab === 'admin') { await loadChannels(); renderAdminChannels(); }
 }
 
 function quickDeploy(id) {
@@ -3859,6 +3860,7 @@ async function deleteChannel(id) {
   selectedId = null;
   document.getElementById('sideContent').innerHTML = `<div class="side-empty"><span class="icon">📻</span>Select a channel to view details and actions</div>`;
   document.getElementById('selectedBadge').style.display = 'none';
+  if (activeMainTab === 'admin') { await loadChannels(); renderAdminChannels(); }
 }
 
 // ─────────────────────────────────────────────
@@ -3948,23 +3950,34 @@ async function saveChannel() {
       const diffs = diffChannelFields(prev, next, who);
       for (const d of diffs) await logChannelHistory(d);
       if (!diffs.length) {
-        // Minor edit with no tracked field changes
         await logChannelHistory({ channelId: editingId, designator, action:'edited', field:'(misc)', newValue: 'Minor edit', changedBy: who });
       }
     }
     logActivity(`<span class="log-ch">${designator}</span> updated by ${who} — ${statusLabels[row.status]}`);
   } else {
-    const { error, data: inserted } = await sb.from('channels').insert(row).select().single();
-    if (error) { alert('Error adding channel: ' + error.message); return; }
-    await logChannelHistory({
-      channelId: inserted?.id || null, designator, action: 'created',
-      field: 'Status', newValue: statusLabels[row.status], changedBy: who,
-    });
+    // Insert without .select().single() — avoids RLS SELECT policy issues
+    const { error: insertErr } = await sb.from('channels').insert(row);
+    if (insertErr) { alert('Error adding channel: ' + insertErr.message); return; }
+    // Fetch the new row by designator to get its ID for history logging
+    try {
+      const { data: newRows } = await sb.from('channels').select('id').eq('designator', designator).order('id', { ascending: false }).limit(1);
+      const newId = newRows?.[0]?.id || null;
+      await logChannelHistory({
+        channelId: newId, designator, action: 'created',
+        field: 'Status', newValue: statusLabels[row.status], changedBy: who,
+      });
+    } catch(e) { /* history logging is non-critical */ }
     logActivity(`<span class="log-ch">${designator}</span> added by ${who} — ${statusLabels[row.status]}`);
   }
 
   document.getElementById('conflictWarning')?.remove();
   closeAddModal();
+
+  // Refresh channels from DB and update whichever view is active
+  await loadChannels();
+  renderChannels();
+  updateStats();
+  if (activeMainTab === 'admin') renderAdminChannels();
 }
 
 
