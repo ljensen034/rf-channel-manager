@@ -1855,6 +1855,77 @@
   .main-view-tab:hover { color: var(--text-secondary); }
   .main-view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+  /* ── GROUPED NAV DROPDOWNS ── */
+  .nav-group {
+    position: relative;
+    display: inline-flex;
+  }
+  .nav-group-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font-data);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .nav-group-btn:hover { color: var(--text-secondary); }
+  .nav-group-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-group-btn .nav-caret { font-size: 8px; opacity: 0.6; transition: transform 0.15s; }
+  .nav-group.open .nav-caret { transform: rotate(180deg); }
+
+  .nav-group-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    z-index: 300;
+    min-width: 220px;
+    padding: 6px;
+    overflow: hidden;
+  }
+  .nav-group.open .nav-group-dropdown { display: block; }
+
+  .nav-group-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .nav-group-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .nav-group-item.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
+  .nav-group-item .nav-item-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+
+  @media (max-width: 768px) {
+    .nav-group-dropdown {
+      position: fixed;
+      left: 8px; right: 8px;
+      top: auto;
+      min-width: 0;
+      width: auto;
+    }
+  }
+
   /* ── CONFLICT BADGE ── */
   .conflict-badge {
     display: inline-flex;
@@ -3787,20 +3858,75 @@
   <!-- MAIN PANEL -->
   <div class="main-panel">
 
-    <!-- Main view tabs -->
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;overflow-x:auto;">
-      <button class="main-view-tab"        id="mvtab-overview"   onclick="switchMainTab('overview')">📊 Overview</button>
-      <button class="main-view-tab active" id="mvtab-channels"   onclick="switchMainTab('channels')">📻 Channels</button>
-      <button class="main-view-tab"        id="mvtab-talkgroups" onclick="switchMainTab('talkgroups')">🔢 Talkgroups</button>
-      <button class="main-view-tab"        id="mvtab-library"    onclick="switchMainTab('library')">📚 Mutual Aid Library</button>
-      <button class="main-view-tab"        id="mvtab-schedule"   onclick="switchMainTab('schedule')">📅 Schedule</button>
-      <button class="main-view-tab"        id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
-      <button class="main-view-tab"        id="mvtab-triggers"   onclick="switchMainTab('triggers')">🔔 Trigger Lookup</button>
-      <button class="main-view-tab"        id="mvtab-inventory"  onclick="switchMainTab('inventory')">📦 Inventory</button>
-      <button class="main-view-tab"        id="mvtab-commreq"    onclick="switchMainTab('commreq')">📝 Comm Plan Req</button>
-      <button class="main-view-tab"        id="mvtab-incidents"  onclick="switchMainTab('incidents')">🚨 Incidents</button>
-      <button class="main-view-tab"        id="mvtab-resources"  onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
-      <button class="main-view-tab"        id="mvtab-admin"      onclick="switchMainTab('admin')"     style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
+    <!-- Main view tabs — grouped dropdown nav -->
+    <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;overflow-x:auto;align-items:center;" id="mainNavBar">
+
+      <button class="main-view-tab active" id="mvtab-overview" onclick="switchMainTab('overview')">📊 Overview</button>
+
+      <!-- Channel Plan group: Channels, Talkgroups, Mutual Aid Library -->
+      <div class="nav-group" id="navgroup-channelplan">
+        <button class="nav-group-btn" id="navbtn-channelplan" onclick="toggleNavGroup('channelplan', event)">
+          📻 Channel Plan <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-group-dropdown">
+          <div class="nav-group-item" id="navitem-channels" onclick="closeAllNavGroups();switchMainTab('channels')">
+            <span class="nav-item-icon">📻</span>Channels
+          </div>
+          <div class="nav-group-item" id="navitem-talkgroups" onclick="closeAllNavGroups();switchMainTab('talkgroups')">
+            <span class="nav-item-icon">🔢</span>Talkgroups
+          </div>
+          <div class="nav-group-item" id="navitem-library" onclick="closeAllNavGroups();switchMainTab('library')">
+            <span class="nav-item-icon">📚</span>Mutual Aid Library
+          </div>
+        </div>
+      </div>
+
+      <!-- Operations group: Schedule, Incidents, Comm Plan Req -->
+      <div class="nav-group" id="navgroup-operations">
+        <button class="nav-group-btn" id="navbtn-operations" onclick="toggleNavGroup('operations', event)">
+          📅 Operations <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-group-dropdown">
+          <div class="nav-group-item" id="navitem-schedule" onclick="closeAllNavGroups();switchMainTab('schedule')">
+            <span class="nav-item-icon">📅</span>Schedule
+          </div>
+          <div class="nav-group-item" id="navitem-incidents" onclick="closeAllNavGroups();switchMainTab('incidents')">
+            <span class="nav-item-icon">🚨</span>Incidents
+          </div>
+          <div class="nav-group-item" id="navitem-commreq" onclick="closeAllNavGroups();switchMainTab('commreq')">
+            <span class="nav-item-icon">📝</span>Comm Plan Req
+          </div>
+        </div>
+      </div>
+
+      <!-- Lookups group: Trigger Lookup, Inventory -->
+      <div class="nav-group" id="navgroup-lookups">
+        <button class="nav-group-btn" id="navbtn-lookups" onclick="toggleNavGroup('lookups', event)">
+          🔔 Lookups <span class="nav-caret">▾</span>
+        </button>
+        <div class="nav-group-dropdown">
+          <div class="nav-group-item" id="navitem-triggers" onclick="closeAllNavGroups();switchMainTab('triggers')">
+            <span class="nav-item-icon">🔔</span>Trigger Lookup
+          </div>
+          <div class="nav-group-item" id="navitem-inventory" onclick="closeAllNavGroups();switchMainTab('inventory')">
+            <span class="nav-item-icon">📦</span>Inventory
+          </div>
+        </div>
+      </div>
+
+      <button class="main-view-tab" id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
+      <button class="main-view-tab" id="mvtab-resources" onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
+      <button class="main-view-tab" id="mvtab-admin" onclick="switchMainTab('admin')" style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
+
+      <!-- Hidden legacy tab anchors kept for switchMainTab()'s generic active-state toggling -->
+      <span id="mvtab-channels" style="display:none;"></span>
+      <span id="mvtab-talkgroups" style="display:none;"></span>
+      <span id="mvtab-library" style="display:none;"></span>
+      <span id="mvtab-schedule" style="display:none;"></span>
+      <span id="mvtab-incidents" style="display:none;"></span>
+      <span id="mvtab-commreq" style="display:none;"></span>
+      <span id="mvtab-triggers" style="display:none;"></span>
+      <span id="mvtab-inventory" style="display:none;"></span>
     </div>
 
     <!-- ── OVERVIEW VIEW ── -->
@@ -7883,13 +8009,28 @@ function deleteReleaseNote(id) {
 // ─────────────────────────────────────────────
 let activeMainTab = 'channels';
 
+// Maps each tab id to the nav-group it belongs to (if any)
+const NAV_GROUP_MAP = {
+  channels: 'channelplan', talkgroups: 'channelplan', library: 'channelplan',
+  schedule: 'operations', incidents: 'operations', commreq: 'operations',
+  triggers: 'lookups', inventory: 'lookups',
+};
+
 function switchMainTab(tab) {
   activeMainTab = tab;
   ['overview','channels','talkgroups','library','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
+    document.getElementById(`navitem-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
     if (v) v.style.display = t === tab ? 'block' : 'none';
   });
+
+  // Highlight the parent group button if the active tab lives inside a group
+  ['channelplan','operations','lookups'].forEach(g => {
+    const isActiveGroup = NAV_GROUP_MAP[tab] === g;
+    document.getElementById(`navbtn-${g}`)?.classList.toggle('active', isActiveGroup);
+  });
+
   if (tab === 'overview')    renderOverview();
   if (tab === 'talkgroups')  renderTalkgroups();
   if (tab === 'library')     renderLibrary();
@@ -7902,6 +8043,26 @@ function switchMainTab(tab) {
   if (tab === 'resources')   renderResources();
   if (tab === 'admin')       renderAdminView();
 }
+
+// ── Grouped nav dropdown interaction ──
+function toggleNavGroup(groupKey, e) {
+  e.stopPropagation();
+  const group = document.getElementById(`navgroup-${groupKey}`);
+  const wasOpen = group.classList.contains('open');
+  closeAllNavGroups();
+  if (!wasOpen) group.classList.add('open');
+}
+
+function closeAllNavGroups() {
+  ['channelplan','operations','lookups'].forEach(g => {
+    document.getElementById(`navgroup-${g}`)?.classList.remove('open');
+  });
+}
+
+// Close any open nav-group dropdown when clicking outside it
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.nav-group')) closeAllNavGroups();
+});
 
 // ─────────────────────────────────────────────
 // OVERVIEW TAB — Active + Reserved only, channels + talkgroups merged
