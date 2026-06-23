@@ -1871,6 +1871,20 @@
       font-size: 16px; /* prevent iOS zoom */
       padding: 10px 12px;
     }
+    /* Some inputs/selects across admin panels carry an inline font-size
+       (12px/13px) for desktop density. Inline styles win over class rules
+       regardless of media query, so they bypass the 16px fix above and
+       trigger iOS Safari/Chrome's zoom-on-focus. Re-assert 16px here by ID
+       with !important so every text-entry field is zoom-safe on mobile. */
+    #adminChGroupFilter, #auditActionFilter, #auditChannelFilter, #auditDateFilter,
+    #auditSearch, #auf-uuid, #cprStatusFilter, #inc-channels, #inc-radios,
+    #inc-talkgroups, #incStatusFilter, #invModelFilter, #invStatusFilter,
+    #lav-active, #lav-available, #lav-interop, #lav-reserved,
+    #newRadioBand, #newRadioModel, #resCategoryFilter, #resStatusFilter,
+    #saUserAgencyFilter, #sr-channel, #syslogCategory, #syslogDateFilter,
+    #syslogSearch, #toneTableSearch, #trlogSearch, #uf-uuid {
+      font-size: 16px !important;
+    }
     .modal-footer { padding: 12px 14px; }
 
     /* ── NOTIFICATION DRAWER ── */
@@ -1942,9 +1956,7 @@
 
   .nav-group-dropdown {
     display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
+    position: fixed;
     background: var(--bg-panel);
     border: 1px solid var(--border-lit);
     border-radius: 8px;
@@ -1973,11 +1985,58 @@
   .nav-group-item.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
   .nav-group-item .nav-item-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
 
+  /* Pending-count badge shown on a nav group button or nav item */
+  .nav-badge {
+    background: var(--status-active);
+    color: #fff;
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-group-btn .nav-badge { margin-left: 1px; }
+
+  /* ── UNIFORM TAB PAGE HEADER ──
+     Used at the top of every main tab/view for a consistent
+     title + subtitle + optional action button pattern. */
+  .tab-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .tab-page-title {
+    font-family: var(--font-data);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+    text-transform: uppercase;
+  }
+  .tab-page-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  .tab-page-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
   @media (max-width: 768px) {
     .nav-group-dropdown {
-      position: fixed;
-      left: 8px; right: 8px;
-      top: auto;
+      left: 8px !important; right: 8px !important;
       min-width: 0;
       width: auto;
     }
@@ -2046,44 +2105,6 @@
   .tg-row.selected { border-color: var(--accent); background: var(--accent-glow); }
 
   /* ── LIBRARY GRID ── */
-  .lib-row {
-    display: grid;
-    grid-template-columns: 28px 1fr 100px 80px 100px auto;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 12px;
-    background: var(--bg-card);
-    border: 1px solid transparent;
-    border-radius: var(--radius);
-    transition: var(--transition);
-  }
-  .lib-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
-  .lib-import-btn {
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-family: var(--font-data);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: var(--transition);
-    white-space: nowrap;
-  }
-  .lib-import-btn:hover { background: var(--accent-glow); }
-  .lib-category-tag {
-    font-family: var(--font-data);
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 2px 6px;
-    border-radius: 2px;
-    border: 1px solid var(--border-lit);
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
-
   /* ── RELEASE NOTES ── */
   .rn-version-block {
     padding: 14px 16px;
@@ -2468,7 +2489,7 @@
   .inv-status-chip.assigned      { background:rgba(30,136,229,0.12); color:var(--accent);          border:1px solid rgba(30,136,229,0.3); }
   .inv-status-chip.signed-out    { background:rgba(255,196,0,0.12);  color:var(--status-reserved); border:1px solid rgba(255,196,0,0.3); }
   .inv-status-chip.maintenance   { background:rgba(156,39,176,0.12); color:#ce93d8;                border:1px solid rgba(156,39,176,0.3); }
-  .inv-status-chip.out-of-service{ background:rgba(255,82,82,0.12);  color:var(--status-active);   border:1px solid rgba(255,82,82,0.3); }
+  .inv-status-chip.out-of-service{ background:rgba(255,152,0,0.12); color:#ff9800;                border:1px solid rgba(255,152,0,0.3); }
   .inv-status-chip.retired       { background:rgba(120,120,120,0.12);color:#888;                   border:1px solid rgba(120,120,120,0.3); }
   .inv-cond-chip {
     display: inline-flex; font-family: var(--font-data); font-size: 9px;
@@ -3916,11 +3937,11 @@
   <div class="main-panel">
 
     <!-- Main view tabs — grouped dropdown nav -->
-    <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;overflow-x:auto;align-items:center;" id="mainNavBar">
+    <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:4px;flex-shrink:0;align-items:center;flex-wrap:wrap;" id="mainNavBar">
 
       <button class="main-view-tab active" id="mvtab-overview" onclick="switchMainTab('overview')">📊 Overview</button>
 
-      <!-- Channel Plan group: Channels, Talkgroups, Mutual Aid Library -->
+      <!-- Channel Plan group: Channels, Talkgroups -->
       <div class="nav-group" id="navgroup-channelplan">
         <button class="nav-group-btn" id="navbtn-channelplan" onclick="toggleNavGroup('channelplan', event)">
           📻 Channel Plan <span class="nav-caret">▾</span>
@@ -3932,9 +3953,6 @@
           <div class="nav-group-item" id="navitem-talkgroups" onclick="closeAllNavGroups();switchMainTab('talkgroups')">
             <span class="nav-item-icon">🔢</span>Talkgroups
           </div>
-          <div class="nav-group-item" id="navitem-library" onclick="closeAllNavGroups();switchMainTab('library')">
-            <span class="nav-item-icon">📚</span>Mutual Aid Library
-          </div>
         </div>
       </div>
 
@@ -3942,6 +3960,7 @@
       <div class="nav-group" id="navgroup-operations">
         <button class="nav-group-btn" id="navbtn-operations" onclick="toggleNavGroup('operations', event)">
           📅 Operations <span class="nav-caret">▾</span>
+          <span class="nav-badge" id="navbadge-operations" style="display:none;">0</span>
         </button>
         <div class="nav-group-dropdown">
           <div class="nav-group-item" id="navitem-schedule" onclick="closeAllNavGroups();switchMainTab('schedule')">
@@ -3952,6 +3971,7 @@
           </div>
           <div class="nav-group-item" id="navitem-commreq" onclick="closeAllNavGroups();switchMainTab('commreq')">
             <span class="nav-item-icon">📝</span>Comm Plan Req
+            <span class="nav-badge" id="navbadge-commreq" style="display:none;margin-left:auto;">0</span>
           </div>
         </div>
       </div>
@@ -3978,7 +3998,6 @@
       <!-- Hidden legacy tab anchors kept for switchMainTab()'s generic active-state toggling -->
       <span id="mvtab-channels" style="display:none;"></span>
       <span id="mvtab-talkgroups" style="display:none;"></span>
-      <span id="mvtab-library" style="display:none;"></span>
       <span id="mvtab-schedule" style="display:none;"></span>
       <span id="mvtab-incidents" style="display:none;"></span>
       <span id="mvtab-commreq" style="display:none;"></span>
@@ -3988,11 +4007,23 @@
 
     <!-- ── OVERVIEW VIEW ── -->
     <div id="view-overview" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Overview</div>
+          <div class="tab-page-subtitle">Live status across channels, talkgroups, reservations, and incidents</div>
+        </div>
+      </div>
       <div id="overviewContent"></div>
     </div>
 
     <!-- ── CHANNELS VIEW ── -->
     <div id="view-channels">
+    <div class="tab-page-header">
+      <div>
+        <div class="tab-page-title">Channels</div>
+        <div class="tab-page-subtitle">Live channel plan — frequencies, status, and assignment</div>
+      </div>
+    </div>
     <!-- Low availability alert banner -->
     <div class="low-avail-banner hidden" id="lowAvailBanner">
       <span class="lav-icon">⚠</span>
@@ -4042,6 +4073,12 @@
 
     <!-- ── TALKGROUPS VIEW ── -->
     <div id="view-talkgroups" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Talkgroups</div>
+          <div class="tab-page-subtitle">Trunked / digital talkgroup assignments</div>
+        </div>
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div>
           <input class="search-input" type="text" id="tgSearchBox" placeholder="Search talkgroups…" oninput="renderTalkgroups()" style="width:240px;">
@@ -4061,32 +4098,14 @@
       <div id="talkgroupGrid" class="channel-grid"></div>
     </div>
 
-    <!-- ── MUTUAL AID LIBRARY VIEW ── -->
-    <div id="view-library" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input class="search-input" type="text" id="libSearchBox" placeholder="Search library…" oninput="renderLibrary()" style="width:220px;">
-          <select class="form-select" id="libCategoryFilter" onchange="renderLibrary()" style="width:180px;font-size:12px;padding:6px 10px;">
-            <option value="all">All Categories</option>
-            <option value="NPSPAC">NPSPAC</option>
-            <option value="VCALL">VCALL / VTAC</option>
-            <option value="State">State Mutual Aid</option>
-            <option value="Federal">Federal / FEMA</option>
-            <option value="Fire">Fire Mutual Aid</option>
-            <option value="Law">Law Enforcement</option>
-            <option value="EMS">EMS / Medical</option>
-            <option value="Custom">Custom</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-secondary" onclick="openLibraryAddModal()">+ Add Custom</button>
-        </div>
-      </div>
-      <div id="libraryGrid" class="channel-grid"></div>
-    </div>
-
     <!-- ── SCHEDULE VIEW ── -->
     <div id="view-schedule" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Schedule</div>
+          <div class="tab-page-subtitle">Channel reservations and event planning calendar</div>
+        </div>
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="sched-nav-btn" onclick="schedNav(-1)">‹</button>
@@ -4110,10 +4129,10 @@
     <div id="view-rfanalyzer" style="display:none;">
 
       <!-- Header -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div class="tab-page-header">
         <div>
-          <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">RF DECONFLICTER TOOL</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Point-to-point deconfliction · USGS 3DEP elevation · First Fresnel zone</div>
+          <div class="tab-page-title">RF Deconflicter Tool</div>
+          <div class="tab-page-subtitle">Point-to-point deconfliction · USGS 3DEP elevation · First Fresnel zone</div>
         </div>
         <button class="btn-secondary" style="font-size:12px;" onclick="clearRFAnalyzer()">↺ Clear / Reset</button>
       </div>
@@ -4273,6 +4292,12 @@
 
     <!-- ── TRIGGER LOOKUP VIEW ── -->
     <div id="view-triggers" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Trigger Lookup</div>
+          <div class="tab-page-subtitle">MDC1200 Emergency Trigger ID Registry</div>
+        </div>
+      </div>
       <!-- Tabs: Registry / System Log -->
       <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
         <button class="admin-sub-tab active" id="trtab-registry" onclick="switchTriggerTab('registry')">📋 Registry</button>
@@ -4281,11 +4306,7 @@
 
       <!-- Registry panel -->
       <div id="tr-registry-panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-          <div>
-            <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">TRIGGER LOOKUP</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">MDC1200 Emergency Trigger ID Registry</div>
-          </div>
+        <div style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input class="search-input" id="triggerSearch" type="text" placeholder="Search ID, serial, LARICS, model…" oninput="renderTriggers()" style="width:260px;">
             <button class="btn-secondary" id="triggerCtrlTopBtn" style="display:none;font-size:12px;" onclick="massSetControlTop()">☑ Mark Control Top</button>
@@ -4324,6 +4345,12 @@
 
     <!-- ── RADIO INVENTORY VIEW ── -->
     <div id="view-inventory" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Radio Inventory</div>
+          <div class="tab-page-subtitle">Full radio lifecycle — status, assignment, condition, chain of custody</div>
+        </div>
+      </div>
 
       <!-- Sub-tabs -->
       <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
@@ -4405,12 +4432,12 @@
     <!-- ── INCIDENTS VIEW ── -->
     <div id="view-incidents" style="display:none;">
 
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="tab-page-header">
         <div>
-          <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">INCIDENT MANAGEMENT</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Named incidents — channels, talkgroups, reservations and inventory tied together</div>
+          <div class="tab-page-title">Incident Management</div>
+          <div class="tab-page-subtitle">Named incidents — channels, talkgroups, reservations and inventory tied together</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div class="tab-page-actions">
           <select class="form-select" id="incStatusFilter" onchange="renderIncidents()" style="width:140px;font-size:12px;padding:5px 8px;">
             <option value="all">All Incidents</option>
             <option value="active">Active</option>
@@ -4432,12 +4459,12 @@
 
     <!-- ── COMM PLAN REQUEST VIEW ── -->
     <div id="view-commreq" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="tab-page-header">
         <div>
-          <div style="font-family:var(--font-data);font-size:14px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">COMMUNICATIONS PLAN REQUESTS</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Public submissions — no login required to submit</div>
+          <div class="tab-page-title">Communications Plan Requests</div>
+          <div class="tab-page-subtitle">Public submissions — no login required to submit</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="tab-page-actions">
           <input class="search-input" id="cprSearch" type="text" placeholder="Search requestor, event, contact…" oninput="renderCommPlanReqs()" style="width:240px;">
           <select class="form-select" id="cprStatusFilter" onchange="renderCommPlanReqs()" style="width:140px;font-size:12px;padding:5px 8px;">
             <option value="all">All Statuses</option>
@@ -4464,6 +4491,12 @@
 
     <!-- ── RESOURCES VIEW ── -->
     <div id="view-resources" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Resources</div>
+          <div class="tab-page-subtitle">Vehicles, equipment, cache, and support resource tracking</div>
+        </div>
+      </div>
 
       <!-- Toolbar -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
@@ -5152,6 +5185,13 @@ function subscribeRealtime() {
       await loadReservations();
       if (activeMainTab === 'schedule') renderSchedule();
       applyScheduledReservations();
+    })
+    .subscribe();
+
+  sb.channel('commreq-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comm_plan_requests' }, async () => {
+      await loadCommPlanReqs();
+      if (activeMainTab === 'commreq') renderCommPlanReqs();
     })
     .subscribe();
 }
@@ -6789,7 +6829,7 @@ function showLandingPage() {
   // Filter modules by what the agency has enabled
   const enabledMods = getAgencyModules();
   const allMods = [
-    { id:'freq',       icon:'📻', title:'Frequency Management', desc:'Channel plan, talkgroups, mutual aid library, scheduling, and ICS 205 export.', accent:'var(--accent)',
+    { id:'freq',       icon:'📻', title:'Frequency Management', desc:'Channel plan, talkgroups, scheduling, and ICS 205 export.', accent:'var(--accent)',
       stats:()=>{ const a=channels.filter(c=>c.status==='active').length; return `<span class="module-stat"><strong>${a}</strong> active</span><span class="module-stat"><strong>${channels.length}</strong> total</span><span class="module-stat"><strong>${talkgroups.length}</strong> talkgroups</span>`; } },
     { id:'rfanalyzer', icon:'📡', title:'RF Deconflicter Tool', desc:'Point-to-point RF deconfliction. USGS 3DEP elevation, LOS, Fresnel zone.', accent:'#00bcd4',
       stats:()=>`<span class="module-stat">USGS 3DEP · Fresnel · LOS</span>` },
@@ -8077,14 +8117,14 @@ let activeMainTab = 'channels';
 
 // Maps each tab id to the nav-group it belongs to (if any)
 const NAV_GROUP_MAP = {
-  channels: 'channelplan', talkgroups: 'channelplan', library: 'channelplan',
+  channels: 'channelplan', talkgroups: 'channelplan',
   schedule: 'operations', incidents: 'operations', commreq: 'operations',
   triggers: 'lookups', inventory: 'lookups',
 };
 
 function switchMainTab(tab) {
   activeMainTab = tab;
-  ['overview','channels','talkgroups','library','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin'].forEach(t => {
+  ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     document.getElementById(`navitem-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
@@ -8099,7 +8139,6 @@ function switchMainTab(tab) {
 
   if (tab === 'overview')    renderOverview();
   if (tab === 'talkgroups')  renderTalkgroups();
-  if (tab === 'library')     renderLibrary();
   if (tab === 'schedule')    renderSchedule();
   if (tab === 'rfanalyzer')  initRFAnalyzerTab();
   if (tab === 'triggers')    renderTriggers();
@@ -8113,10 +8152,29 @@ function switchMainTab(tab) {
 // ── Grouped nav dropdown interaction ──
 function toggleNavGroup(groupKey, e) {
   e.stopPropagation();
-  const group = document.getElementById(`navgroup-${groupKey}`);
+  const group  = document.getElementById(`navgroup-${groupKey}`);
   const wasOpen = group.classList.contains('open');
   closeAllNavGroups();
-  if (!wasOpen) group.classList.add('open');
+  if (wasOpen) return;
+
+  group.classList.add('open');
+
+  // Position the dropdown panel using fixed coordinates so it escapes
+  // any scrolling ancestor (the dropdown uses position:fixed, not absolute)
+  const btn = document.getElementById(`navbtn-${groupKey}`);
+  const dropdown = group.querySelector('.nav-group-dropdown');
+  if (btn && dropdown) {
+    const rect = btn.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // Mobile: CSS media query pins it to fixed left/right margins — just set top
+      dropdown.style.top = `${rect.bottom + 6}px`;
+      dropdown.style.left = '';
+    } else {
+      dropdown.style.top  = `${rect.bottom + 6}px`;
+      dropdown.style.left = `${rect.left}px`;
+    }
+  }
 }
 
 function closeAllNavGroups() {
@@ -8129,6 +8187,10 @@ function closeAllNavGroups() {
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.nav-group')) closeAllNavGroups();
 });
+
+// Reposition (or close) open dropdowns if the window resizes/scrolls
+window.addEventListener('resize', closeAllNavGroups);
+
 
 // ─────────────────────────────────────────────
 // OVERVIEW TAB — Active + Reserved only, channels + talkgroups merged
@@ -10513,149 +10575,6 @@ async function saveTalkgroup() {
   if (activeMainTab === 'admin') renderAdminView();
 }
 
-// ─────────────────────────────────────────────
-// MUTUAL AID LIBRARY
-// ─────────────────────────────────────────────
-const BUILTIN_LIBRARY = [
-  // NPSPAC
-  { id:'lib-np1',  designator:'8CALL90',   freq:'155.3400', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Calling — NPSPAC Ch 1',      builtin:true },
-  { id:'lib-np2',  designator:'8TAC91',    freq:'155.3475', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 2',    builtin:true },
-  { id:'lib-np3',  designator:'8TAC92',    freq:'155.3550', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 3',    builtin:true },
-  { id:'lib-np4',  designator:'8TAC93',    freq:'155.3625', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 4',    builtin:true },
-  { id:'lib-np5',  designator:'8TAC94',    freq:'155.3700', category:'NPSPAC', mode:'P25 Phase I', tone:'NAC 0x001', desc:'National Tactical — NPSPAC Ch 5',    builtin:true },
-  // VCALL / VTAC
-  { id:'lib-vc1',  designator:'VCALL10',   freq:'155.7525', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Calling — National Interop',     builtin:true },
-  { id:'lib-vc2',  designator:'VTAC11',    freq:'151.1375', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 1',                     builtin:true },
-  { id:'lib-vc3',  designator:'VTAC12',    freq:'154.4525', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 2',                     builtin:true },
-  { id:'lib-vc4',  designator:'VTAC13',    freq:'158.7375', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'VHF Tactical 3',                     builtin:true },
-  { id:'lib-vc5',  designator:'UCALL40',   freq:'453.2125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Calling — National Interop',     builtin:true },
-  { id:'lib-vc6',  designator:'UTAC41',    freq:'453.4625', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 1',                     builtin:true },
-  { id:'lib-vc7',  designator:'UTAC42',    freq:'453.7125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 2',                     builtin:true },
-  { id:'lib-vc8',  designator:'UTAC43',    freq:'458.2125', category:'VCALL',  mode:'Analog FM',   tone:'None',     desc:'UHF Tactical 3',                     builtin:true },
-  // Federal / FEMA
-  { id:'lib-fe1',  designator:'FEMA-OPS',  freq:'164.8500', category:'Federal', mode:'Analog FM',  tone:'None',     desc:'FEMA Operations Primary',            builtin:true },
-  { id:'lib-fe2',  designator:'NWS-162',   freq:'162.4000', category:'Federal', mode:'Analog FM',  tone:'None',     desc:'NOAA Weather Radio',                 builtin:true },
-  // Fire Mutual Aid
-  { id:'lib-fi1',  designator:'FIRE-MA-1', freq:'154.2800', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Fire Mutual Aid Primary',            builtin:true },
-  { id:'lib-fi2',  designator:'FIRE-MA-2', freq:'154.2950', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Fire Mutual Aid Secondary',          builtin:true },
-  { id:'lib-fi3',  designator:'AIR-GRND',  freq:'168.6250', category:'Fire',   mode:'Analog FM',   tone:'None',     desc:'Air-to-Ground Coordination',         builtin:true },
-  // Law Enforcement
-  { id:'lib-la1',  designator:'LAW-MA-1',  freq:'460.1250', category:'Law',    mode:'P25 Phase I', tone:'None',     desc:'Law Enforcement Mutual Aid 1',       builtin:true },
-  { id:'lib-la2',  designator:'LAW-MA-2',  freq:'460.3750', category:'Law',    mode:'P25 Phase I', tone:'None',     desc:'Law Enforcement Mutual Aid 2',       builtin:true },
-  // EMS
-  { id:'lib-em1',  designator:'MED-9',     freq:'462.9500', category:'EMS',    mode:'Analog FM',   tone:'None',     desc:'MED-9 Hospital Notification',        builtin:true },
-  { id:'lib-em2',  designator:'MED-10',    freq:'463.0000', category:'EMS',    mode:'Analog FM',   tone:'None',     desc:'MED-10 EMS Coordination',            builtin:true },
-];
-
-let customLibrary = loadCustomLibrary();
-
-function loadCustomLibrary() {
-  try { const s = localStorage.getItem('rfCustomLibrary'); return s ? JSON.parse(s) : []; }
-  catch(e) { return []; }
-}
-
-function saveCustomLibrary() {
-  try { localStorage.setItem('rfCustomLibrary', JSON.stringify(customLibrary)); } catch(e) {}
-}
-
-function getAllLibraryEntries() {
-  return [...BUILTIN_LIBRARY, ...customLibrary];
-}
-
-function renderLibrary() {
-  const query    = (document.getElementById('libSearchBox')?.value || '').toLowerCase();
-  const catFilter = document.getElementById('libCategoryFilter')?.value || 'all';
-  const grid = document.getElementById('libraryGrid');
-  if (!grid) return;
-
-  // Library column header
-  grid.previousElementSibling?.previousElementSibling && null; // no-op
-
-  let entries = getAllLibraryEntries().filter(e => {
-    const matchCat = catFilter === 'all' || e.category === catFilter;
-    const matchQ   = !query || e.designator.toLowerCase().includes(query) ||
-                     e.desc.toLowerCase().includes(query) || e.freq.includes(query) ||
-                     e.category.toLowerCase().includes(query);
-    return matchCat && matchQ;
-  });
-
-  if (!entries.length) { grid.innerHTML = `<div class="no-data-row">No library entries found</div>`; return; }
-
-  // Check which freqs are already in the channel plan
-  const usedFreqs = new Set(channels.map(c => c.freq));
-
-  grid.innerHTML = entries.map(e => {
-    const alreadyAdded = usedFreqs.has(e.freq);
-    return `<div class="lib-row">
-      <div style="width:3px;height:28px;border-radius:2px;background:var(--accent);flex-shrink:0;opacity:0.5;"></div>
-      <div>
-        <div style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(e.designator)}</div>
-        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escHtml(e.desc)}</div>
-      </div>
-      <div style="font-family:var(--font-data);font-size:12px;color:var(--accent);">${e.freq} MHz</div>
-      <div style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${e.mode}</div>
-      <span class="lib-category-tag">${e.category}</span>
-      <div style="display:flex;gap:6px;align-items:center;">
-        ${alreadyAdded
-          ? `<span style="font-family:var(--font-data);font-size:10px;color:var(--status-available);padding:3px 8px;border:1px solid rgba(0,230,118,0.3);border-radius:2px;">✓ In Plan</span>`
-          : `<button class="lib-import-btn" onclick="importLibraryEntry('${e.id}')">+ Add to Plan</button>`}
-        ${!e.builtin ? `<button class="rn-edit-btn rn-delete-btn" onclick="deleteLibraryEntry('${e.id}')" title="Delete">✕</button>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function importLibraryEntry(id) {
-  const e = getAllLibraryEntries().find(x => x.id === id);
-  if (!e) return;
-  // Pre-fill the add channel modal
-  openAddModal();
-  setTimeout(() => {
-    document.getElementById('f-designator').value = e.designator;
-    document.getElementById('f-freq').value        = e.freq;
-    document.getElementById('f-mode').value        = e.mode;
-    document.getElementById('f-tone').value        = e.tone || '';
-    document.getElementById('f-notes').value       = e.desc || '';
-    document.getElementById('f-status').value      = 'available';
-    document.getElementById('f-group').value       = e.category;
-    // Switch back to channels tab after modal opens
-    switchMainTab('channels');
-  }, 50);
-}
-
-function openLibraryAddModal() {
-  ['lib-designator','lib-freq','lib-tone','lib-desc'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('lib-category').value = 'Custom';
-  document.getElementById('lib-mode').value = 'Analog FM';
-  document.getElementById('libraryAddModal').classList.add('open');
-}
-
-function saveLibraryEntry() {
-  const designator = document.getElementById('lib-designator').value.trim();
-  const freq       = document.getElementById('lib-freq').value.trim();
-  if (!designator || !freq) { alert('Designator and Frequency are required.'); return; }
-  customLibrary.push({
-    id:          'clib' + Date.now(),
-    designator,
-    freq,
-    category:    document.getElementById('lib-category').value,
-    mode:        document.getElementById('lib-mode').value,
-    tone:        document.getElementById('lib-tone').value.trim() || 'None',
-    desc:        document.getElementById('lib-desc').value.trim(),
-    builtin:     false,
-  });
-  saveCustomLibrary();
-  document.getElementById('libraryAddModal').classList.remove('open');
-  renderLibrary();
-}
-
-function deleteLibraryEntry(id) {
-  const e = customLibrary.find(x => x.id === id);
-  if (!e || !confirm(`Remove "${e.designator}" from the library?`)) return;
-  customLibrary = customLibrary.filter(x => x.id !== id);
-  saveCustomLibrary();
-  renderLibrary();
-}
 
 // ─────────────────────────────────────────────
 // CONFLICT DETECTOR
@@ -11584,7 +11503,7 @@ function renderInventory() {
 function invStatusColor(status) {
   return { 'in-stock':'var(--status-available)', 'assigned':'var(--accent)',
     'signed-out':'var(--status-reserved)',
-    'out-of-service':'var(--status-active)', 'retired':'#555' }[status] || 'var(--border)';
+    'out-of-service':'#ff9800', 'retired':'#555' }[status] || 'var(--border)';
 }
 
 async function openInventoryModal(id) {
@@ -13130,7 +13049,24 @@ async function loadCommPlanReqs() {
     if (error) { console.warn('loadCommPlanReqs:', error.message); return; }
     commPlanReqs = data || [];
     window._commPlanReqs = commPlanReqs;
+    updateCommReqBadge();
   } catch(e) { console.warn('loadCommPlanReqs:', e.message); }
+}
+
+// Shows a small red count badge on the Operations group button and the
+// Comm Plan Req nav item whenever there are pending (unreviewed) requests.
+function updateCommReqBadge() {
+  const pending = commPlanReqs.filter(r => r.status === 'pending').length;
+  [['navbadge-operations', pending], ['navbadge-commreq', pending]].forEach(([id, count]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) {
+      el.textContent = count > 99 ? '99+' : count;
+      el.style.display = 'inline-flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
 }
 
 function copyPublicFormLink() {
@@ -13850,64 +13786,7 @@ init();
 </div>
 
 <!-- ── LIBRARY ADD CUSTOM MODAL ── -->
-<div class="modal-overlay" id="libraryAddModal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-header">
-      <div class="modal-title">Add Custom Library Entry</div>
-      <button class="modal-close" onclick="document.getElementById('libraryAddModal').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Designator / Name *</label>
-          <input class="form-input" id="lib-designator" placeholder="e.g. VCALL10">
-        </div>
-        <div class="form-field">
-          <label class="form-label">RX Frequency (MHz) * <span style="font-weight:400;color:var(--text-dim);">Receive / Repeater Output</span></label>
-          <input class="form-input" id="lib-freq" placeholder="155.3400">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Category</label>
-          <select class="form-select" id="lib-category">
-            <option value="Custom">Custom</option>
-            <option value="NPSPAC">NPSPAC</option>
-            <option value="VCALL">VCALL / VTAC</option>
-            <option value="State">State Mutual Aid</option>
-            <option value="Federal">Federal / FEMA</option>
-            <option value="Fire">Fire Mutual Aid</option>
-            <option value="Law">Law Enforcement</option>
-            <option value="EMS">EMS / Medical</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Mode</label>
-          <select class="form-select" id="lib-mode">
-            <option value="Analog FM">Analog FM</option>
-            <option value="P25 Phase I">P25 Phase I</option>
-            <option value="P25 Phase II">P25 Phase II</option>
-            <option value="DMR">DMR</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Tone / NAC</label>
-          <input class="form-input" id="lib-tone" placeholder="100.0 Hz or NAC 0x001">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Description</label>
-          <input class="form-input" id="lib-desc" placeholder="Brief description">
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="document.getElementById('libraryAddModal').classList.remove('open')">Cancel</button>
-      <button class="btn-primary" onclick="saveLibraryEntry()">Save Entry</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- ── LOW AVAILABILITY SETTINGS MODAL ── -->
 <div class="modal-overlay" id="lowAvailSettingsModal">
