@@ -999,14 +999,76 @@
     gap: 10px;
   }
 
-  /* ── ICS 205 MODAL ── */
+  /* ── ICS 205 MODAL — matches official LACoFD ICS 205 Excel template ── */
   .ics205-wrapper {
     background: #fff;
     color: #000;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11px;
-    padding: 16px;
     border-radius: 4px;
+  }
+  .lac205-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #000;
+  }
+  .lac205-table td, .lac205-table th {
+    border: 1px solid #000;
+    padding: 3px 5px;
+    vertical-align: middle;
+  }
+  .lac205-header-title {
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    border-right: 1px solid #000;
+    border-top: 2px solid #000;
+    line-height: 1.25;
+  }
+  .lac205-header-label {
+    font-size: 8px;
+    vertical-align: top;
+    border-top: 2px solid #000;
+    padding-top: 3px;
+  }
+  .lac205-header-value {
+    font-size: 11px;
+    height: 22px;
+    vertical-align: bottom;
+    border-top: none;
+    padding-top: 6px;
+  }
+  .lac205-warning {
+    background: #c0c0c0;
+    color: #c00;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    padding: 4px 6px;
+    border: 1px solid #000;
+  }
+  .lac205-colhead {
+    font-size: 7.5px;
+    font-weight: normal;
+    text-align: center;
+    background: #fff;
+    line-height: 1.15;
+  }
+  .lac205-colhead u { text-decoration: underline; }
+  .lac205-rownum {
+    font-size: 8px;
+    text-align: center;
+    width: 26px;
+  }
+  .lac205-cell { font-size: 8.5px; }
+  .lac205-cell.center { text-align: center; }
+  .lac205-footer-label { font-size: 8px; padding-top: 4px; vertical-align: top; }
+  .lac205-disclaimer {
+    font-size: 8px;
+    padding: 5px 6px;
+    border: 1px solid #000;
+    border-top: 1px solid #000;
+    line-height: 1.35;
   }
 
   /* ── ICS 205A INLINE TABLE INPUTS ── */
@@ -1022,71 +1084,6 @@
     outline: none;
   }
   .ics205a-input:focus { border-color: var(--accent); }
-
-  .ics205-title {
-    text-align: center;
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-
-  .ics205-subtitle {
-    text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    margin-bottom: 10px;
-    border-bottom: 2px solid #000;
-    padding-bottom: 6px;
-  }
-
-  .ics205-meta {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0;
-    border: 1px solid #000;
-    margin-bottom: 0;
-  }
-
-  .ics205-meta-cell {
-    padding: 4px 6px;
-    border-right: 1px solid #000;
-    border-bottom: 1px solid #000;
-  }
-
-  .ics205-meta-cell:last-child { border-right: none; }
-
-  .ics205-meta-label { font-size: 9px; font-weight: bold; text-transform: uppercase; }
-  .ics205-meta-value { font-size: 11px; }
-
-  .ics205-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #000;
-  }
-
-  .ics205-table th {
-    background: #d0d0d0;
-    border: 1px solid #000;
-    padding: 4px 6px;
-    text-align: left;
-    font-size: 10px;
-    text-transform: uppercase;
-  }
-
-  .ics205-table td {
-    border: 1px solid #000;
-    padding: 4px 6px;
-    font-size: 11px;
-  }
-
-  .ics205-sig {
-    margin-top: 10px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    border: 1px solid #000;
-    padding: 6px;
-  }
 
   /* ── SCROLLBARS ── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -6763,76 +6760,106 @@ function openICS205(channelIds, incidentId) {
     scopedChannels = channels.filter(c => idSet.has(String(c.id)));
   }
 
-  const rows = scopedChannels.map((ch, i) => `
-    <tr>
-      <td style="text-align:center">${i + 1}</td>
-      <td><strong>${escHtml(ch.designator)}</strong></td>
-      <td>${escHtml(ch.function || '—')}</td>
-      <td>${ch.freq} MHz</td>
-      <td>${ch.rxFreq && ch.rxFreq !== ch.freq ? ch.rxFreq + ' MHz' : ch.freq + ' MHz'}</td>
-      <td>${escHtml(ch.mode || '—')}</td>
-      <td>${escHtml(ch.tone || '—')}</td>
-      <td>${escHtml(ch.agency || '—')}</td>
-      <td>
-        <span style="font-weight:bold;color:${
-          ch.status === 'active' ? '#c00' :
-          ch.status === 'available' ? '#006400' :
-          ch.status === 'reserved' ? '#996600' : '#550055'
-        };">${statusLabels[ch.status].toUpperCase()}</span>
-      </td>
-    </tr>
-  `).join('') || `<tr><td colspan="9" style="text-align:center;color:#777;padding:14px;">No channels in this scope.</td></tr>`;
+  const incidentName    = inc?.name      || '';
+  const incidentLocation = inc?.location  || '';
+  const opPeriod          = inc?.op_period || '';
+  const preparedBy         = currentUser?.name || '';
 
-  const incidentName   = inc?.name      || '—';
-  const incidentNumber = inc?.number    || '—';
-  const opPeriod        = inc?.op_period || '—';
-  const commander       = inc?.commander || '—';
-  const preparedBy       = currentUser?.name || '—';
+  // Build exactly 16 rows — LACoFD ICS 205 form has 16 fixed channel slots, blank rows if unused
+  const ROW_COUNT = 16;
+  const rowsHtml = Array.from({ length: ROW_COUNT }, (_, i) => {
+    const ch = scopedChannels[i];
+    if (!ch) {
+      return `<tr>
+        <td class="lac205-rownum">${i + 1}</td>
+        <td class="lac205-cell"></td><td class="lac205-cell"></td><td class="lac205-cell"></td>
+        <td class="lac205-cell center"></td><td class="lac205-cell center"></td>
+        <td class="lac205-cell center"></td><td class="lac205-cell center"></td>
+        <td class="lac205-cell center"></td><td class="lac205-cell center"></td><td class="lac205-cell center"></td>
+        <td class="lac205-cell"></td>
+      </tr>`;
+    }
+    const rxDev = ch.bandwidth || 'W';
+    const txDev = ch.bandwidth || 'W';
+    return `<tr>
+      <td class="lac205-rownum">${i + 1}</td>
+      <td class="lac205-cell">${escHtml(ch.function || '')}</td>
+      <td class="lac205-cell">${escHtml(ch.designator || '')}</td>
+      <td class="lac205-cell">${escHtml(ch.agency || '')}</td>
+      <td class="lac205-cell center">${escHtml(ch.freq || '')} ${rxDev}</td>
+      <td class="lac205-cell center">${escHtml(ch.rxTone || ch.tone || '')}</td>
+      <td class="lac205-cell center">${escHtml(ch.rxFreq && ch.rxFreq !== ch.freq ? ch.rxFreq : ch.freq || '')} ${txDev}</td>
+      <td class="lac205-cell center">${escHtml(ch.txTone || '')}</td>
+      <td class="lac205-cell center">${escHtml(ch.bandwidth || '')}</td>
+      <td class="lac205-cell center">${escHtml(ch.power || '')}</td>
+      <td class="lac205-cell center">${escHtml(ch.adm || '')}</td>
+      <td class="lac205-cell">${escHtml(ch.notes || '')}</td>
+    </tr>`;
+  }).join('');
 
   document.getElementById('ics205Title').textContent = inc ? `ICS 205 — ${inc.name}` : 'ICS 205 — Incident Radio Communications Plan';
 
   document.getElementById('ics205Body').innerHTML = `
     <div style="padding:16px;">
     <div class="ics205-wrapper" id="ics205Print">
-      <div class="ics205-title">ICS 205</div>
-      <div class="ics205-subtitle">INCIDENT RADIO COMMUNICATIONS PLAN</div>
-      <div class="ics205-meta">
-        <div class="ics205-meta-cell"><div class="ics205-meta-label">1. Incident Name</div><div class="ics205-meta-value">${escHtml(incidentName)}</div></div>
-        <div class="ics205-meta-cell"><div class="ics205-meta-label">2. Incident Number</div><div class="ics205-meta-value">${escHtml(incidentNumber)}</div></div>
-        <div class="ics205-meta-cell" style="border-right:none"><div class="ics205-meta-label">3. Date/Time Prepared</div><div class="ics205-meta-value">${dateStr} / ${timeStr}</div></div>
-        <div class="ics205-meta-cell" style="border-bottom:none"><div class="ics205-meta-label">4. Operational Period</div><div class="ics205-meta-value">${escHtml(opPeriod)}</div></div>
-        <div class="ics205-meta-cell" style="border-bottom:none"><div class="ics205-meta-label">5. Incident Commander</div><div class="ics205-meta-value">${escHtml(commander)}</div></div>
-        <div class="ics205-meta-cell" style="border-bottom:none;border-right:none"><div class="ics205-meta-label">6. Prepared By (Comms Unit Ldr)</div><div class="ics205-meta-value">${escHtml(preparedBy)}</div></div>
-      </div>
-      <br>
-      <table class="ics205-table">
-        <thead>
-          <tr>
-            <th style="width:24px;">#</th>
-            <th>Channel Name / Talkgroup</th>
-            <th>Function</th>
-            <th>TX Freq / Talkgroup</th>
-            <th>RX Freq / Talkgroup</th>
-            <th>Mode / System</th>
-            <th>Tone / NAC</th>
-            <th>Assignment</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
+      <table class="lac205-table">
+        <tr>
+          <td class="lac205-header-title" colspan="3" rowspan="2">INCIDENT RADIO<br>COMMUNICATIONS PLAN</td>
+          <td class="lac205-header-label" colspan="3">Incident Name
+            <div class="lac205-header-value">${escHtml(incidentName)}</div>
+          </td>
+          <td class="lac205-header-label" colspan="2">Date/Time Prepared
+            <div class="lac205-header-value">${dateStr} / ${timeStr}</div>
+          </td>
+          <td class="lac205-header-label" colspan="4">Operational Period Date/Time
+            <div class="lac205-header-value">${escHtml(opPeriod)}</div>
+          </td>
+        </tr>
+        <tr><td colspan="9"></td></tr>
+        <tr>
+          <td class="lac205-warning" colspan="12">Utilization of any frequency other than those listed on this form are prohibited, subject to fines by the FCC and demobilization from the incident.</td>
+        </tr>
+        <tr>
+          <td class="lac205-colhead">Zn<br>Ch</td>
+          <td class="lac205-colhead">Function</td>
+          <td class="lac205-colhead">Channel Name/Trunked<br>Radio System Talkgroup</td>
+          <td class="lac205-colhead">Assignment</td>
+          <td class="lac205-colhead"><u>RX</u> Freq&nbsp;&nbsp;&nbsp;&nbsp;N or W</td>
+          <td class="lac205-colhead">RX<br>Tone/NAC</td>
+          <td class="lac205-colhead"><u>TX</u> Freq&nbsp;&nbsp;&nbsp;&nbsp;N or W</td>
+          <td class="lac205-colhead">Tx Tone/NAC</td>
+          <td class="lac205-colhead">Dev</td>
+          <td class="lac205-colhead">Pwr</td>
+          <td class="lac205-colhead">Mode<br>A, D or M</td>
+          <td class="lac205-colhead">Remarks</td>
+        </tr>
+        ${rowsHtml}
+        <tr>
+          <td class="lac205-footer-label" colspan="5">Prepared By (Communications Unit Leader)
+            <div class="lac205-header-value">${escHtml(preparedBy)}</div>
+          </td>
+          <td class="lac205-footer-label" colspan="7">Incident Location</td>
+        </tr>
+        <tr>
+          <td colspan="5"></td>
+          <td class="lac205-footer-label" colspan="7">
+            County: <strong>LAC</strong> &nbsp;&nbsp; State: <strong>CA</strong> &nbsp;&nbsp;&nbsp;&nbsp;
+            Latitude: ${escHtml(inc?.lat || '')} &nbsp;&nbsp; Longitude: ${escHtml(inc?.lon || '')}
+            ${incidentLocation ? `&nbsp;&nbsp;&nbsp;(${escHtml(incidentLocation)})` : ''}
+          </td>
+        </tr>
+        <tr>
+          <td class="lac205-disclaimer" colspan="12">
+            The convention calls for frequency lists to show four digits after the decimal place (five digits for 700 MHz frequencies).
+            The letter "U", "N", or "W" in the deviation (Dev) column reflects whether the frequency is ultranarrow (6.25 kHz),
+            narrow (12.5 kHz) or wide band (25 kHz). Mode refers to either "A" indicating Analog, "D" indicating Digital
+            (e.g. Project 25) or "M" indicating Mixed Mode. All channels are shown as if programmed in a control station,
+            mobile or portable radio. Repeaters (and depending on use, base stations) must be programmed with the Rx and Tx reversed.
+          </td>
+        </tr>
       </table>
-      <div class="ics205-sig">
-        <div>
-          <div style="font-weight:bold;font-size:10px;text-transform:uppercase;">Signature (Comms Unit Leader)</div>
-          <div style="margin-top:20px;border-top:1px solid #000;padding-top:2px;font-size:10px;">Name / Signature / Date</div>
-        </div>
-        <div>
-          <div style="font-weight:bold;font-size:10px;text-transform:uppercase;">Approved By (Safety Officer)</div>
-          <div style="margin-top:20px;border-top:1px solid #000;padding-top:2px;font-size:10px;">Name / Signature / Date</div>
-        </div>
-      </div>
       <div style="margin-top:6px;font-size:9px;color:#555;">
-        ICS 205 — Page 1 of 1 &nbsp;|&nbsp; Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations
+        Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations
       </div>
     </div>
     </div>
@@ -6846,16 +6873,21 @@ function printICS205() {
   win.document.write(`
     <!DOCTYPE html><html><head><title>ICS 205</title>
     <style>
-      body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 16px; }
-      .ics205-title { text-align:center; font-size:14px; font-weight:bold; margin-bottom:4px; }
-      .ics205-subtitle { text-align:center; font-size:12px; font-weight:bold; margin-bottom:10px; border-bottom:2px solid #000; padding-bottom:6px; }
-      .ics205-meta { display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #000; }
-      .ics205-meta-cell { padding:4px 6px; border-right:1px solid #000; border-bottom:1px solid #000; }
-      .ics205-meta-label { font-size:9px; font-weight:bold; text-transform:uppercase; }
-      .ics205-table { width:100%; border-collapse:collapse; border:1px solid #000; margin-top:10px; }
-      .ics205-table th { background:#d0d0d0; border:1px solid #000; padding:4px 6px; text-align:left; font-size:10px; text-transform:uppercase; }
-      .ics205-table td { border:1px solid #000; padding:4px 6px; font-size:11px; }
-      .ics205-sig { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:20px; border:1px solid #000; padding:6px; }
+      @page { size: landscape; margin: 0.3in; }
+      body { font-family: Arial, sans-serif; font-size: 11px; margin: 0; padding: 0; }
+      .lac205-table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
+      .lac205-table td, .lac205-table th { border: 1px solid #000; padding: 3px 5px; vertical-align: middle; }
+      .lac205-header-title { font-size: 15px; font-weight: bold; text-align: center; border-right: 1px solid #000; border-top: 2px solid #000; line-height: 1.25; }
+      .lac205-header-label { font-size: 8px; vertical-align: top; border-top: 2px solid #000; padding-top: 3px; }
+      .lac205-header-value { font-size: 11px; height: 22px; vertical-align: bottom; border-top: none; padding-top: 6px; }
+      .lac205-warning { background: #c0c0c0; color: #c00; font-weight: bold; font-size: 12px; text-align: center; padding: 4px 6px; border: 1px solid #000; }
+      .lac205-colhead { font-size: 7.5px; font-weight: normal; text-align: center; background: #fff; line-height: 1.15; }
+      .lac205-colhead u { text-decoration: underline; }
+      .lac205-rownum { font-size: 8px; text-align: center; width: 26px; }
+      .lac205-cell { font-size: 8.5px; }
+      .lac205-cell.center { text-align: center; }
+      .lac205-footer-label { font-size: 8px; padding-top: 4px; vertical-align: top; }
+      .lac205-disclaimer { font-size: 8px; padding: 5px 6px; border: 1px solid #000; line-height: 1.35; }
     </style></head><body>${content}</body></html>`);
   win.document.close();
   win.print();
