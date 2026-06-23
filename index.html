@@ -906,6 +906,63 @@
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
   .form-row.single { grid-template-columns: 1fr; }
+  .form-row.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  /* Larger modal variant for content-dense forms (e.g. Add/Edit Channel) */
+  .modal.modal-lg { max-width: 720px; }
+  @media (min-width: 1100px) {
+    .modal.modal-lg { max-width: 780px; }
+  }
+  @media (max-width: 600px) {
+    .form-row.form-row-4 { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Section dividers inside a modal body — groups related fields visually */
+  .form-section-label {
+    font-family: var(--font-data);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 2px;
+  }
+  .form-section-label:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  /* Small inline qualifier text appended to a form-label, e.g. "auto-fills from freq" */
+  .form-label-hint {
+    font-weight: 400;
+    color: var(--text-dim);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+    font-size: 11px;
+  }
+
+  /* Live-resolved value shown under tone/frequency fields (e.g. "✓ Tone 9 — 100.0 Hz") */
+  .form-resolved-hint {
+    font-size: 11px;
+    color: var(--accent);
+    font-family: var(--font-data);
+    min-height: 15px;
+    margin-top: 3px;
+  }
+
+  /* Toggle row pattern — label + description on the left, switch on the right */
+  .form-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 2px;
+    border-top: 1px solid var(--border);
+    margin-top: 6px;
+    gap: 16px;
+  }
+  .form-toggle-title { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+  .form-toggle-desc   { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+
 
   .form-field { display: flex; flex-direction: column; gap: 6px; }
 
@@ -4794,23 +4851,19 @@
 
 <!-- ── ADD / EDIT MODAL ── -->
 <div class="modal-overlay" id="addModal">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
       <div class="modal-title" id="modalTitle">Add Channel</div>
       <button class="modal-close" onclick="closeAddModal()">✕</button>
     </div>
     <div class="modal-body">
+
+      <div class="form-section-label">Identity</div>
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Channel Designator *</label>
           <input class="form-input" id="f-designator" placeholder="e.g. FIRE-TAC-1">
         </div>
-        <div class="form-field">
-          <label class="form-label">RX Frequency (MHz) * <span style="font-weight:400;color:var(--text-dim);">Receive / Repeater Output</span></label>
-          <input class="form-input" id="f-freq" placeholder="154.4300" oninput="onFreqInput()">
-        </div>
-      </div>
-      <div class="form-row triple">
         <div class="form-field">
           <label class="form-label">Status *</label>
           <select class="form-select" id="f-status">
@@ -4820,6 +4873,67 @@
             <option value="interop">Interop / Mutual Aid</option>
           </select>
         </div>
+      </div>
+
+      <div class="form-section-label">Frequency &amp; Tone</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">RX Frequency (MHz) *<span class="form-label-hint">Receive / Repeater Output</span></label>
+          <input class="form-input" id="f-freq" placeholder="154.4300" oninput="onFreqInput()">
+        </div>
+        <div class="form-field">
+          <label class="form-label">TX Frequency (MHz)<span class="form-label-hint">leave blank if same as RX</span></label>
+          <input class="form-input" id="f-rxfreq" placeholder="154.4300" oninput="onFreqInput()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">RX Tone / CSQ<span class="form-label-hint">CA tone # or Hz</span></label>
+          <input class="form-input" id="f-rxtone" placeholder="e.g. 9 or 100.0 or CSQ" oninput="onToneInput('rx')">
+          <div id="f-rxtone-resolved" class="form-resolved-hint"></div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">TX Tone / NAC<span class="form-label-hint">CA tone # or Hz/hex</span></label>
+          <input class="form-input" id="f-txtone" placeholder="e.g. 9 or 100.0 or 0x293" oninput="onToneInput('tx')">
+          <div id="f-txtone-resolved" class="form-resolved-hint"></div>
+        </div>
+      </div>
+
+      <div class="form-section-label">RF Characteristics</div>
+      <div class="form-row form-row-4">
+        <div class="form-field">
+          <label class="form-label">Band<span class="form-label-hint">auto-fills</span></label>
+          <select class="form-select" id="f-band">
+            <option value="VHF">VHF</option>
+            <option value="UHF">UHF</option>
+            <option value="700">700 MHz</option>
+            <option value="800">800 MHz</option>
+            <option value="Aviation">Aviation</option>
+            <option value="HF">HF</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Bandwidth</label>
+          <select class="form-select" id="f-bw">
+            <option value="W">W — Wide (25 kHz)</option>
+            <option value="N">N — Narrow (12.5 kHz)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">A/D/M<span class="form-label-hint">ICS-205</span></label>
+          <select class="form-select" id="f-adm">
+            <option value="A">A — Analog</option>
+            <option value="D">D — Digital</option>
+            <option value="M">M — Mixed</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Power<span class="form-label-hint">watts</span></label>
+          <input class="form-input" id="f-power" placeholder="100" type="number" step="1">
+        </div>
+      </div>
+      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Mode</label>
           <select class="form-select" id="f-mode">
@@ -4834,55 +4948,12 @@
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">Band <span style="font-weight:400;color:var(--text-dim);">auto-fills from freq</span></label>
-          <select class="form-select" id="f-band">
-            <option value="VHF">VHF (136–174 MHz)</option>
-            <option value="UHF">UHF (400–512 MHz)</option>
-            <option value="700">700 MHz</option>
-            <option value="800">800 MHz</option>
-            <option value="Aviation">Aviation (108–136 MHz)</option>
-            <option value="HF">HF (&lt;30 MHz)</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">RX Tone / CSQ <span style="font-weight:400;color:var(--text-dim);">CA tone # or Hz</span></label>
-          <input class="form-input" id="f-rxtone" placeholder="e.g. 9 or 100.0 or CSQ" oninput="onToneInput('rx')">
-          <div id="f-rxtone-resolved" style="font-size:10px;color:var(--accent);font-family:var(--font-data);min-height:14px;margin-top:2px;"></div>
-        </div>
-        <div class="form-field">
-          <label class="form-label">TX Tone / NAC <span style="font-weight:400;color:var(--text-dim);">CA tone # or Hz/hex</span></label>
-          <input class="form-input" id="f-txtone" placeholder="e.g. 9 or 100.0 or 0x293" oninput="onToneInput('tx')">
-          <div id="f-txtone-resolved" style="font-size:10px;color:var(--accent);font-family:var(--font-data);min-height:14px;margin-top:2px;"></div>
-        </div>
-      </div>
-      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <div class="form-field">
           <label class="form-label">Function / Purpose</label>
           <input class="form-input" id="f-function" placeholder="Command, Fire Attack, EMS, etc.">
         </div>
-        <div class="form-field">
-          <label class="form-label">Bandwidth</label>
-          <select class="form-select" id="f-bw">
-            <option value="W">W — Wideband (25 kHz)</option>
-            <option value="N">N — Narrowband (12.5 kHz)</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">A/D/M <span style="font-weight:400;color:var(--text-dim);">ICS-205 class</span></label>
-          <select class="form-select" id="f-adm">
-            <option value="A">A — Analog</option>
-            <option value="D">D — Digital</option>
-            <option value="M">M — Mixed</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Power <span style="font-weight:400;color:var(--text-dim);">watts</span></label>
-          <input class="form-input" id="f-power" placeholder="e.g. 100" type="number" step="1">
-        </div>
       </div>
+
+      <div class="form-section-label">Assignment</div>
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Department / Agency</label>
@@ -4895,20 +4966,15 @@
       </div>
       <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">TX Frequency (MHz) <span style="font-weight:400;color:var(--text-dim);">Transmit — leave blank if same as RX</span></label>
-          <input class="form-input" id="f-rxfreq" placeholder="154.4300" oninput="onFreqInput()">
-        </div>
-      </div>
-      <div class="form-row single">
-        <div class="form-field">
           <label class="form-label">Notes</label>
           <textarea class="form-textarea" id="f-notes" placeholder="Special instructions, restrictions, contact info…"></textarea>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 2px;border-top:1px solid var(--border);margin-top:4px;">
+
+      <div class="form-toggle-row">
         <div>
-          <div style="font-size:13px;color:var(--text-primary);">Enable Conflict Detection</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Warn if this frequency is already in use</div>
+          <div class="form-toggle-title">Enable Conflict Detection</div>
+          <div class="form-toggle-desc">Warn if this frequency is already in use</div>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="f-conflict-check" checked>
