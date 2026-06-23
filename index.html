@@ -2078,22 +2078,38 @@
   }
   .nav-group-btn .nav-badge { margin-left: 1px; }
 
-  /* ── PENDING REQUEST FLASH — draws attention when a COML approval is awaiting action ── */
+  /* ── PENDING REQUEST FLASH — draws attention when something needs review ── */
   @keyframes pendingFlash {
     0%, 100% { box-shadow: 0 0 0 0 rgba(255,82,82,0.6); border-color: var(--status-active); }
     50%      { box-shadow: 0 0 0 6px rgba(255,82,82,0); border-color: var(--status-active); }
   }
-  #icrPendingBtn.flashing {
+  #icrPendingBtn.flashing,
+  .nav-group-btn.flashing {
     animation: pendingFlash 1.4s ease-in-out infinite;
     border-color: var(--status-active);
     color: var(--status-active);
+  }
+  .nav-group-item.flashing {
+    animation: pendingFlash 1.4s ease-in-out infinite;
+    border-radius: 6px;
   }
   @keyframes pendingBadgePulse {
     0%, 100% { transform: scale(1); }
     50%      { transform: scale(1.18); }
   }
-  #icrPendingBadge.flashing {
+  #icrPendingBadge.flashing,
+  .nav-badge.flashing {
     animation: pendingBadgePulse 1.4s ease-in-out infinite;
+  }
+
+  /* Whole-row flash for upcoming pending Comm Plan Requests in the list view */
+  @keyframes cprRowFlash {
+    0%, 100%   { background: var(--bg-card); border-color: rgba(255,82,82,0.5); }
+    50%        { background: rgba(255,82,82,0.10); border-color: rgba(255,82,82,0.9); }
+  }
+  .cpr-row.flashing {
+    animation: cprRowFlash 1.6s ease-in-out infinite;
+    border-width: 1px;
   }
 
   /* ── UNIFORM TAB PAGE HEADER ──
@@ -7527,6 +7543,42 @@ function updateIcrBadge() {
     btn.classList.remove('flashing');
     badge.classList.remove('flashing');
   }
+  // Flash the Schedule nav item directly — Internal Channel Requests live under Schedule
+  document.getElementById('navitem-schedule')?.classList.toggle('flashing', pending > 0);
+  updateOperationsNavFlash();
+}
+
+// Combines all "needs attention under Operations" signals — Internal Channel Requests
+// (no date restriction) and upcoming-within-7-days pending Comm Plan Requests — and
+// flashes the Operations group button (with a combined count badge) if either is true.
+function updateOperationsNavFlash() {
+  const icrPending = (internalChannelRequests || []).filter(r => r.status === 'pending').length;
+  const cprPending  = (commPlanReqs || []).filter(r => r.status === 'pending' && isCprUpcomingWithin7Days(r)).length;
+  const total       = icrPending + cprPending;
+
+  const btn   = document.getElementById('navbtn-operations');
+  const badge = document.getElementById('navbadge-operations');
+  btn?.classList.toggle('flashing', total > 0);
+  if (badge) {
+    if (total > 0) {
+      badge.textContent = total > 99 ? '99+' : total;
+      badge.style.display = 'inline-flex';
+      badge.classList.add('flashing');
+    } else {
+      badge.style.display = 'none';
+      badge.classList.remove('flashing');
+    }
+  }
+}
+
+// True if a Comm Plan Request's operational start date falls between today and 7 days from now (inclusive)
+function isCprUpcomingWithin7Days(r) {
+  if (!r.op_start_date) return false;
+  const todayISO = new Date().toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const horizon = new Date();
+  horizon.setDate(horizon.getDate() + 7);
+  const horizonISO = horizon.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  return r.op_start_date >= todayISO && r.op_start_date <= horizonISO;
 }
 
 function openIcrForm() {
@@ -14608,20 +14660,27 @@ async function loadCommPlanReqs() {
   } catch(e) { console.warn('loadCommPlanReqs:', e.message); }
 }
 
-// Shows a small red count badge on the Operations group button and the
-// Comm Plan Req nav item whenever there are pending (unreviewed) requests.
+// Shows a small red count badge on the Comm Plan Req nav item, and flashes both
+// it and the Operations group, whenever there's a PENDING request whose
+// operational start date falls within the next 7 days. Older or far-future
+// pending requests still count toward the regular cprStatusFilter list but do
+// not trigger the urgent flash — only near-term ones do.
 function updateCommReqBadge() {
-  const pending = commPlanReqs.filter(r => r.status === 'pending').length;
-  [['navbadge-operations', pending], ['navbadge-commreq', pending]].forEach(([id, count]) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (count > 0) {
-      el.textContent = count > 99 ? '99+' : count;
-      el.style.display = 'inline-flex';
+  const urgent = commPlanReqs.filter(r => r.status === 'pending' && isCprUpcomingWithin7Days(r));
+  const badge = document.getElementById('navbadge-commreq');
+  const item  = document.getElementById('navitem-commreq');
+  if (badge) {
+    if (urgent.length > 0) {
+      badge.textContent = urgent.length > 99 ? '99+' : urgent.length;
+      badge.style.display = 'inline-flex';
+      badge.classList.add('flashing');
     } else {
-      el.style.display = 'none';
+      badge.style.display = 'none';
+      badge.classList.remove('flashing');
     }
-  });
+  }
+  item?.classList.toggle('flashing', urgent.length > 0);
+  updateOperationsNavFlash();
 }
 
 function copyPublicFormLink() {
@@ -14662,7 +14721,8 @@ function renderCommPlanReqs() {
   grid.innerHTML = filtered.map(r => {
     const submitted = new Date(r.created_at).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric'});
     const loc = r.location_name || r.location_address || '—';
-    return `<div class="cpr-row" onclick="openCprModal('${r.id}')">
+    const isUrgent = r.status === 'pending' && isCprUpcomingWithin7Days(r);
+    return `<div class="cpr-row${isUrgent ? ' flashing' : ''}" onclick="openCprModal('${r.id}')">
       <div><span class="cpr-status-chip ${r.status}">${r.status}</span></div>
       <div style="min-width:0;">
         <div style="font-size:13px;color:var(--text-primary);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(r.event_name||'—')}</div>
