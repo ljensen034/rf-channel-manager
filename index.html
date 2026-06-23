@@ -2804,17 +2804,98 @@
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Request Type</label>
-          <select class="form-select" id="pr-request-type">
+          <select class="form-select" id="pr-request-type" onchange="onPrRequestTypeChange()">
             <option value="">— Select type —</option>
             <option value="Special Event">Special Event</option>
             <option value="Drill / Exercise">Drill / Exercise</option>
             <option value="Planned Event">Planned Event</option>
             <option value="VIP / Dignitary">VIP / Dignitary Visit</option>
             <option value="Sporting Event">Sporting Event</option>
+            <option value="Captain/BC Academy">Captain/BC Academy</option>
+            <option value="Multi Company Drill">Multi Company Drill</option>
+            <option value="Brush Drill">Brush Drill</option>
+            <option value="MCI Drill">MCI Drill</option>
+            <option value="Spring Drill">Spring Drill</option>
+            <option value="Other Drill Type">Other Drill Type</option>
+            <option value="Lifeguard Event">Lifeguard Event</option>
+            <option value="Preplanned Event">Preplanned Event</option>
+            <option value="Fireground Survival Drill">Fireground Survival Drill</option>
+            <option value="Mayday Drill">Mayday Drill</option>
             <option value="Other">Other</option>
           </select>
         </div>
       </div>
+
+      <!-- Wildland vs All Hazards picker — shown for Captain/BC Academy, Multi Company Drill, Other Drill Type -->
+      <div class="form-row single" id="pr-category-picker-row" style="display:none;">
+        <div class="form-field">
+          <label class="form-label">Is this drill All Hazards or Wildland based? *</label>
+          <select class="form-select" id="pr-drill-category" onchange="onPrDrillCategoryChange()">
+            <option value="">— Select category —</option>
+            <option value="all-hazards">All Hazards</option>
+            <option value="wildland">Wildland</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- All Hazards channel checkboxes -->
+      <div id="pr-channels-allhazards" style="display:none;background:var(--pub-accent-bg);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--pub-accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">All Hazards Channel Requests</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-ah-command" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Command Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Repeated)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-ah-primary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Primary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-ah-secondary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Secondary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-ah-air-ground" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Air to Ground Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-ah-trunked" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Trunked Talkgroup <span style="color:var(--text-dim);font-size:12px;">(Digital Countywide, NO IDLH)</span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Wildland channel checkboxes -->
+      <div id="pr-channels-wildland" style="display:none;background:var(--pub-accent-bg);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--pub-accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Wildland Channel Requests</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-command" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Command Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Repeated)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-primary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Primary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-secondary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Secondary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-air-ground" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Air to Ground Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-crew-dozer" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Crew Dozer Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="pr-ch-wl-rotor-victor" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
+            <span style="font-size:14px;color:var(--text-primary);">Rotor Victor Channel <span style="color:var(--text-dim);font-size:12px;">(VHF AM)</span></span>
+          </label>
+        </div>
+      </div>
+
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Brief Event Description *</label>
@@ -2900,19 +2981,6 @@
 </div>
 
 
-  <div class="notif-drawer-header">
-    <div class="notif-drawer-title">🔔 Notifications <span id="notifUnreadCount" style="font-size:10px;color:var(--text-dim);"></span></div>
-    <div class="notif-drawer-actions">
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="markAllRead()">Mark all read</button>
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="clearAllNotifs()">Clear</button>
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openNotifSettings()">⚙ Settings</button>
-      <button class="modal-close" onclick="toggleNotifDrawer()" style="font-size:16px;margin-left:4px;">✕</button>
-    </div>
-  </div>
-  <div class="notif-list" id="notifList">
-    <div class="notif-empty">No notifications yet.<br>Channel changes will appear here.</div>
-  </div>
-</div>
 
 <!-- NOTIFICATION SETTINGS MODAL -->
 <div class="modal-overlay" id="notifSettingsModal">
@@ -3267,7 +3335,6 @@
 
 <!-- MOBILE SLIDE-DOWN MENU -->
 <div id="mobileMenu">
-  <button class="btn-primary" onclick="openAddModal();toggleMobileMenu()">+ Add Channel</button>
   <button class="btn-secondary" onclick="openICS205();toggleMobileMenu()">⬇ ICS 205 Export</button>
   <button class="btn-secondary" onclick="openMorningReport();toggleMobileMenu()">📋 Morning Report</button>
   <button class="btn-secondary" onclick="openBigBoard();toggleMobileMenu()">⛶ Big Board</button>
@@ -3297,10 +3364,6 @@
   <button class="mobile-nav-btn" id="mnavLog" onclick="mobileNav('log')">
     <span class="nav-icon">📋</span>Log
   </button>
-  <button class="mobile-nav-btn" id="mnavNotif" onclick="mobileNav('notif')" style="position:relative;">
-    <span class="nav-icon">🔔</span>Alerts
-    <span id="mobileNotifDot" style="display:none;position:absolute;top:6px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:var(--status-active);"></span>
-  </button>
   <button class="mobile-nav-btn" id="mnavFilter" onclick="mobileNav('filter')">
     <span class="nav-icon">🔍</span>Filter
   </button>
@@ -3318,11 +3381,6 @@
     <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
     <button class="btn-secondary" onclick="openLowAvailSettings()" title="Low Availability Alert Settings">⚠ Alerts</button>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
-    <button class="btn-primary" onclick="openAddModal()">+ Add Channel</button>
-    <button class="notif-btn" id="notifBell" onclick="toggleNotifDrawer()" title="Notifications">
-      🔔
-      <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
-    </button>
   </div>
   <!-- Mobile: hamburger only — bell is in desktop actions above -->
   <div style="display:flex;gap:6px;align-items:center;margin-left:auto;" class="mobile-topbar-right">
@@ -7034,7 +7092,7 @@ async function sendEmailNotification(subject, body, type) {
   }
 }
 
-// ── PUSH NOTIFICATION ──
+// ── PUSH NOTIFICATION (drives toast popups + sound + email; bell/drawer UI removed) ──
 function pushNotification(type, text) {
   // Check if this type is enabled
   const typeKey = type; // 'added','updated','active','available','reserved','removed'
@@ -7048,13 +7106,9 @@ function pushNotification(type, text) {
   notifications.unshift(notif);
   if (notifications.length > 100) notifications.pop();
 
-  notifUnread++;
-  updateNotifBadge();
-  renderNotifList();
-
   if (notifSettings.sound !== false) playTone(notifSettings.tone || 'chime');
   if (notifSettings.toast !== false) showToast(notif);
-  
+
   // Send email for critical events
   if (type === 'active') {
     sendEmailNotification(
@@ -7086,70 +7140,9 @@ function showToast(notif) {
   toastTimeout = setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
 }
 
-function updateNotifBadge() {
-  const badge = document.getElementById('notifBadge');
-  const bell  = document.getElementById('notifBell');
-  if (badge) {
-    if (notifUnread > 0) {
-      badge.style.display = 'flex';
-      badge.textContent = notifUnread > 99 ? '99+' : notifUnread;
-      if (bell) bell.classList.add('has-unread');
-    } else {
-      badge.style.display = 'none';
-      if (bell) bell.classList.remove('has-unread');
-    }
-  }
-  const countEl = document.getElementById('notifUnreadCount');
-  if (countEl) countEl.textContent = notifUnread > 0 ? `(${notifUnread} unread)` : '';
-  // Mobile nav dot
-  const dot = document.getElementById('mobileNotifDot');
-  if (dot) dot.style.display = notifUnread > 0 ? 'block' : 'none';
-}
-
-function renderNotifList() {
-  const list = document.getElementById('notifList');
-  if (!list) return;
-  if (!notifications.length) {
-    list.innerHTML = '<div class="notif-empty">No notifications yet.<br>Channel changes will appear here.</div>';
-    return;
-  }
-  list.innerHTML = notifications.map(n => `
-    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markRead(${n.id})">
-      <div class="notif-dot" style="background:${n.color};${!n.read ? 'box-shadow:0 0 5px '+n.color+';' : ''}"></div>
-      <div class="notif-content">
-        <div class="notif-text">${n.text}</div>
-        <div class="notif-meta">${n.ts}</div>
-      </div>
-      <div class="notif-type-tag" style="background:${n.color}18;color:${n.color};border:1px solid ${n.color}33;">${n.label}</div>
-    </div>
-  `).join('');
-}
-
 function markRead(id) {
   const n = notifications.find(x => x.id === id);
   if (n && !n.read) { n.read = true; notifUnread = Math.max(0, notifUnread - 1); }
-  updateNotifBadge();
-  renderNotifList();
-}
-
-function markAllRead() {
-  notifications.forEach(n => n.read = true);
-  notifUnread = 0;
-  updateNotifBadge();
-  renderNotifList();
-}
-
-function clearAllNotifs() {
-  notifications = [];
-  notifUnread = 0;
-  updateNotifBadge();
-  renderNotifList();
-}
-
-function toggleNotifDrawer() {
-  const drawer = document.getElementById('notifDrawer');
-  drawer.classList.toggle('open');
-  if (drawer.classList.contains('open')) markAllRead();
 }
 
 // ── DETECT CHANNEL CHANGES FROM REALTIME ──
@@ -7216,7 +7209,7 @@ document.addEventListener('click', function(e) {
 });
 
 function mobileNav(tab) {
-  ['channels','log','notif','filter'].forEach(t => {
+  ['channels','log','filter'].forEach(t => {
     document.getElementById('mnav' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.remove('active');
   });
   document.getElementById('mnav' + tab.charAt(0).toUpperCase() + tab.slice(1))?.classList.add('active');
@@ -7225,7 +7218,6 @@ function mobileNav(tab) {
 
   if (tab === 'channels') {
     if (mainPanel) mainPanel.style.display = 'flex';
-    document.getElementById('notifDrawer')?.classList.remove('open');
     closeMobileSheet();
   } else if (tab === 'log') {
     const entries = activityLog.slice(0, 30).map(e => `
@@ -7236,11 +7228,6 @@ function mobileNav(tab) {
     document.getElementById('sheetTitle').textContent = '📋 Activity Log';
     document.getElementById('sheetContent').innerHTML = `<div style="padding-bottom:16px;">${entries}</div>`;
     openMobileSheet();
-  } else if (tab === 'notif') {
-    document.getElementById('notifDrawer')?.classList.add('open');
-    markAllRead();
-    updateNotifBadge();
-    document.getElementById('mobileNotifDot').style.display = 'none';
   } else if (tab === 'filter') {
     document.getElementById('sheetTitle').textContent = '🔍 Filter Channels';
     document.getElementById('sheetContent').innerHTML = `
@@ -12532,6 +12519,62 @@ function setPubTheme(theme, skipSave) {
 }
 
 // ── Public form submission (no auth — uses anon key with permissive insert policy) ──
+// ── Request Type → conditional channel checkbox logic ──
+const PR_DIRECT_ALLHAZARDS_TYPES = ['MCI Drill', 'Lifeguard Event', 'Preplanned Event', 'Fireground Survival Drill', 'Mayday Drill'];
+const PR_ASK_CATEGORY_TYPES      = ['Captain/BC Academy', 'Multi Company Drill', 'Other Drill Type'];
+
+function onPrRequestTypeChange() {
+  const type = document.getElementById('pr-request-type').value;
+  const categoryRow   = document.getElementById('pr-category-picker-row');
+  const allHazardsBox = document.getElementById('pr-channels-allhazards');
+  const wildlandBox    = document.getElementById('pr-channels-wildland');
+
+  // Reset all conditional sections first
+  categoryRow.style.display   = 'none';
+  allHazardsBox.style.display = 'none';
+  wildlandBox.style.display   = 'none';
+  document.getElementById('pr-drill-category').value = '';
+
+  if (PR_DIRECT_ALLHAZARDS_TYPES.includes(type)) {
+    // These drill types go straight to All Hazards channel options
+    allHazardsBox.style.display = 'block';
+  } else if (PR_ASK_CATEGORY_TYPES.includes(type)) {
+    // Ask the user whether this is All Hazards or Wildland based
+    categoryRow.style.display = 'block';
+  }
+  // All other types show no channel picker at all
+}
+
+function onPrDrillCategoryChange() {
+  const category = document.getElementById('pr-drill-category').value;
+  const allHazardsBox = document.getElementById('pr-channels-allhazards');
+  const wildlandBox    = document.getElementById('pr-channels-wildland');
+
+  allHazardsBox.style.display = category === 'all-hazards' ? 'block' : 'none';
+  wildlandBox.style.display   = category === 'wildland'    ? 'block' : 'none';
+}
+
+// Gather the checked channel requests into a clean array of labels for storage
+function collectRequestedChannels() {
+  const map = {
+    'pr-ch-ah-command':        'All Hazards — Command Channel (UHF Repeated)',
+    'pr-ch-ah-primary-tac':    'All Hazards — Primary Tac Channel (UHF Direct)',
+    'pr-ch-ah-secondary-tac':  'All Hazards — Secondary Tac Channel (UHF Direct)',
+    'pr-ch-ah-air-ground':     'All Hazards — Air to Ground Channel (VHF Direct)',
+    'pr-ch-ah-trunked':        'All Hazards — Trunked Talkgroup (Digital Countywide, NO IDLH)',
+    'pr-ch-wl-command':        'Wildland — Command Channel (VHF Repeated)',
+    'pr-ch-wl-primary-tac':    'Wildland — Primary Tac Channel (VHF Direct)',
+    'pr-ch-wl-secondary-tac':  'Wildland — Secondary Tac Channel (VHF Direct)',
+    'pr-ch-wl-air-ground':     'Wildland — Air to Ground Channel (VHF Direct)',
+    'pr-ch-wl-crew-dozer':     'Wildland — Crew Dozer Channel (VHF Direct)',
+    'pr-ch-wl-rotor-victor':   'Wildland — Rotor Victor Channel (VHF AM)',
+  };
+  return Object.entries(map)
+    .filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, label]) => label);
+}
+
+
 async function submitPublicRequest() {
   const errEl = document.getElementById('pubFormError');
   errEl.style.display = 'none';
@@ -12597,6 +12640,8 @@ async function submitPublicRequest() {
     op_end_date:        endDate,
     op_end_time:        endTime,
     request_type:       document.getElementById('pr-request-type').value || null,
+    drill_category:     document.getElementById('pr-drill-category')?.value || null,
+    requested_channels: collectRequestedChannels(),
     event_description:  eventDesc,
     event_name:          eventName,
     location_name:       locName || null,
@@ -12629,8 +12674,13 @@ async function submitPublicRequest() {
 
 function resetPublicForm() {
   document.querySelectorAll('#publicReqScreen input, #publicReqScreen textarea, #publicReqScreen select').forEach(el => {
-    if (el.type !== 'date') el.value = '';
+    if (el.type === 'checkbox') el.checked = false;
+    else if (el.type !== 'date') el.value = '';
   });
+  // Hide conditional channel picker sections
+  document.getElementById('pr-category-picker-row').style.display   = 'none';
+  document.getElementById('pr-channels-allhazards').style.display   = 'none';
+  document.getElementById('pr-channels-wildland').style.display     = 'none';
   document.getElementById('pubFormCard').style.display = 'block';
   document.getElementById('pubSuccessCard').style.display = 'none';
   document.getElementById('pubFormError').style.display = 'none';
@@ -12716,13 +12766,24 @@ function openCprModal(id) {
 
   const field = (label, val) => val ? `<div><div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">${label}</div><div style="font-size:13px;color:var(--text-secondary);">${escHtml(val)}</div></div>` : '';
 
+  const categoryLabel = r.drill_category === 'wildland' ? 'Wildland' : r.drill_category === 'all-hazards' ? 'All Hazards' : '';
+  const channelsList = (r.requested_channels || []);
+
   document.getElementById('cprModalTitle').textContent = r.event_name || 'Request Detail';
   document.getElementById('cprDetailSection').innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
       <span class="cpr-status-chip ${r.status}" style="font-size:11px;padding:3px 10px;">${r.status}</span>
       ${r.request_type ? `<span style="font-size:12px;color:var(--text-dim);">${escHtml(r.request_type)}</span>` : ''}
+      ${categoryLabel ? `<span style="font-family:var(--font-data);font-size:10px;padding:2px 8px;border-radius:2px;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.3);">${categoryLabel}</span>` : ''}
     </div>
     <div style="font-size:12px;color:var(--text-secondary);padding:10px 12px;background:var(--bg-deep);border-radius:var(--radius);margin-bottom:14px;line-height:1.6;">${escHtml(r.event_description||'—')}</div>
+    ${channelsList.length ? `
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:12px;">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Requested Channels</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${channelsList.map(c => `<div style="font-size:12px;color:var(--text-primary);display:flex;align-items:center;gap:6px;"><span style="color:var(--status-available);">✓</span>${escHtml(c)}</div>`).join('')}
+      </div>
+    </div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
       ${field('Operational Start', fmtDateTime(r.op_start_date, r.op_start_time))}
       ${field('Operational End',   fmtDateTime(r.op_end_date,   r.op_end_time))}
@@ -12801,7 +12862,10 @@ function convertCprToReservation() {
     setTimeout(() => {
       document.getElementById('sr-title').value      = r.event_name || '';
       document.getElementById('sr-requestor').value  = r.requestee_name || '';
-      document.getElementById('sr-notes').value       = [r.event_description, r.comments].filter(Boolean).join('\n\n');
+      const channelsNote = (r.requested_channels || []).length
+        ? 'Requested Channels:\n' + r.requested_channels.map(c => '• ' + c).join('\n')
+        : '';
+      document.getElementById('sr-notes').value       = [r.event_description, channelsNote, r.comments].filter(Boolean).join('\n\n');
 
       // Combine date + time into datetime-local format
       if (r.op_start_date && r.op_start_time) {
