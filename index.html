@@ -1883,7 +1883,7 @@
        trigger iOS Safari/Chrome's zoom-on-focus. Re-assert 16px here by ID
        with !important so every text-entry field is zoom-safe on mobile. */
     #adminChGroupFilter, #auditActionFilter, #auditChannelFilter, #auditDateFilter,
-    #auditSearch, #auf-uuid, #cprStatusFilter, #inc-channels, #inc-radios,
+    #auditSearch, #auf-uuid, #cprStatusFilter, #inc-channels,
     #inc-talkgroups, #incStatusFilter, #invModelFilter, #invStatusFilter,
     #lav-active, #lav-available, #lav-reserved,
     #newRadioBand, #newRadioModel, #resCategoryFilter, #resStatusFilter,
@@ -4288,6 +4288,15 @@
       <!-- Path map + results -->
       <div id="rfa-results" style="display:none;">
 
+        <!-- Results actions: export + link to incident -->
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <select class="form-select" id="rfa-link-incident" style="width:220px;font-size:12px;padding:6px 10px;">
+            <option value="">— Link to incident —</option>
+          </select>
+          <button class="btn-secondary" style="font-size:12px;" onclick="linkRFAResultToIncident()">🔗 Link Results to Incident</button>
+          <button class="btn-primary" style="font-size:12px;" onclick="exportRFAReport()">⬇ Export PDF Report</button>
+        </div>
+
         <!-- Combined path map -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
           <div style="padding:10px 16px;border-bottom:1px solid var(--border);font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">Path Map</div>
@@ -4295,7 +4304,8 @@
         </div>
 
         <!-- Verdict banner -->
-        <div id="rfa-verdict" style="margin-bottom:16px;"></div>
+        <div id="rfa-verdict" style="margin-bottom:8px;"></div>
+        <div id="rfa-linked-incident" style="margin-bottom:16px;"></div>
 
         <!-- Terrain profile chart -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
@@ -5590,6 +5600,7 @@ async function logActivity(text) {
 let rfaMapA = null, rfaMapB = null, rfaPathMap = null;
 let rfaMarkerA = null, rfaMarkerB = null;
 let rfaProfileChart = null;
+let rfaLastResult = null; // stores the most recent analysis for PDF export / incident linking
 
 function initRFAnalyzerTab() {
   // Populate channel dropdown from live channel list
@@ -5620,6 +5631,7 @@ function clearRFAnalyzer() {
   });
   if (rfaPathMap) { rfaPathMap.remove(); rfaPathMap = null; }
   if (rfaProfileChart) { rfaProfileChart.destroy(); rfaProfileChart = null; }
+  rfaLastResult = null;
 }
 
 function rfaOnFreqInput() {
@@ -5814,6 +5826,42 @@ async function runRFAnalyzer() {
   const aAddr = [document.getElementById('rfa-a-street').value, document.getElementById('rfa-a-city').value].filter(Boolean).join(', ') || `${aLat},${aLon}`;
   const bAddr = [document.getElementById('rfa-b-street').value, document.getElementById('rfa-b-city').value].filter(Boolean).join(', ') || `${bLat},${bLon}`;
   logEvent('risk', 'RF Path Analysis', `${aAddr} → ${bAddr} · ${dist.toFixed(2)} mi · ${band} · LOS:${terrain.losStatus} · Fresnel:${terrain.fresnelStatus} · Score:${riskScore}`);
+
+  // ── Store full result for PDF export / incident linking ──
+  rfaLastResult = {
+    aAddr, bAddr, aLat, aLon, aElev, bLat, bLon, bElev,
+    band, freqMHz, antennaFt, dist,
+    losStatus: terrain.losStatus, fresnelStatus: terrain.fresnelStatus,
+    fresnelViolations: terrain.fresnelViolations, interiorCount: terrain.interiorCount,
+    blockedAt: terrain.blockedAt, riskScore, verdict, vDesc,
+    channelLabel: (() => {
+      const sel = document.getElementById('rfa-channel');
+      const opt = sel?.options[sel.selectedIndex];
+      return opt && opt.value ? opt.textContent : null;
+    })(),
+    timestamp: new Date().toISOString(),
+    linkedIncidentId: rfaLastResult?.linkedIncidentId || null,
+  };
+
+  // Populate the "link to incident" dropdown with current incidents
+  const incSel = document.getElementById('rfa-link-incident');
+  if (incSel) {
+    incSel.innerHTML = '<option value="">— Link to incident —</option>' +
+      incidents.map(i => `<option value="${i.id}">${escHtml(i.name)}${i.number ? ' — ' + escHtml(i.number) : ''}</option>`).join('');
+  }
+  renderRFALinkedIncidentTag();
+}
+
+// Show a small tag under the verdict if this result is already linked to an incident
+function renderRFALinkedIncidentTag() {
+  const el = document.getElementById('rfa-linked-incident');
+  if (!el) return;
+  if (!rfaLastResult?.linkedIncidentId) { el.innerHTML = ''; return; }
+  const inc = incidents.find(i => String(i.id) === String(rfaLastResult.linkedIncidentId));
+  if (!inc) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--accent);background:rgba(30,136,229,0.08);border:1px solid rgba(30,136,229,0.25);padding:4px 10px;border-radius:4px;">
+    🔗 Linked to incident: <strong>${escHtml(inc.name)}</strong>
+  </div>`;
 }
 
 function rfaRenderPathMap(aLat, aLon, aElev, bLat, bLon, bElev, profile, losStatus, blockedAt) {
@@ -6000,8 +6048,111 @@ function rfaRenderSampleTable(profile, aElev, bElev, antennaFt, totalDist, freqM
 }
 
 // ─────────────────────────────────────────────
-// CHANNEL AUDIT TRAIL
+// RF DECONFLICTER — PDF EXPORT + INCIDENT LINKING
 // ─────────────────────────────────────────────
+function exportRFAReport() {
+  if (!rfaLastResult) { alert('Run an analysis first.'); return; }
+  const r = rfaLastResult;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'2-digit', day:'2-digit', year:'numeric' });
+  const timeStr  = now.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false });
+
+  const linkedInc = r.linkedIncidentId ? incidents.find(i => String(i.id) === String(r.linkedIncidentId)) : null;
+
+  const vColor = r.verdict.startsWith('HIGH') ? '#c00' : r.verdict.startsWith('MODERATE') ? '#b8860b' : '#006400';
+  const losColor = r.losStatus === 'clear' ? '#c00' : '#006400';
+  const frzColor = r.fresnelStatus === 'clear' ? '#c00' : r.fresnelStatus === 'partial' ? '#b8860b' : '#006400';
+
+  const statRow = (label, value) => `<tr><td style="padding:5px 10px;border:1px solid #ccc;background:#f5f7fa;font-weight:bold;width:42%;">${label}</td><td style="padding:5px 10px;border:1px solid #ccc;">${value}</td></tr>`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#111;max-width:780px;margin:0 auto;padding:24px;">
+      <div style="text-align:center;border-bottom:3px solid #1565c0;padding-bottom:14px;margin-bottom:18px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">COMM CENTER — Public Safety Operations</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:0.03em;">RF Deconfliction Report</div>
+        <div style="font-size:12px;color:#888;margin-top:4px;">Generated ${dateStr} at ${timeStr} PT</div>
+      </div>
+
+      ${linkedInc ? `<div style="background:#eef4fb;border:1px solid #1565c0;border-radius:4px;padding:8px 14px;margin-bottom:16px;font-size:12px;">
+        <strong>Linked Incident:</strong> ${escHtml(linkedInc.name)}${linkedInc.number ? ' — ' + escHtml(linkedInc.number) : ''}
+      </div>` : ''}
+
+      <div style="border:2px solid ${vColor};border-radius:6px;padding:12px 16px;margin-bottom:18px;background:${vColor}0d;">
+        <div style="font-size:15px;font-weight:700;color:${vColor};letter-spacing:0.03em;">${r.verdict}</div>
+        <div style="font-size:12px;color:#444;margin-top:4px;">${r.vDesc}</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Site Information</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
+        ${statRow('Site A', escHtml(r.aAddr) + `<br><span style="color:#777;">${r.aLat.toFixed(5)}, ${r.aLon.toFixed(5)} · ${r.aElev.toLocaleString()} ft ASL</span>`)}
+        ${statRow('Site B', escHtml(r.bAddr) + `<br><span style="color:#777;">${r.bLat.toFixed(5)}, ${r.bLon.toFixed(5)} · ${r.bElev.toLocaleString()} ft ASL</span>`)}
+        ${statRow('Path Distance', `${r.dist.toFixed(2)} mi (${(r.dist*1.60934).toFixed(2)} km)`)}
+        ${r.channelLabel ? statRow('Channel', escHtml(r.channelLabel)) : ''}
+      </table>
+
+      <div style="font-size:13px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">RF Parameters</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
+        ${statRow('Band', r.band)}
+        ${statRow('Frequency', `${r.freqMHz} MHz`)}
+        ${statRow('Antenna Height', `${r.antennaFt} ft AGL (both sites)`)}
+      </table>
+
+      <div style="font-size:13px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Terrain Analysis (USGS 3DEP)</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
+        ${statRow('Line of Sight', `<span style="color:${losColor};font-weight:bold;">${r.losStatus.toUpperCase()}</span>${r.blockedAt ? ` — blocked at ${r.blockedAt.distMiles.toFixed(1)} mi (${Math.round(r.blockedAt.elevFt||0).toLocaleString()} ft ASL)` : ''}`)}
+        ${statRow('First Fresnel Zone', `<span style="color:${frzColor};font-weight:bold;">${r.fresnelStatus.toUpperCase()}</span> — ${r.fresnelViolations}/${r.interiorCount} samples below 60% clearance`)}
+        ${statRow('Risk Score', `${r.riskScore} (distance + LOS + Fresnel + band)`)}
+      </table>
+
+      <div style="margin-top:24px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
+        This report reflects a computational terrain estimate using USGS 3DEP elevation data and is intended as a planning aid.
+        Field verification is recommended before relying on these results operationally.<br>
+        COMM CENTER — Public Safety Operations &nbsp;·&nbsp; Generated ${dateStr} ${timeStr} PT
+      </div>
+    </div>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>RF Deconfliction Report</title></head><body>${html}
+    <div style="text-align:center;margin:20px;">
+      <button onclick="window.print()" style="padding:10px 24px;background:#1e88e5;color:#fff;border:none;border-radius:4px;font-size:14px;cursor:pointer;">🖨 Print / Save PDF</button>
+      <button onclick="window.close()" style="padding:10px 24px;background:#eee;color:#333;border:none;border-radius:4px;font-size:14px;cursor:pointer;margin-left:10px;">Close</button>
+    </div>
+    <style>@media print{button,div[style*="text-align:center;margin:20px"]{display:none!important}}</style>
+    </body></html>`);
+  win.document.close();
+  logEvent('risk', 'RF Report Exported', `${r.aAddr} → ${r.bAddr} · ${r.verdict}`);
+}
+
+async function linkRFAResultToIncident() {
+  if (!rfaLastResult) { alert('Run an analysis first.'); return; }
+  const sel = document.getElementById('rfa-link-incident');
+  const incId = sel?.value;
+  if (!incId) { alert('Select an incident from the dropdown first.'); return; }
+
+  const inc = incidents.find(i => String(i.id) === String(incId));
+  if (!inc) return;
+
+  rfaLastResult.linkedIncidentId = incId;
+  renderRFALinkedIncidentTag();
+
+  const summary = `RF Deconfliction: ${rfaLastResult.aAddr} → ${rfaLastResult.bAddr} · ${rfaLastResult.dist.toFixed(2)} mi · ` +
+    `${rfaLastResult.band} ${rfaLastResult.freqMHz} MHz · LOS: ${rfaLastResult.losStatus} · Fresnel: ${rfaLastResult.fresnelStatus} · ${rfaLastResult.verdict}`;
+
+  // Append to the incident's notes log (same per-entry pattern as Trigger/Inventory notes)
+  const { error } = await sb.from('incident_notes').insert({
+    incident_id: incId,
+    note:        summary,
+    author:      currentUser?.name || 'Unknown',
+    created_at:  new Date().toISOString(),
+    agency_id:   agencyId(),
+  });
+  if (error) { alert('Linked locally, but failed to log to incident notes: ' + error.message); return; }
+
+  logEvent('incident', 'RF Analysis Linked', `${summary} — linked to ${inc.name}`, { incident: inc.name });
+  alert(`Linked to incident: ${inc.name}`);
+}
+
+
 // In-memory audit cache; loaded fresh from Supabase on demand
 let auditCache   = [];        // full audit records from DB
 let auditLoaded  = false;     // flag to avoid redundant fetches
@@ -13132,7 +13283,6 @@ function renderIncidents() {
     const icon = TYPE_ICONS[inc.type] || '📋';
     const chCount  = (inc.channel_ids   || []).length;
     const tgCount  = (inc.talkgroup_ids || []).length;
-    const radCount = (inc.radio_ids     || []).length;
     const ts = new Date(inc.created_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
     return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;cursor:pointer;" onclick="openIncidentDetail('${inc.id}')">
       <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -13147,7 +13297,6 @@ function renderIncidents() {
           <span style="font-family:var(--font-data);font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;background:${st.chip};color:${st.color};border:1px solid ${st.color}44;">${st.label}</span>
           ${chCount  ?`<span style="font-size:11px;color:var(--text-dim);">📻 ${chCount} ch</span>`:''}
           ${tgCount  ?`<span style="font-size:11px;color:var(--text-dim);">🔢 ${tgCount} tg</span>`:''}
-          ${radCount ?`<span style="font-size:11px;color:var(--text-dim);">📦 ${radCount} radios</span>`:''}
           <button onclick="event.stopPropagation();openIncidentForm('${inc.id}')" class="btn-secondary" style="font-size:11px;padding:3px 10px;">✏ Edit</button>
           <button onclick="event.stopPropagation();closeIncidentConfirm('${inc.id}')" class="btn-secondary" style="font-size:11px;padding:3px 10px;${inc.status==='closed'?'':''}">
             ${inc.status === 'closed' ? '↺ Reopen' : '✓ Close'}
@@ -13194,12 +13343,6 @@ function openIncidentForm(id) {
   if (tgSel) tgSel.innerHTML = talkgroups.map(t =>
     `<option value="${t.id}">${t.tg_id} — ${t.name}</option>`).join('');
 
-  // Populate radio selector
-  const radSel = document.getElementById('inc-radios');
-  if (radSel) radSel.innerHTML = inventory
-    .filter(r => r.status !== 'retired')
-    .map(r => `<option value="${r.id}">${r.serial_number} — ${r.radio_model||'—'} (${INV_STATUS_LABELS[r.status]||r.status})</option>`).join('');
-
   if (id) {
     const inc = incidents.find(x => String(x.id) === String(id));
     if (!inc) return;
@@ -13212,22 +13355,26 @@ function openIncidentForm(id) {
     document.getElementById('inc-op-period').value  = inc.op_period    || '';
     document.getElementById('inc-commander').value  = inc.commander    || '';
     document.getElementById('inc-coml').value       = inc.coml         || '';
-    document.getElementById('inc-notes').value      = inc.notes        || '';
     // Restore multi-select
     const chIds  = inc.channel_ids   || [];
     const tgIds  = inc.talkgroup_ids || [];
-    const radIds = inc.radio_ids     || [];
     [...(chSel?.options||[])].forEach(o => { o.selected = chIds.includes(String(o.value)); });
     [...(tgSel?.options||[])].forEach(o => { o.selected = tgIds.includes(String(o.value)); });
-    [...(radSel?.options||[])].forEach(o => { o.selected = radIds.includes(String(o.value)); });
   } else {
     document.getElementById('incModalTitle').textContent = 'New Incident';
-    ['inc-name','inc-number','inc-location','inc-op-period','inc-commander','inc-coml','inc-notes'].forEach(fid => {
+    ['inc-name','inc-number','inc-location','inc-op-period','inc-commander','inc-coml'].forEach(fid => {
       const el = document.getElementById(fid); if (el) el.value = '';
     });
     document.getElementById('inc-type').value   = 'wildfire';
     document.getElementById('inc-status').value = 'active';
   }
+
+  // Notes panel only applies to existing incidents — new ones must be saved first
+  const notesSection = document.getElementById('inc-notes-section');
+  if (notesSection) notesSection.style.display = id ? 'block' : 'none';
+  document.getElementById('inc-new-note').value = '';
+  if (id) renderIncidentNotes(id);
+
   document.getElementById('incidentModal').classList.add('open');
 }
 
@@ -13243,10 +13390,8 @@ async function saveIncident() {
 
   const chSel  = document.getElementById('inc-channels');
   const tgSel  = document.getElementById('inc-talkgroups');
-  const radSel = document.getElementById('inc-radios');
   const chIds  = [...(chSel?.options||[])].filter(o=>o.selected).map(o=>o.value);
   const tgIds  = [...(tgSel?.options||[])].filter(o=>o.selected).map(o=>o.value);
-  const radIds = [...(radSel?.options||[])].filter(o=>o.selected).map(o=>o.value);
 
   const row = {
     name, number:     document.getElementById('inc-number').value.trim()    || null,
@@ -13256,10 +13401,8 @@ async function saveIncident() {
     op_period:        document.getElementById('inc-op-period').value.trim() || null,
     commander:        document.getElementById('inc-commander').value.trim() || null,
     coml:             document.getElementById('inc-coml').value.trim()      || null,
-    notes:            document.getElementById('inc-notes').value.trim()     || null,
     channel_ids:      chIds,
     talkgroup_ids:    tgIds,
-    radio_ids:        radIds,
     updated_by:       currentUser?.name || 'Unknown',
     updated_at:       new Date().toISOString(),
     agency_id:        agencyId(),
@@ -13268,16 +13411,65 @@ async function saveIncident() {
   if (incidentEditingId) {
     const { error } = await sb.from('incidents').update(row).eq('id', incidentEditingId);
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
-    logEvent('incident', 'Incident Updated', `${name} — ${chIds.length} channels, ${tgIds.length} talkgroups, ${radIds.length} radios`, { incident: name, number: row.number });
+    logEvent('incident', 'Incident Updated', `${name} — ${chIds.length} channels, ${tgIds.length} talkgroups`, { incident: name, number: row.number });
+    closeIncidentModal();
+    await loadIncidents();
+    renderIncidents();
   } else {
-    const { error } = await sb.from('incidents').insert(row);
+    const { data: inserted, error } = await sb.from('incidents').insert(row).select('id').single();
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
-    logEvent('incident', 'Incident Created', `${name} (${row.type}) — ${row.number||'no number'} — ${chIds.length} channels, ${tgIds.length} talkgroups, ${radIds.length} radios`, { incident: name, number: row.number, type: row.type });
+    logEvent('incident', 'Incident Created', `${name} (${row.type}) — ${row.number||'no number'} — ${chIds.length} channels, ${tgIds.length} talkgroups`, { incident: name, number: row.number, type: row.type });
+    await loadIncidents();
+    renderIncidents();
+    // Re-open the same incident in edit mode so the user can immediately add notes
+    if (inserted?.id) { openIncidentForm(inserted.id); return; }
+    closeIncidentModal();
   }
+}
 
-  closeIncidentModal();
-  await loadIncidents();
-  renderIncidents();
+// ── Per-entry timestamped notes log for incidents (same pattern as Trigger Lookup / Inventory) ──
+async function renderIncidentNotes(incidentId) {
+  const el = document.getElementById('inc-notes-log');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Loading…</div>';
+  try {
+    const { data, error } = await sb.from('incident_notes').select('*').eq('incident_id', incidentId).order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data?.length) {
+      el.innerHTML = '<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">No notes yet.</div>';
+      return;
+    }
+    el.innerHTML = data.map(n => {
+      const ts = new Date(n.created_at).toLocaleString('en-US', {
+        timeZone:'America/Los_Angeles', month:'short', day:'numeric',
+        year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
+      });
+      return `<div class="trigger-note-row">
+        <div class="trigger-note-meta">${ts}<br><strong>${escHtml(n.author||'Unknown')}</strong></div>
+        <div style="flex:1;color:var(--text-primary);line-height:1.5;white-space:pre-wrap;">${escHtml(n.note)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="padding:10px 14px;color:var(--text-dim);font-size:12px;">Error: ${e.message}</div>`;
+  }
+}
+
+async function saveIncidentNote() {
+  const noteText = document.getElementById('inc-new-note').value.trim();
+  if (!noteText) return;
+  if (!incidentEditingId) { alert('Save the incident first before adding notes.'); return; }
+  const inc = incidents.find(x => String(x.id) === String(incidentEditingId));
+  const { error } = await sb.from('incident_notes').insert({
+    incident_id: incidentEditingId,
+    note:        noteText,
+    author:      currentUser?.name || 'Unknown',
+    created_at:  new Date().toISOString(),
+    agency_id:   agencyId(),
+  });
+  if (error) { alert('Error saving note: ' + error.message); return; }
+  document.getElementById('inc-new-note').value = '';
+  await renderIncidentNotes(incidentEditingId);
+  logEvent('incident', 'Note Added', `Note added to ${inc?.name||'incident'}: ${noteText.slice(0,80)}${noteText.length>80?'…':''}`, { incident: inc?.name });
 }
 
 // ═══════════════════════════════════════════════
@@ -15343,16 +15535,16 @@ init();
         <select class="form-select" id="inc-talkgroups" multiple style="height:80px;font-family:var(--font-data);font-size:12px;">
         </select>
       </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:10px;">
-        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Assign Radios from Inventory</div>
-        <select class="form-select" id="inc-radios" multiple style="height:80px;font-family:var(--font-data);font-size:12px;">
-        </select>
-      </div>
 
-      <div class="form-row single" style="margin-top:10px;border-top:1px solid var(--border);padding-top:12px;">
-        <div class="form-field">
-          <label class="form-label">Notes / Briefing</label>
-          <textarea class="form-textarea" id="inc-notes" placeholder="Operational notes, briefing details, special instructions…" style="height:72px;"></textarea>
+      <div id="inc-notes-section" style="margin-top:10px;border-top:1px solid var(--border);padding-top:12px;display:none;">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Notes / Briefing Log</div>
+        <div id="inc-notes-log" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-deep);margin-bottom:10px;">
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div class="form-field" style="flex:1;">
+            <textarea class="form-textarea" id="inc-new-note" placeholder="Add an operational note, briefing detail, or special instruction…" style="height:52px;" onkeydown="if(event.ctrlKey&&event.key==='Enter')saveIncidentNote()"></textarea>
+          </div>
+          <button class="btn-primary" style="padding:7px 14px;flex-shrink:0;margin-bottom:1px;" onclick="saveIncidentNote()">Post</button>
         </div>
       </div>
     </div>
