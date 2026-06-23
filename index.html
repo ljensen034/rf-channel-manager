@@ -2541,6 +2541,101 @@
     font-weight: 700;
   }
   .pub-form-section-label:first-child { border-top: none; padding-top: 0; }
+
+  /* ── Channel request checkbox panels (All Hazards / Wildland) ── */
+  .pr-channel-panel {
+    background: var(--pub-accent-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .pr-channel-panel-title {
+    font-family: var(--font-data);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pub-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+  .pr-channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pr-channel-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pr-channel-item:active { background: var(--bg-hover); }
+  .pr-channel-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+    pointer-events: none;
+  }
+  .pr-channel-check {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 2px solid var(--border-lit);
+    background: var(--bg-deep);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s, border-color 0.12s;
+    position: relative;
+  }
+  .pr-channel-check::after {
+    content: '';
+    width: 12px; height: 9px;
+    border-left: 3px solid #fff;
+    border-bottom: 3px solid #fff;
+    transform: rotate(-45deg) scale(0);
+    transition: transform 0.15s;
+    margin-top: -2px;
+  }
+  .pr-channel-item input[type="checkbox"]:checked + .pr-channel-check {
+    background: var(--pub-accent);
+    border-color: var(--pub-accent);
+  }
+  .pr-channel-item input[type="checkbox"]:checked + .pr-channel-check::after {
+    transform: rotate(-45deg) scale(1);
+  }
+  .pr-channel-item:has(input:checked) {
+    border-color: var(--pub-accent);
+  }
+  .pr-channel-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .pr-channel-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  .pr-channel-band {
+    font-family: var(--font-data);
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+  @media (max-width: 480px) {
+    .pr-channel-item { padding: 12px 13px; gap: 10px; }
+    .pr-channel-check { width: 22px; height: 22px; }
+    .pr-channel-name { font-size: 14px; }
+    .pr-channel-band { font-size: 11px; }
+  }
   .pub-success-card {
     max-width: 480px; margin: 60px auto; text-align: center;
     background: var(--bg-card); border: 1px solid rgba(0,230,118,0.3);
@@ -2752,6 +2847,74 @@
     .ov-row { grid-template-columns: 36px 1fr auto; }
     .ov-row > *:nth-child(n+4) { display: none; }
   }
+
+  /* ═══════════════════════════════════════════════════════════
+     GLOBAL READABILITY PASS
+     Raises font-size on high-traffic CONTENT text across every
+     tab/module — channel rows, tables, forms, buttons, modals,
+     side panel detail values. Intentionally leaves small caption
+     text alone (uppercase section labels, status chips, badges,
+     timestamps, micro-tags) since those work correctly at their
+     current size and act as visual hierarchy markers, not body
+     copy. Placed at the end of the stylesheet so it wins the
+     cascade against earlier same-specificity declarations.
+     ═══════════════════════════════════════════════════════════ */
+
+  body { font-size: 14px; }
+
+  /* Buttons + inputs used everywhere */
+  .btn-primary, .btn-secondary, .btn-danger { font-size: 14px; padding-top: 8px; padding-bottom: 8px; }
+  .search-input { font-size: 14px; }
+  .form-input, .form-select, .form-textarea { font-size: 14px; padding: 9px 11px; }
+  .form-label { font-size: 11px; }
+
+  /* Channel grid rows (Channels tab + Overview) */
+  .ch-designator   { font-size: 14px; }
+  .ch-freq         { font-size: 13px; }
+  .ch-function     { font-size: 13px; }
+  .ch-assignment   { font-size: 13px; }
+  .ch-tone, .ch-mode { font-size: 12px; }
+  .ov-agency       { font-size: 13px; }
+  .ov-sub          { font-size: 12px; }
+
+  /* Side detail panel (channel/trigger/inventory detail views) */
+  .detail-value      { font-size: 15px; }
+  .detail-value.freq { font-size: 19px; }
+  .side-empty        { font-size: 13px; }
+
+  /* Modal body copy and form rows across every modal in the app */
+  .modal-title { font-size: 16px; }
+  .modal-body, .modal-body p, .modal-body div, .modal-body span,
+  .modal-body label:not(.form-label) { font-size: 14px; }
+  .modal-footer { font-size: 14px; }
+
+  /* Trigger Lookup, Radio Inventory, Comm Plan Req, Incidents row text */
+  .trigger-id      { font-size: 16px; }
+  .inv-row, .cpr-row, .trigger-row { font-size: 13px; }
+
+  /* Table cells used in admin panels, ICS-205 export, audit trail */
+  table { font-size: 13px; }
+  td, th { font-size: 13px; }
+
+  /* Landing page module cards */
+  .module-card-title { font-size: 16px; }
+  .module-card-desc  { font-size: 13px; }
+  .module-stat        { font-size: 12px; }
+
+  /* Theme switcher + dropdown menus */
+  .theme-option-name { font-size: 13px; }
+  .theme-option-desc { font-size: 11px; }
+
+  /* Public Comm Plan Request form already has its own larger
+     16px mobile-safe sizing scoped under #publicReqScreen — untouched here. */
+
+  @media (max-width: 768px) {
+    body { font-size: 15px; }
+    .ch-designator { font-size: 15px; }
+    .ch-freq, .ch-function, .ch-assignment { font-size: 14px; }
+    .form-input, .form-select, .form-textarea { font-size: 15px; }
+    .btn-primary, .btn-secondary, .btn-danger { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
@@ -2806,11 +2969,6 @@
           <label class="form-label">Request Type</label>
           <select class="form-select" id="pr-request-type" onchange="onPrRequestTypeChange()">
             <option value="">— Select type —</option>
-            <option value="Special Event">Special Event</option>
-            <option value="Drill / Exercise">Drill / Exercise</option>
-            <option value="Planned Event">Planned Event</option>
-            <option value="VIP / Dignitary">VIP / Dignitary Visit</option>
-            <option value="Sporting Event">Sporting Event</option>
             <option value="Captain/BC Academy">Captain/BC Academy</option>
             <option value="Multi Company Drill">Multi Company Drill</option>
             <option value="Brush Drill">Brush Drill</option>
@@ -2839,59 +2997,103 @@
       </div>
 
       <!-- All Hazards channel checkboxes -->
-      <div id="pr-channels-allhazards" style="display:none;background:var(--pub-accent-bg);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--pub-accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">All Hazards Channel Requests</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-ah-command" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Command Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Repeated)</span></span>
+      <div id="pr-channels-allhazards" class="pr-channel-panel" style="display:none;">
+        <div class="pr-channel-panel-title">All Hazards Channel Requests</div>
+        <div class="pr-channel-list">
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-ah-command">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Command Channel</span>
+              <span class="pr-channel-band">UHF Repeated</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-ah-primary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Primary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-ah-primary-tac">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Primary Tac Channel</span>
+              <span class="pr-channel-band">UHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-ah-secondary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Secondary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(UHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-ah-secondary-tac">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Secondary Tac Channel</span>
+              <span class="pr-channel-band">UHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-ah-air-ground" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Air to Ground Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-ah-air-ground">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Air to Ground Channel</span>
+              <span class="pr-channel-band">VHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-ah-trunked" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Trunked Talkgroup <span style="color:var(--text-dim);font-size:12px;">(Digital Countywide, NO IDLH)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-ah-trunked">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Trunked Talkgroup</span>
+              <span class="pr-channel-band">Digital Countywide, NO IDLH</span>
+            </span>
           </label>
         </div>
       </div>
 
       <!-- Wildland channel checkboxes -->
-      <div id="pr-channels-wildland" style="display:none;background:var(--pub-accent-bg);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--pub-accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Wildland Channel Requests</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-command" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Command Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Repeated)</span></span>
+      <div id="pr-channels-wildland" class="pr-channel-panel" style="display:none;">
+        <div class="pr-channel-panel-title">Wildland Channel Requests</div>
+        <div class="pr-channel-list">
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-command">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Command Channel</span>
+              <span class="pr-channel-band">VHF Repeated</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-primary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Primary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-primary-tac">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Primary Tac Channel</span>
+              <span class="pr-channel-band">VHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-secondary-tac" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Secondary Tac Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-secondary-tac">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Secondary Tac Channel</span>
+              <span class="pr-channel-band">VHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-air-ground" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Air to Ground Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-air-ground">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Air to Ground Channel</span>
+              <span class="pr-channel-band">VHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-crew-dozer" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Crew Dozer Channel <span style="color:var(--text-dim);font-size:12px;">(VHF Direct)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-crew-dozer">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Crew Dozer Channel</span>
+              <span class="pr-channel-band">VHF Direct</span>
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="pr-ch-wl-rotor-victor" style="width:18px;height:18px;accent-color:var(--pub-accent);flex-shrink:0;">
-            <span style="font-size:14px;color:var(--text-primary);">Rotor Victor Channel <span style="color:var(--text-dim);font-size:12px;">(VHF AM)</span></span>
+          <label class="pr-channel-item">
+            <input type="checkbox" id="pr-ch-wl-rotor-victor">
+            <span class="pr-channel-check"></span>
+            <span class="pr-channel-label">
+              <span class="pr-channel-name">Rotor Victor Channel</span>
+              <span class="pr-channel-band">VHF AM</span>
+            </span>
           </label>
         </div>
       </div>
@@ -12521,6 +12723,7 @@ function setPubTheme(theme, skipSave) {
 // ── Public form submission (no auth — uses anon key with permissive insert policy) ──
 // ── Request Type → conditional channel checkbox logic ──
 const PR_DIRECT_ALLHAZARDS_TYPES = ['MCI Drill', 'Lifeguard Event', 'Preplanned Event', 'Fireground Survival Drill', 'Mayday Drill'];
+const PR_DIRECT_WILDLAND_TYPES   = ['Brush Drill', 'Spring Drill'];
 const PR_ASK_CATEGORY_TYPES      = ['Captain/BC Academy', 'Multi Company Drill', 'Other Drill Type'];
 
 function onPrRequestTypeChange() {
@@ -12538,6 +12741,9 @@ function onPrRequestTypeChange() {
   if (PR_DIRECT_ALLHAZARDS_TYPES.includes(type)) {
     // These drill types go straight to All Hazards channel options
     allHazardsBox.style.display = 'block';
+  } else if (PR_DIRECT_WILDLAND_TYPES.includes(type)) {
+    // These drill types go straight to Wildland channel options
+    wildlandBox.style.display = 'block';
   } else if (PR_ASK_CATEGORY_TYPES.includes(type)) {
     // Ask the user whether this is All Hazards or Wildland based
     categoryRow.style.display = 'block';
