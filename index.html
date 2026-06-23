@@ -2457,29 +2457,140 @@
   #publicReqScreen {
     position: fixed; inset: 0; background: var(--bg-deep);
     z-index: 2000; display: none; overflow-y: auto;
-    padding: 40px 16px;
+    padding: 24px 14px 60px;
+    -webkit-text-size-adjust: 100%;
   }
   #publicReqScreen.visible { display: block; }
+
+  /* Theme color variables — switched via data-pubtheme attribute on #publicReqScreen */
+  #publicReqScreen { --pub-accent: #1e88e5; --pub-accent-bg: rgba(30,136,229,0.12); }
+  #publicReqScreen[data-pubtheme="green"]  { --pub-accent: #00c853; --pub-accent-bg: rgba(0,200,83,0.12); }
+  #publicReqScreen[data-pubtheme="orange"] { --pub-accent: #ff6d00; --pub-accent-bg: rgba(255,109,0,0.14); }
+  #publicReqScreen[data-pubtheme="red"]    { --pub-accent: #e53935; --pub-accent-bg: rgba(229,57,53,0.12); }
+  #publicReqScreen[data-pubtheme="purple"] { --pub-accent: #8e24aa; --pub-accent-bg: rgba(142,36,170,0.12); }
+  #publicReqScreen[data-pubtheme="high-contrast"] {
+    --pub-accent: #ffeb3b; --pub-accent-bg: rgba(255,235,59,0.18);
+    background: #000000;
+  }
+  #publicReqScreen[data-pubtheme="high-contrast"] .pub-form-card { background: #0a0a0a; border-color: #333; }
+  #publicReqScreen[data-pubtheme="high-contrast"] .form-input,
+  #publicReqScreen[data-pubtheme="high-contrast"] .form-select,
+  #publicReqScreen[data-pubtheme="high-contrast"] .form-textarea {
+    background: #141414; border-color: #444; color: #fff;
+  }
+  #publicReqScreen[data-pubtheme="light"] {
+    background: #f4f6f8;
+  }
+  #publicReqScreen[data-pubtheme="light"] .pub-form-card { background: #ffffff; border-color: #dde2e7; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  #publicReqScreen[data-pubtheme="light"] .pub-form-header { border-color: #e5e9ed; }
+  #publicReqScreen[data-pubtheme="light"] .pub-form-section-label { color: #8a94a0; border-color: #e5e9ed; }
+  #publicReqScreen[data-pubtheme="light"] .form-input,
+  #publicReqScreen[data-pubtheme="light"] .form-select,
+  #publicReqScreen[data-pubtheme="light"] .form-textarea {
+    background: #fbfcfd; border-color: #d5dae0; color: #1a1f25;
+  }
+  #publicReqScreen[data-pubtheme="light"] .form-label { color: #5a6472; }
+  #publicReqScreen[data-pubtheme="light"] h1,
+  #publicReqScreen[data-pubtheme="light"] .pub-form-title { color: #1a1f25; }
+  #publicReqScreen[data-pubtheme="light"] .pub-form-subtitle { color: #5a6472; }
+
+  /* Theme switcher bar */
+  .pub-theme-bar {
+    max-width: 640px; margin: 0 auto 14px; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+    flex-wrap: wrap; padding: 10px 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .pub-theme-bar-label {
+    font-family: var(--font-data); font-size: 11px; color: var(--text-dim);
+    margin-right: 4px; white-space: nowrap;
+  }
+  .pub-theme-swatch {
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; flex-shrink: 0;
+    transition: transform 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pub-theme-swatch:active { transform: scale(0.92); }
+  .pub-theme-swatch.active { border-color: var(--text-primary); }
+  .pub-theme-swatch.active::after { content: '✓'; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
   .pub-form-card {
     max-width: 640px; margin: 0 auto;
     background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
+    border-radius: 14px; overflow: hidden;
   }
   .pub-form-header {
-    padding: 28px 32px 20px; text-align: center;
+    padding: 26px 28px 22px; text-align: center;
     border-bottom: 1px solid var(--border);
   }
-  .pub-form-body { padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; }
+  .pub-form-title {
+    font-family: var(--font-data); font-size: 20px; font-weight: 700;
+    letter-spacing: 0.04em; color: var(--text-primary); line-height: 1.3;
+  }
+  .pub-form-subtitle {
+    font-size: 14px; color: var(--text-dim); margin-top: 10px; line-height: 1.55;
+  }
+  .pub-form-body { padding: 26px 28px; display: flex; flex-direction: column; gap: 18px; }
   .pub-form-section-label {
-    font-family: var(--font-data); font-size: 10px; color: var(--text-dim);
-    text-transform: uppercase; letter-spacing: 0.08em; margin: 6px 0 -4px;
-    padding-top: 12px; border-top: 1px solid var(--border);
+    font-family: var(--font-data); font-size: 12px; color: var(--pub-accent);
+    text-transform: uppercase; letter-spacing: 0.07em; margin: 6px 0 -6px;
+    padding-top: 16px; border-top: 1px solid var(--border);
+    font-weight: 700;
   }
   .pub-form-section-label:first-child { border-top: none; padding-top: 0; }
   .pub-success-card {
-    max-width: 480px; margin: 80px auto; text-align: center;
+    max-width: 480px; margin: 60px auto; text-align: center;
     background: var(--bg-card); border: 1px solid rgba(0,230,118,0.3);
-    border-radius: 12px; padding: 48px 32px;
+    border-radius: 14px; padding: 44px 28px;
+  }
+
+  /* Larger, mobile-safe field sizing scoped to the public form only.
+     16px minimum prevents iOS Safari/Chrome auto-zoom-on-focus. */
+  #publicReqScreen .form-label {
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-weight: 600;
+  }
+  #publicReqScreen .form-input,
+  #publicReqScreen .form-select,
+  #publicReqScreen .form-textarea {
+    font-size: 16px;
+    padding: 13px 14px;
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    border-width: 1.5px;
+  }
+  #publicReqScreen .form-input:focus,
+  #publicReqScreen .form-select:focus,
+  #publicReqScreen .form-textarea:focus {
+    border-color: var(--pub-accent);
+    box-shadow: 0 0 0 3px var(--pub-accent-bg);
+  }
+  #publicReqScreen .form-textarea { min-height: 90px; }
+  #publicReqScreen .btn-primary {
+    background: var(--pub-accent);
+    font-size: 16px;
+    padding: 15px;
+    border-radius: 9px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  #publicReqScreen .btn-secondary {
+    font-size: 15px;
+    padding: 12px 20px;
+  }
+  @media (max-width: 480px) {
+    .pub-form-header { padding: 22px 18px 18px; }
+    .pub-form-body { padding: 20px 18px; gap: 16px; }
+    .pub-form-title { font-size: 18px; }
+    .pub-theme-bar { gap: 6px; padding: 8px 10px; }
+    .pub-theme-swatch { width: 28px; height: 28px; }
   }
 
   /* ── COMM PLAN REQUEST MODULE (admin side) ── */
@@ -2647,11 +2758,21 @@
 
 <!-- ── PUBLIC COMM PLAN REQUEST FORM — no login required ── -->
 <div id="publicReqScreen">
+  <div class="pub-theme-bar" id="pubThemeBar">
+    <span class="pub-theme-bar-label">🎨 Color theme:</span>
+    <div class="pub-theme-swatch active" data-theme="default" style="background:#1e88e5;" onclick="setPubTheme('default')" title="Default Blue"></div>
+    <div class="pub-theme-swatch" data-theme="green" style="background:#00c853;" onclick="setPubTheme('green')" title="Green"></div>
+    <div class="pub-theme-swatch" data-theme="orange" style="background:#ff6d00;" onclick="setPubTheme('orange')" title="Orange"></div>
+    <div class="pub-theme-swatch" data-theme="red" style="background:#e53935;" onclick="setPubTheme('red')" title="Red"></div>
+    <div class="pub-theme-swatch" data-theme="purple" style="background:#8e24aa;" onclick="setPubTheme('purple')" title="Purple"></div>
+    <div class="pub-theme-swatch" data-theme="light" style="background:#ffffff;border:2px solid #ccc;" onclick="setPubTheme('light')" title="Light Mode"></div>
+    <div class="pub-theme-swatch" data-theme="high-contrast" style="background:#000;border:2px solid #ffeb3b;" onclick="setPubTheme('high-contrast')" title="High Contrast"></div>
+  </div>
   <div class="pub-form-card" id="pubFormCard">
     <div class="pub-form-header">
-      <div style="font-size:32px;margin-bottom:8px;">📡</div>
-      <div style="font-family:var(--font-data);font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--text-primary);">COMMUNICATIONS PLAN REQUEST</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.5;">LACC Dispatchers can be requested to assist as Radio Operators on large scale drills, events, and exercises. The Field Communications Unit is happy to participate in large scale drills and exercises, assisting with any communication issues or questions.</div>
+      <div style="font-size:34px;margin-bottom:10px;">📡</div>
+      <div class="pub-form-title">COMMUNICATIONS PLAN REQUEST</div>
+      <div class="pub-form-subtitle">LACC Dispatchers can be requested to assist as Radio Operators on large scale drills, events, and exercises. The Field Communications Unit is happy to participate in large scale drills and exercises, assisting with any communication issues or questions.</div>
     </div>
     <div class="pub-form-body">
 
@@ -4068,7 +4189,7 @@
 
       <!-- Radio Config panel -->
       <div id="admin-radioconf-panel" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
           <!-- Radio Models -->
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -4091,6 +4212,18 @@
               <button class="btn-primary" style="font-size:12px;padding:5px 12px;" onclick="addRadioBand()">+ Add</button>
             </div>
           </div>
+        </div>
+
+        <!-- CA Standard Tone Table -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">📻 CA Standard Tone Table</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">Reference — enter the Tone # in RX/TX Tone fields to auto-resolve to CTCSS Hz / NAC</div>
+            </div>
+            <input class="search-input" id="toneTableSearch" type="text" placeholder="Search tone, Hz, or NAC…" oninput="renderToneTable()" style="width:200px;font-size:12px;">
+          </div>
+          <div id="toneTableGrid" style="max-height:340px;overflow-y:auto;padding:10px 16px;"></div>
         </div>
       </div>
 
@@ -4329,12 +4462,39 @@
       </div>
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">Tone / NAC</label>
-          <input class="form-input" id="f-tone" placeholder="100.0 Hz / 0x293">
+          <label class="form-label">RX Tone / CSQ <span style="font-weight:400;color:var(--text-dim);">CA tone # or Hz</span></label>
+          <input class="form-input" id="f-rxtone" placeholder="e.g. 9 or 100.0 or CSQ" oninput="onToneInput('rx')">
+          <div id="f-rxtone-resolved" style="font-size:10px;color:var(--accent);font-family:var(--font-data);min-height:14px;margin-top:2px;"></div>
         </div>
+        <div class="form-field">
+          <label class="form-label">TX Tone / NAC <span style="font-weight:400;color:var(--text-dim);">CA tone # or Hz/hex</span></label>
+          <input class="form-input" id="f-txtone" placeholder="e.g. 9 or 100.0 or 0x293" oninput="onToneInput('tx')">
+          <div id="f-txtone-resolved" style="font-size:10px;color:var(--accent);font-family:var(--font-data);min-height:14px;margin-top:2px;"></div>
+        </div>
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
         <div class="form-field">
           <label class="form-label">Function / Purpose</label>
           <input class="form-input" id="f-function" placeholder="Command, Fire Attack, EMS, etc.">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Bandwidth</label>
+          <select class="form-select" id="f-bw">
+            <option value="W">W — Wideband (25 kHz)</option>
+            <option value="N">N — Narrowband (12.5 kHz)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">A/D/M <span style="font-weight:400;color:var(--text-dim);">ICS-205 class</span></label>
+          <select class="form-select" id="f-adm">
+            <option value="A">A — Analog</option>
+            <option value="D">D — Digital</option>
+            <option value="M">M — Mixed</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Power <span style="font-weight:400;color:var(--text-dim);">watts</span></label>
+          <input class="form-input" id="f-power" placeholder="e.g. 100" type="number" step="1">
         </div>
       </div>
       <div class="form-row">
@@ -4422,7 +4582,12 @@ function rowToChannel(row) {
     status:        row.status,
     mode:          row.mode        || 'Analog FM',
     band:          row.band        || detectBand(row.freq || ''),
-    tone:          row.tone        || '—',
+    tone:          row.tone        || '—',          // legacy combined tone field, kept for compatibility
+    rxTone:        row.rx_tone     || '',
+    txTone:        row.tx_tone     || '',
+    bandwidth:     row.bandwidth   || 'W',
+    adm:           row.adm         || 'A',
+    power:         row.power       || '',
     function:      row.function    || '—',
     agency:        row.agency      || '—',
     group:         row.group       || '',
@@ -4442,6 +4607,11 @@ function channelToRow(ch, userName) {
     mode:        ch.mode,
     band:        ch.band || detectBand(ch.freq || ''),
     tone:        ch.tone,
+    rx_tone:     ch.rxTone   || '',
+    tx_tone:     ch.txTone   || '',
+    bandwidth:   ch.bandwidth || 'W',
+    adm:         ch.adm       || 'A',
+    power:       ch.power     || '',
     function:    ch.function,
     agency:      ch.agency,
     group:       ch.group,
@@ -5646,13 +5816,18 @@ async function deleteChannel(id) {
 function openAddModal() {
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Add Channel';
-  ['designator','freq','function','agency','tone','group','rxfreq','notes'].forEach(f => {
+  ['designator','freq','function','agency','rxtone','txtone','group','rxfreq','notes','power'].forEach(f => {
     const el = document.getElementById(`f-${f}`);
     if (el) el.value = '';
+  });
+  ['f-rxtone-resolved','f-txtone-resolved'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '';
   });
   document.getElementById('f-status').value = 'available';
   document.getElementById('f-mode').value   = 'Analog FM';
   document.getElementById('f-band').value   = 'VHF';
+  document.getElementById('f-bw').value     = 'W';
+  document.getElementById('f-adm').value    = 'A';
   const cc = document.getElementById('f-conflict-check');
   if (cc) cc.checked = true;
   document.getElementById('conflictWarning')?.remove();
@@ -5668,12 +5843,19 @@ function openEditModal(id) {
   document.getElementById('f-status').value      = ch.status;
   document.getElementById('f-mode').value        = ch.mode;
   document.getElementById('f-band').value        = ch.band || detectBand(ch.freq || '');
-  document.getElementById('f-tone').value        = ch.tone !== '—' ? ch.tone : '';
+  document.getElementById('f-rxtone').value      = ch.rxTone || (ch.tone !== '—' ? ch.tone : '');
+  document.getElementById('f-txtone').value      = ch.txTone || '';
+  document.getElementById('f-bw').value          = ch.bandwidth || 'W';
+  document.getElementById('f-adm').value         = ch.adm || 'A';
+  document.getElementById('f-power').value       = ch.power || '';
   document.getElementById('f-function').value    = ch.function !== '—' ? ch.function : '';
   document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
   document.getElementById('f-group').value       = ch.group || '';
   document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
   document.getElementById('f-notes').value       = ch.notes || '';
+  // Show resolved tone hints
+  onToneInput('rx');
+  onToneInput('tx');
   const cc = document.getElementById('f-conflict-check');
   if (cc) cc.checked = ch.conflictCheck !== false;
   document.getElementById('conflictWarning')?.remove();
@@ -5693,6 +5875,9 @@ async function saveChannel() {
   const who = currentUser ? currentUser.name : 'Unknown';
   const conflictCheck = document.getElementById('f-conflict-check')?.checked !== false;
 
+  const rxToneResolved = resolveTone(document.getElementById('f-rxtone').value.trim());
+  const txToneResolved = resolveTone(document.getElementById('f-txtone').value.trim());
+
   const row = {
     designator,
     freq,
@@ -5700,7 +5885,12 @@ async function saveChannel() {
     status:          document.getElementById('f-status').value,
     mode:            document.getElementById('f-mode').value,
     band:            document.getElementById('f-band').value              || detectBand(freq),
-    tone:            document.getElementById('f-tone').value.trim()      || '—',
+    tone:            document.getElementById('f-rxtone').value.trim()    || '—',  // legacy field mirrors RX tone
+    rx_tone:         document.getElementById('f-rxtone').value.trim()    || '',
+    tx_tone:         document.getElementById('f-txtone').value.trim()    || '',
+    bandwidth:       document.getElementById('f-bw').value                || 'W',
+    adm:             document.getElementById('f-adm').value               || 'A',
+    power:           document.getElementById('f-power').value.trim()     || '',
     function:        document.getElementById('f-function').value.trim()  || '—',
     agency:          document.getElementById('f-agency').value.trim()    || '—',
     group:           document.getElementById('f-group').value.trim()     || '',
@@ -9088,6 +9278,113 @@ function haversineMiles(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// ─────────────────────────────────────────────
+// CA STANDARD CTCSS / NAC TONE TABLE
+// ─────────────────────────────────────────────
+// Maps the California Standard Tone # to its CTCSS Hz value and NAC hex code.
+// Tones 1–16 have NAC equivalents; tones 17–32 are CTCSS-only (no NAC).
+const CA_TONE_TABLE = {
+  1:  { ctcss: 110.9, nac: '$455' },
+  2:  { ctcss: 123.0, nac: '$4CE' },
+  3:  { ctcss: 131.8, nac: '$526' },
+  4:  { ctcss: 136.5, nac: '$555' },
+  5:  { ctcss: 146.2, nac: '$5B6' },
+  6:  { ctcss: 156.7, nac: '$61F' },
+  7:  { ctcss: 167.9, nac: '$68F' },
+  8:  { ctcss: 103.5, nac: '$40B' },
+  9:  { ctcss: 100.0, nac: '$3E8' },
+  10: { ctcss: 107.2, nac: '$430' },
+  11: { ctcss: 114.8, nac: '$47C' },
+  12: { ctcss: 127.3, nac: '$4F9' },
+  13: { ctcss: 141.3, nac: '$585' },
+  14: { ctcss: 151.4, nac: '$5EA' },
+  15: { ctcss: 162.2, nac: '$656' },
+  16: { ctcss: 192.8, nac: '$788' },
+  17: { ctcss: 67.0,  nac: null   },
+  18: { ctcss: 71.9,  nac: null   },
+  19: { ctcss: 74.4,  nac: null   },
+  20: { ctcss: 77.0,  nac: null   },
+  21: { ctcss: 79.7,  nac: null   },
+  22: { ctcss: 82.5,  nac: null   },
+  23: { ctcss: 85.4,  nac: null   },
+  24: { ctcss: 88.5,  nac: null   },
+  25: { ctcss: 91.5,  nac: null   },
+  26: { ctcss: 94.8,  nac: null   },
+  27: { ctcss: 97.4,  nac: null   },
+  28: { ctcss: 118.8, nac: null   },
+  29: { ctcss: 173.8, nac: null   },
+  30: { ctcss: 179.9, nac: null   },
+  31: { ctcss: 186.2, nac: null   },
+  32: { ctcss: 203.5, nac: null   },
+};
+
+// Reverse lookup: CTCSS Hz value → CA Tone #  (for resolving raw Hz entries back to a tone number)
+const CTCSS_TO_TONE = Object.fromEntries(
+  Object.entries(CA_TONE_TABLE).map(([num, t]) => [t.ctcss.toFixed(1), Number(num)])
+);
+
+// Resolve any tone input — a CA tone number (1-32), a raw CTCSS Hz value, "CSQ", or a NAC hex code —
+// into a normalized { toneNumber, ctcss, nac, display } object. Returns null if unresolvable.
+function resolveTone(input) {
+  if (!input) return null;
+  const raw = String(input).trim();
+  if (!raw) return null;
+
+  // CSQ / Carrier Squelch — no tone at all
+  if (/^csq$/i.test(raw)) {
+    return { toneNumber: null, ctcss: null, nac: null, display: 'CSQ (Carrier Squelch)' };
+  }
+
+  // NAC hex code, e.g. "0x293" or "$293" or "293" (3 hex digits, P25/digital)
+  const hexMatch = raw.match(/^(?:0x|\$)?([0-9a-fA-F]{3})$/);
+  if (hexMatch && !/^\d+(\.\d+)?$/.test(raw)) {
+    const hex = '$' + hexMatch[1].toUpperCase();
+    const found = Object.entries(CA_TONE_TABLE).find(([,t]) => t.nac === hex);
+    if (found) {
+      const [num, t] = found;
+      return { toneNumber: Number(num), ctcss: t.ctcss, nac: t.nac, display: `Tone ${num} — ${t.ctcss} Hz / ${t.nac}` };
+    }
+    return { toneNumber: null, ctcss: null, nac: hex, display: `NAC ${hex}` };
+  }
+
+  const num = parseFloat(raw);
+
+  // CA Standard Tone Number (1-32, whole number, no decimal point in input)
+  if (!raw.includes('.') && Number.isInteger(num) && CA_TONE_TABLE[num]) {
+    const t = CA_TONE_TABLE[num];
+    return {
+      toneNumber: num, ctcss: t.ctcss, nac: t.nac,
+      display: `Tone ${num} — ${t.ctcss} Hz${t.nac ? ' / ' + t.nac : ' (no NAC)'}`
+    };
+  }
+
+  // Raw CTCSS Hz value (e.g. "100.0" or "100")
+  const matchedToneNum = CTCSS_TO_TONE[num.toFixed(1)];
+  if (matchedToneNum) {
+    const t = CA_TONE_TABLE[matchedToneNum];
+    return {
+      toneNumber: matchedToneNum, ctcss: t.ctcss, nac: t.nac,
+      display: `${t.ctcss} Hz — Tone ${matchedToneNum}${t.nac ? ' / ' + t.nac : ''}`
+    };
+  }
+
+  // Unrecognized Hz value — still valid, just not in the CA standard table
+  if (num > 0) {
+    return { toneNumber: null, ctcss: num, nac: null, display: `${num} Hz (non-standard)` };
+  }
+
+  return null;
+}
+
+// Live resolver hookup for the RX/TX tone fields in the channel form
+function onToneInput(which) {
+  const inputEl    = document.getElementById(`f-${which}tone`);
+  const resolvedEl = document.getElementById(`f-${which}tone-resolved`);
+  if (!inputEl || !resolvedEl) return;
+  const resolved = resolveTone(inputEl.value);
+  resolvedEl.textContent = resolved ? '✓ ' + resolved.display : '';
+}
+
 function detectBand(freqStr) {
   const f = parseFloat(freqStr);
   if (!f) return 'UHF';
@@ -11337,6 +11634,36 @@ function initPresence() {
 async function renderAdminRadioConfig() {
   await renderRadioModelList();
   await renderRadioBandList();
+  renderToneTable();
+}
+
+function renderToneTable() {
+  const el    = document.getElementById('toneTableGrid');
+  const query = (document.getElementById('toneTableSearch')?.value || '').toLowerCase();
+  if (!el) return;
+
+  const entries = Object.entries(CA_TONE_TABLE).filter(([num, t]) => {
+    if (!query) return true;
+    return num.includes(query) || String(t.ctcss).includes(query) || (t.nac || '').toLowerCase().includes(query);
+  });
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;">
+      ${entries.map(([num, t]) => `
+        <div style="padding:8px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;" onclick="copyToneToClipboard('${num}')" title="Click to copy tone number">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--accent);">#${num}</span>
+          <div style="text-align:right;">
+            <div style="font-family:var(--font-data);font-size:12px;color:var(--text-primary);">${t.ctcss} Hz</div>
+            <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);">${t.nac || 'no NAC'}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    ${!entries.length ? '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px;">No matching tones.</div>' : ''}
+  `;
+}
+
+function copyToneToClipboard(num) {
+  navigator.clipboard?.writeText(num).catch(() => {});
 }
 
 async function renderRadioModelList() {
@@ -11411,9 +11738,9 @@ async function deleteRadioBand(id, name) {
 const CSV_TEMPLATES = {
   channels: {
     filename: 'channel-import-template.csv',
-    headers: ['designator','freq','rx_freq','status','mode','band','tone','function','agency','group','notes','conflict_check'],
-    sample: ['FIRE-TAC-1','154.4300','','active','Analog FM','VHF','100.0','Fire Attack','LAFD','Fire Ops','Primary fire attack channel','true'],
-    note: '# status: available | active | reserved | interop | mode: Analog FM | P25 Phase I | P25 Phase II | DMR | band: VHF | UHF | 700 | 800 | conflict_check: true | false',
+    headers: ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','remarks'],
+    sample: ['FIRE-TAC-1','154.4300','9','154.4300','9','W','100','A','Primary fire attack channel'],
+    note: '# rx_tone/tx_tone: CA Standard Tone # (1-32, see Admin > Radio Config > Tone Table), raw Hz value, NAC hex (0x293), or CSQ for carrier squelch | bandwidth: W (wide 25kHz) or N (narrow 12.5kHz) | adm: A (Analog) | D (Digital) | M (Mixed)',
   },
   talkgroups: {
     filename: 'talkgroup-import-template.csv',
@@ -11473,16 +11800,34 @@ async function importCSV(type) {
 
   if (type === 'channels') {
     for (const r of rows) {
-      if (!r.designator || !r.freq) { skipped++; continue; }
-      const existing = channels.find(c => c.designator === r.designator);
+      // New template uses channel_name + rx_freq + tx_freq; fall back to legacy designator/freq if present
+      const designatorVal = r.channel_name || r.designator;
+      const rxFreqVal      = r.rx_freq || r.freq;
+      if (!designatorVal || !rxFreqVal) { skipped++; continue; }
+      const existing = channels.find(c => c.designator === designatorVal);
       if (existing) { skipped++; continue; }
+
+      const rxToneResolved = resolveTone(r.rx_tone);
+      const txToneResolved = resolveTone(r.tx_tone);
+
       const row = {
-        designator: r.designator, freq: r.freq, rx_freq: r.rx_freq || r.freq,
-        status: r.status || 'available', mode: r.mode || 'Analog FM',
-        band: r.band || detectBand(r.freq),
-        tone: r.tone || '—', function: r.function || '—',
-        agency: r.agency || '—', group: r.group || '',
-        notes: r.notes || '', conflict_check: r.conflict_check !== 'false',
+        designator: designatorVal,
+        freq:       rxFreqVal,
+        rx_freq:    r.tx_freq || rxFreqVal,   // DB column rx_freq actually stores TX per current schema
+        status:     r.status || 'available',
+        mode:       r.mode || 'Analog FM',
+        band:       r.band || detectBand(rxFreqVal),
+        tone:       r.rx_tone || '—',
+        rx_tone:    r.rx_tone || '',
+        tx_tone:    r.tx_tone || '',
+        bandwidth:  (r.bandwidth || 'W').toUpperCase(),
+        adm:        (r.adm || 'A').toUpperCase(),
+        power:      r.power || '',
+        function:   r.function || '—',
+        agency:     r.agency || '—',
+        group:      r.group || '',
+        notes:      r.remarks || r.notes || '',
+        conflict_check: r.conflict_check !== 'false',
         updated_by: currentUser?.name || 'Import', updated_at: new Date().toISOString(),
         agency_id: agencyId(),
       };
@@ -12155,6 +12500,10 @@ function checkPublicReqRoute() {
   const slug = params.get('agency') || null;
   window._pubReqAgencySlug = slug;
 
+  // Restore previously chosen color theme for this device/browser
+  const savedTheme = localStorage.getItem('pubReqTheme') || 'default';
+  setPubTheme(savedTheme, true);
+
   // Pre-fill operational dates to tomorrow as a convenience default
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -12165,6 +12514,21 @@ function checkPublicReqRoute() {
   if (endDateEl)   endDateEl.value   = ds;
 
   return true;
+}
+
+// Switch the public form's color theme — persists choice in localStorage per device
+function setPubTheme(theme, skipSave) {
+  const screen = document.getElementById('publicReqScreen');
+  if (!screen) return;
+  if (theme === 'default') screen.removeAttribute('data-pubtheme');
+  else screen.setAttribute('data-pubtheme', theme);
+
+  // Update swatch active state
+  document.querySelectorAll('.pub-theme-swatch').forEach(sw => {
+    sw.classList.toggle('active', sw.dataset.theme === theme);
+  });
+
+  if (!skipSave) localStorage.setItem('pubReqTheme', theme);
 }
 
 // ── Public form submission (no auth — uses anon key with permissive insert policy) ──
