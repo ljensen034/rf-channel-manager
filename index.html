@@ -7623,6 +7623,21 @@ async function submitIcrRequest() {
   const channelIds = [...sel.options].filter(o => o.selected).map(o => o.value);
   const channelDesignators = channelIds.map(id => channels.find(c => String(c.id) === String(id))?.designator).filter(Boolean);
 
+  // Flag conflicts up front so the requestor knows before submitting — this does not
+  // block submission, since a COML reviewing the queue may still choose to resolve it
+  // (re-assign a different channel, adjust the time, etc).
+  if (channelIds.length) {
+    const conflicts = checkResourceConflicts(channelIds, 'channel', startISO, endISO, null, null)
+      .filter(c => c.severity === 'hard');
+    if (conflicts.length) {
+      const proceed = confirm(
+        '⚠ Possible conflict detected:\n\n' + formatConflictMessages(conflicts).join('\n') +
+        '\n\nYou can still submit — the COML will see this conflict when reviewing your request. Submit anyway?'
+      );
+      if (!proceed) return;
+    }
+  }
+
   const row = {
     title,
     start: startISO,
@@ -7668,7 +7683,14 @@ function renderIcrQueue() {
 
   const fmtDT = d => new Date(d).toLocaleString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
 
-  body.innerHTML = pending.map(r => `
+  body.innerHTML = pending.map(r => {
+    const conflicts = (r.channel_ids || []).length
+      ? checkResourceConflicts(r.channel_ids, 'channel', r.start, r.end_time, r.id, 'icr').filter(c => c.severity === 'hard')
+      : [];
+    const conflictHtml = conflicts.length
+      ? `<div style="font-size:11px;color:var(--status-active);background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);border-radius:4px;padding:6px 9px;margin-top:6px;">⚠ ${formatConflictMessages(conflicts).join('<br>⚠ ')}</div>`
+      : '';
+    return `
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
         <div>
@@ -7681,6 +7703,7 @@ function renderIcrQueue() {
           </div>
           ${r.channel_designator ? `<div style="font-size:12px;color:var(--accent);margin-top:4px;">📻 Preferred: ${escHtml(r.channel_designator)}</div>` : '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">No preferred channel specified</div>'}
           ${r.notes ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;font-style:italic;">"${escHtml(r.notes)}"</div>` : ''}
+          ${conflictHtml}
         </div>
         <span style="font-family:var(--font-data);font-size:9px;font-weight:700;padding:3px 8px;border-radius:2px;background:${r.priority==='Emergency'?'rgba(255,82,82,0.12)':r.priority==='High'?'rgba(255,196,0,0.12)':'rgba(120,120,120,0.12)'};color:${r.priority==='Emergency'?'var(--status-active)':r.priority==='High'?'var(--status-reserved)':'var(--text-dim)'};white-space:nowrap;">${r.priority.toUpperCase()}</span>
       </div>
@@ -7689,7 +7712,8 @@ function renderIcrQueue() {
         <button class="btn-primary" style="font-size:12px;" onclick="approveIcrRequest('${r.id}')">✓ Approve &amp; Schedule</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function approveIcrRequest(id) {
@@ -10980,23 +11004,12 @@ function checkTimeConflicts() {
   if (new Date(endISO) <= new Date(startISO)) { if (el) el.style.display = 'none'; return; }
 
   const channelIds = [...sel.options].filter(o => o.selected).map(o => o.value);
-  const conflicts = [];
-  channelIds.forEach(chId => {
-    reservations.filter(r =>
-      r.id !== schedEditingId &&
-      (r.channelIds || [r.channelId]).includes(chId) &&
-      new Date(r.start) < new Date(endISO) &&
-      new Date(r.end)   > new Date(startISO)
-    ).forEach(r => {
-      const ch = channels.find(c => c.id == chId);
-      const fmtT = d => new Date(d).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
-      conflicts.push(`${ch?.designator||chId} overlaps <strong>${r.title}</strong> (${fmtT(r.start)}–${fmtT(r.end)})`);
-    });
-  });
+  const conflicts = checkResourceConflicts(channelIds, 'channel', startISO, endISO, schedEditingId, 'reservation')
+    .filter(c => c.severity === 'hard'); // live display shows only blocking conflicts, not frequency-adjacent notes
 
   if (!el) return;
   if (conflicts.length) {
-    el.innerHTML = '⚠ Time conflict: ' + conflicts.join('<br>');
+    el.innerHTML = '⚠ ' + formatConflictMessages(conflicts).join('<br>');
     el.style.display = 'block';
   } else {
     el.style.display = 'none';
@@ -11499,22 +11512,12 @@ async function saveReservation() {
     errEl.textContent = '⚠ End time must be after start time.'; errEl.style.display='block'; return;
   }
 
-  // Conflict check — each selected channel against other reservations
-  const conflictMsgs = [];
-  channelIds.forEach(chId => {
-    const conflicts = reservations.filter(r =>
-      r.id !== schedEditingId &&
-      (r.channelIds || [r.channelId]).includes(chId) &&
-      new Date(r.start) < new Date(endISO) &&
-      new Date(r.end)   > new Date(startISO)
-    );
-    if (conflicts.length) {
-      const ch = channels.find(c => c.id == chId);
-      conflictMsgs.push(`${ch?.designator || chId}: overlaps "${conflicts.map(r=>r.title).join('", "')}"`);
-    }
-  });
-  if (conflictMsgs.length) {
-    errEl.textContent = '⚠ Conflicts: ' + conflictMsgs.join(' · ');
+  // Conflict check — unified engine checks reservations, incidents, and pending/approved
+  // internal channel requests for the same channel(s) during this window
+  const conflicts = checkResourceConflicts(channelIds, 'channel', startISO, endISO, schedEditingId, 'reservation')
+    .filter(c => c.severity === 'hard');
+  if (conflicts.length) {
+    errEl.textContent = '⚠ Conflicts: ' + formatConflictMessages(conflicts).join(' · ');
     errEl.style.display = 'block';
     return;
   }
@@ -11883,6 +11886,141 @@ function checkFrequencyConflict(freq, rxFreq, excludeId) {
     }
   });
   return conflicts;
+}
+
+// ═══════════════════════════════════════════════
+// UNIFIED CONFLICT ENGINE
+// ═══════════════════════════════════════════════
+// Single source of truth for "is this channel/talkgroup already committed
+// somewhere else during this window?" — called by every module that assigns
+// a channel or talkgroup to something: Schedule reservations, the internal
+// Channel Request form, Incidents, and the Comm Plan Request → reservation
+// conversion. Returns a flat array of conflict objects so each caller can
+// render them however fits its own UI (inline warning, hard block, banner).
+//
+// Params:
+//   resourceIds   — array of channel/talkgroup IDs being requested (strings or numbers)
+//   resourceType  — 'channel' | 'talkgroup'
+//   startISO/endISO — the proposed time window (ISO strings). Pass null/null
+//                     for an open-ended request (e.g. an Incident with no end date) —
+//                     in that case it conflicts with ANY other commitment, since
+//                     there's no window to compare against.
+//   excludeId     — id of the record being edited, so it doesn't conflict with itself
+//   excludeType   — 'reservation' | 'incident' | 'icr' (which table excludeId belongs to)
+//
+// Returns: [{ source, severity, resourceId, resourceLabel, withTitle, withWindow, raw }]
+//   source:   'reservation' | 'incident' | 'icr' | 'frequency'
+//   severity: 'hard' (same exact resource, overlapping window — should block)
+//             'soft' (frequency-adjacent or loosely related — should warn only)
+function checkResourceConflicts(resourceIds, resourceType, startISO, endISO, excludeId, excludeType) {
+  const ids = (resourceIds || []).map(String);
+  if (!ids.length) return [];
+
+  const conflicts = [];
+  const hasWindow = !!(startISO && endISO);
+  const newStart = hasWindow ? new Date(startISO).getTime() : null;
+  const newEnd    = hasWindow ? new Date(endISO).getTime()   : null;
+  const overlaps = (aStart, aEnd) => {
+    if (!hasWindow) return true; // open-ended request — anything active conflicts
+    return aStart < newEnd && aEnd > newStart;
+  };
+
+  const getLabel = (id) => {
+    if (resourceType === 'talkgroup') {
+      const t = talkgroups.find(x => String(x.id) === String(id));
+      return t ? `${t.tg_id} — ${t.name}` : `TG #${id}`;
+    }
+    const c = channels.find(x => String(x.id) === String(id));
+    return c ? `${c.designator} (${c.freq} MHz)` : `Channel #${id}`;
+  };
+
+  const fmtWindow = (s, e) => {
+    if (!s || !e) return 'no end date set';
+    const f = d => new Date(d).toLocaleString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+    return `${f(s)} → ${f(e)}`;
+  };
+
+  ids.forEach(id => {
+    // ── 1. Reservations (Schedule) — time-bounded overlap on the same resource ──
+    reservations.forEach(r => {
+      if (excludeType === 'reservation' && String(r.id) === String(excludeId)) return;
+      const rIds = resourceType === 'talkgroup'
+        ? (r.talkgroupIds || []).map(String)
+        : (r.channelIds || (r.channelId ? [r.channelId] : [])).map(String);
+      if (!rIds.includes(id)) return;
+      if (!overlaps(new Date(r.start).getTime(), new Date(r.end).getTime())) return;
+      conflicts.push({
+        source: 'reservation', severity: 'hard',
+        resourceId: id, resourceLabel: getLabel(id),
+        withTitle: r.title || 'Untitled reservation',
+        withWindow: fmtWindow(r.start, r.end),
+        raw: r,
+      });
+    });
+
+    // ── 2. Incidents — open-ended commitment while active/standby ──
+    incidents.forEach(inc => {
+      if (excludeType === 'incident' && String(inc.id) === String(excludeId)) return;
+      if (inc.status === 'closed') return; // closed incidents release their resources
+      const incIds = resourceType === 'talkgroup'
+        ? (inc.talkgroup_ids || []).map(String)
+        : (inc.channel_ids   || []).map(String);
+      if (!incIds.includes(id)) return;
+      // An active/standby incident has no end date — it conflicts with any
+      // overlapping window, and with any other open-ended request by definition.
+      conflicts.push({
+        source: 'incident', severity: 'hard',
+        resourceId: id, resourceLabel: getLabel(id),
+        withTitle: `${inc.name}${inc.number ? ' (' + inc.number + ')' : ''}`,
+        withWindow: `${inc.status === 'active' ? 'Active' : 'Standby'} incident — no end date`,
+        raw: inc,
+      });
+    });
+
+    // ── 3. Internal Channel Requests — pending or approved, time-bounded ──
+    (internalChannelRequests || []).forEach(req => {
+      if (excludeType === 'icr' && String(req.id) === String(excludeId)) return;
+      if (req.status === 'denied') return;
+      if (resourceType !== 'channel') return; // ICRs are channel-only today
+      const reqIds = (req.channel_ids || []).map(String);
+      if (!reqIds.includes(id)) return;
+      if (!overlaps(new Date(req.start).getTime(), new Date(req.end_time).getTime())) return;
+      conflicts.push({
+        source: 'icr', severity: req.status === 'approved' ? 'hard' : 'soft',
+        resourceId: id, resourceLabel: getLabel(id),
+        withTitle: `${req.title} (${req.status === 'approved' ? 'approved request' : 'pending request'} — ${req.requestor_name || 'unknown'})`,
+        withWindow: fmtWindow(req.start, req.end_time),
+        raw: req,
+      });
+    });
+
+    // ── 4. Frequency-level conflict (channels only) — reuses the existing logic ──
+    if (resourceType === 'channel') {
+      const ch = channels.find(c => String(c.id) === String(id));
+      if (ch && ch.conflictCheck !== false) {
+        const freqConflicts = checkFrequencyConflict(ch.freq, ch.rxFreq, ch.id);
+        freqConflicts.forEach(fc => {
+          conflicts.push({
+            source: 'frequency', severity: 'soft',
+            resourceId: id, resourceLabel: getLabel(id),
+            withTitle: `${fc.designator} (${fc.freq} MHz — ${statusLabels[fc.status] || fc.status})`,
+            withWindow: 'Shares the same frequency',
+            raw: fc,
+          });
+        });
+      }
+    }
+  });
+
+  return conflicts;
+}
+
+// Renders a conflict list into a plain-text summary, shared by every module's UI
+function formatConflictMessages(conflicts) {
+  return conflicts.map(c => {
+    const tag = c.source === 'reservation' ? '📅' : c.source === 'incident' ? '🚨' : c.source === 'icr' ? '📥' : '📻';
+    return `${tag} ${c.resourceLabel} conflicts with "${c.withTitle}" — ${c.withWindow}`;
+  });
 }
 
 function showConflictWarning(conflicts) {
@@ -13794,6 +13932,35 @@ async function saveIncident() {
   const tgSel  = document.getElementById('inc-talkgroups');
   const chIds  = [...(chSel?.options||[])].filter(o=>o.selected).map(o=>o.value);
   const tgIds  = [...(tgSel?.options||[])].filter(o=>o.selected).map(o=>o.value);
+  const newStatus = document.getElementById('inc-status').value;
+
+  // Conflict check — only matters for active/standby incidents (a closed incident
+  // releases its resources). Only flag NEWLY added channels/talkgroups so editing
+  // an incident that already legitimately holds a resource doesn't re-nag every save.
+  if (newStatus !== 'closed') {
+    const existingInc = incidentEditingId ? incidents.find(x => String(x.id) === String(incidentEditingId)) : null;
+    const prevChIds = (existingInc?.channel_ids   || []).map(String);
+    const prevTgIds = (existingInc?.talkgroup_ids || []).map(String);
+    const addedChIds = chIds.filter(id => !prevChIds.includes(String(id)));
+    const addedTgIds = tgIds.filter(id => !prevTgIds.includes(String(id)));
+
+    const chConflicts = addedChIds.length
+      ? checkResourceConflicts(addedChIds, 'channel', null, null, incidentEditingId, 'incident').filter(c => c.severity === 'hard')
+      : [];
+    const tgConflicts = addedTgIds.length
+      ? checkResourceConflicts(addedTgIds, 'talkgroup', null, null, incidentEditingId, 'incident').filter(c => c.severity === 'hard')
+      : [];
+    const allConflicts = [...chConflicts, ...tgConflicts];
+
+    if (allConflicts.length) {
+      const proceed = confirm(
+        '⚠ Conflict detected — the following are already committed elsewhere:\n\n' +
+        formatConflictMessages(allConflicts).join('\n') +
+        '\n\nAssigning them to this incident takes priority and will not automatically release the other commitment. Continue?'
+      );
+      if (!proceed) return;
+    }
+  }
 
   const row = {
     name, number:     document.getElementById('inc-number').value.trim()    || null,
