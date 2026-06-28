@@ -631,6 +631,47 @@
     background: var(--accent-glow);
   }
 
+  /* ── ADMIN CHANNELS LIST ROW ──
+     Dedicated layout for Admin > Channels — distinct from .channel-row since
+     this view has a different column set (no checkbox, no tone/mode, but adds
+     a Group column and inline action buttons). Reusing .channel-row's grid
+     here caused designator/frequency to overlap because the column counts
+     and content didn't match. */
+  .admin-ch-row {
+    display: grid;
+    grid-template-columns: 4px 130px 110px 1fr 110px 130px 110px 90px;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    min-width: 0;
+  }
+  .admin-ch-row:hover { border-color: var(--border-lit); background: var(--bg-hover); }
+  .admin-ch-row > div { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .admin-ch-grid-header {
+    display: grid;
+    grid-template-columns: 4px 130px 110px 1fr 110px 130px 110px 90px;
+    gap: 10px;
+    padding: 4px 12px 8px;
+    font-family: var(--font-data);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  @media (max-width: 900px) {
+    .admin-ch-row, .admin-ch-grid-header { grid-template-columns: 4px 110px 1fr 90px; }
+    .admin-ch-row > *:nth-child(4),
+    .admin-ch-row > *:nth-child(6),
+    .admin-ch-row > *:nth-child(7),
+    .admin-ch-grid-header > *:nth-child(4),
+    .admin-ch-grid-header > *:nth-child(6),
+    .admin-ch-grid-header > *:nth-child(7) { display: none; }
+  }
+
   .channel-row .status-bar {
     width: 3px;
     height: 28px;
@@ -4117,6 +4158,9 @@
           <div class="tab-page-title">Overview</div>
           <div class="tab-page-subtitle">Live status across channels, talkgroups, reservations, and incidents</div>
         </div>
+        <div class="tab-page-actions">
+          <button class="btn-secondary" onclick="openImpactDashboard()">⚡ Operational Impact</button>
+        </div>
       </div>
       <div id="overviewContent"></div>
     </div>
@@ -4706,7 +4750,7 @@
           </div>
         </div>
         <div id="adminChSummary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-data);font-size:11px;color:var(--text-dim);"></div>
-        <div class="channel-grid-header"><span></span><span>Designator</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Group</span><span>Actions</span></div>
+        <div class="admin-ch-grid-header"><span></span><span>Designator</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Group</span><span>Actions</span></div>
         <div id="adminChannelList"></div>
       </div>
 
@@ -5374,6 +5418,70 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="document.getElementById('rfaHistoryModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── OPERATIONAL IMPACT DASHBOARD ── -->
+<div class="modal-overlay" id="impactDashboardModal">
+  <div class="modal" style="max-width:780px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title">⚡ Operational Impact Dashboard</div>
+      <button class="modal-close" onclick="document.getElementById('impactDashboardModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="impactDashboardBody" style="flex:1;overflow-y:auto;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="openImpactDashboard()">↺ Refresh</button>
+      <button class="btn-secondary" onclick="document.getElementById('impactDashboardModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECOMMENDED ASSIGNMENT MODAL ── -->
+<div class="modal-overlay" id="recommendModal">
+  <div class="modal" style="max-width:700px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title">🎯 Recommended Channels</div>
+      <button class="modal-close" onclick="document.getElementById('recommendModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+
+      <!-- Criteria picker — shown when the source didn't already imply a role/category -->
+      <div id="recommendCriteria" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+        <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;">Recommendation Criteria</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="rec-category">
+              <option value="">— Any —</option>
+              <option value="all-hazards">All Hazards (UHF)</option>
+              <option value="wildland">Wildland (VHF)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Role</label>
+            <select class="form-select" id="rec-role">
+              <option value="">— Any —</option>
+              <option value="command">Command</option>
+              <option value="tac">Tactical</option>
+              <option value="air-ground">Air to Ground</option>
+              <option value="trunked">Trunked Talkgroup</option>
+              <option value="crew-dozer">Crew/Dozer</option>
+              <option value="rotor-victor">Rotor/Victor</option>
+            </select>
+          </div>
+          <div class="form-field" style="flex:0 0 auto;align-self:flex-end;">
+            <button class="btn-primary" style="padding:8px 16px;" onclick="runRecommendation()">Search</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="recommendSummary" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
+      <div id="recommendResults"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('recommendModal').classList.remove('open')">Close</button>
     </div>
   </div>
 </div>
@@ -6068,6 +6176,170 @@ async function loadRFAFromHistory(logId) {
   } catch(e) {
     alert('Could not load this analysis: ' + e.message);
   }
+}
+
+// ═══════════════════════════════════════════════
+// OPERATIONAL IMPACT DASHBOARD
+// ═══════════════════════════════════════════════
+// Surfaces eight specific operational risks the landing page's simple status
+// strip doesn't show. Each tile is independently computed; a tile renders
+// "clear" (green) if its condition list comes back empty, rather than being
+// hidden, so the absence of a problem is itself visible at a glance.
+async function openImpactDashboard() {
+  const body = document.getElementById('impactDashboardBody');
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-dim);font-size:12px;">Computing operational impact…</div>';
+  document.getElementById('impactDashboardModal').classList.add('open');
+
+  const tiles = [];
+
+  // ── 1. Channels below minimum availability — reuses the same threshold logic as the live banner ──
+  {
+    const counts = { available:0, active:0, reserved:0 };
+    channels.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+    const items = [];
+    ['available','active','reserved'].forEach(s => {
+      const threshold = lowAvailSettings[s] ?? 0;
+      if (threshold > 0 && counts[s] <= threshold) {
+        items.push(`${statusLabels[s]}: ${counts[s]} channel${counts[s]!==1?'s':''} (threshold ${threshold})`);
+      }
+    });
+    tiles.push({ icon:'📻', title:'Channels Below Minimum Availability', items, action:()=>{closeImpactDashboard();switchMainTab('channels');} });
+  }
+
+  // ── 2. Incidents with no command channel ── (checks the Function field of each linked channel for "command")
+  {
+    const items = [];
+    incidents.filter(i => i.status !== 'closed').forEach(inc => {
+      const incChIds = (inc.channel_ids || []).map(String);
+      const hasCommand = incChIds.some(id => {
+        const ch = channels.find(c => String(c.id) === id);
+        return ch && /command/i.test(ch.function || '');
+      });
+      if (!hasCommand) items.push(`${inc.name}${inc.number ? ' (' + inc.number + ')' : ''} — ${incChIds.length} channel${incChIds.length!==1?'s':''} assigned, none marked Command`);
+    });
+    tiles.push({ icon:'🚨', title:'Incidents With No Command Channel', items, action:()=>{closeImpactDashboard();switchMainTab('incidents');} });
+  }
+
+  // ── 3. Reservations starting in next 12 hours ──
+  {
+    const now = Date.now();
+    const horizon = now + 12*3600000;
+    const items = [];
+    reservations.forEach(r => {
+      const start = new Date(r.start).getTime();
+      if (start >= now && start <= horizon) {
+        const chNames = (r.channelIds || (r.channelId?[r.channelId]:[])).map(id => channels.find(c=>String(c.id)===String(id))?.designator).filter(Boolean).join(', ');
+        items.push(`${r.title} — starts ${new Date(r.start).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})}${chNames ? ' · ' + chNames : ''}`);
+      }
+    });
+    tiles.push({ icon:'📅', title:'Reservations Starting In Next 12 Hours', items, action:()=>{closeImpactDashboard();switchMainTab('schedule');} });
+  }
+
+  // ── 4. Pending Comm Plan Requests inside 7 days ──
+  {
+    const items = [];
+    commPlanReqs.filter(r => r.status === 'pending' && isCprUpcomingWithin7Days(r)).forEach(r => {
+      items.push(`${r.event_name} — ${r.op_start_date} · requested by ${r.requestee_name || 'Unknown'}`);
+    });
+    tiles.push({ icon:'📝', title:'Pending Comm Plan Requests (Next 7 Days)', items, action:()=>{closeImpactDashboard();switchMainTab('commreq');} });
+  }
+
+  // ── 5. Talkgroups assigned to multiple active/standby incidents ──
+  {
+    const tgToIncidents = {};
+    incidents.filter(i => i.status !== 'closed').forEach(inc => {
+      (inc.talkgroup_ids || []).forEach(tgId => {
+        const key = String(tgId);
+        if (!tgToIncidents[key]) tgToIncidents[key] = [];
+        tgToIncidents[key].push(inc);
+      });
+    });
+    const items = [];
+    Object.entries(tgToIncidents).forEach(([tgId, incs]) => {
+      if (incs.length > 1) {
+        const tg = talkgroups.find(t => String(t.id) === tgId);
+        items.push(`${tg ? tg.tg_id + ' — ' + tg.name : 'TG #' + tgId} — assigned to ${incs.length} incidents: ${incs.map(i=>i.name).join(', ')}`);
+      }
+    });
+    tiles.push({ icon:'🔢', title:'Talkgroups Assigned to Multiple Incidents', items, action:()=>{closeImpactDashboard();switchMainTab('incidents');} });
+  }
+
+  // ── 6. Resources overdue ──
+  {
+    const items = [];
+    resources.filter(r => r.expectedReturn && new Date(r.expectedReturn) < new Date() && r.status !== 'available').forEach(r => {
+      items.push(`${r.name || r.id} — expected back ${new Date(r.expectedReturn).toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric'})}`);
+    });
+    tiles.push({ icon:'🚒', title:'Resources Overdue', items, action:()=>{closeImpactDashboard();switchMainTab('resources');} });
+  }
+
+  // ── 7. ICS 205 not generated — checks activity_log for a generation event per open incident ──
+  {
+    const items = [];
+    const openIncidents = incidents.filter(i => i.status !== 'closed' && (i.channel_ids||[]).length);
+    if (openIncidents.length) {
+      try {
+        const { data: logs } = await sb.from('activity_log')
+          .select('extra')
+          .eq('category', 'incident')
+          .eq('action', 'ICS 205 Generated')
+          .limit(500);
+        const generatedIncidentIds = new Set(
+          (logs || []).map(l => { try { return String(JSON.parse(l.extra||'{}').incidentId || ''); } catch(e) { return ''; } }).filter(Boolean)
+        );
+        openIncidents.forEach(inc => {
+          if (!generatedIncidentIds.has(String(inc.id))) {
+            items.push(`${inc.name}${inc.number ? ' (' + inc.number + ')' : ''} — ${(inc.channel_ids||[]).length} channels assigned, no ICS 205 on record`);
+          }
+        });
+      } catch(e) { /* if the log query fails, skip this tile's data rather than block the whole dashboard */ }
+    }
+    tiles.push({ icon:'📋', title:'Incidents With Channels But No ICS 205 Generated', items, action:()=>{closeImpactDashboard();switchMainTab('incidents');} });
+  }
+
+  // ── 8. Requests missing COML/contact info ──
+  {
+    const items = [];
+    commPlanReqs.filter(r => r.status === 'pending' || r.status === 'reviewed').forEach(r => {
+      const missing = [];
+      if (!r.contact_name)  missing.push('contact name');
+      if (!r.contact_phone) missing.push('contact phone');
+      if (!r.contact_email) missing.push('contact email');
+      if (missing.length) items.push(`${r.event_name} — missing ${missing.join(', ')}`);
+    });
+    tiles.push({ icon:'☎️', title:'Requests Missing COML / Contact Info', items, action:()=>{closeImpactDashboard();switchMainTab('commreq');} });
+  }
+
+  // ── Render ──
+  window._impactTileActions = tiles.map(t => t.action);
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      ${tiles.map((t, i) => {
+        const clear = !t.items.length;
+        return `<div style="background:var(--bg-card);border:1px solid ${clear?'var(--border)':'rgba(255,82,82,0.35)'};border-radius:8px;padding:14px;cursor:pointer;" onclick="window._impactTileActions[${i}]()">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;">
+              <span>${t.icon}</span>${t.title}
+            </div>
+            <span style="font-family:var(--font-data);font-size:14px;font-weight:700;color:${clear?'var(--status-available)':'var(--status-active)'};">${clear ? '✓' : t.items.length}</span>
+          </div>
+          ${clear
+            ? `<div style="font-size:11px;color:var(--text-dim);">Clear — no issues found</div>`
+            : `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;max-height:90px;overflow-y:auto;">
+                 ${t.items.slice(0,4).map(i => `<div style="padding:2px 0;border-top:1px solid var(--border);padding-top:4px;margin-top:4px;">${escHtml(i)}</div>`).join('')}
+                 ${t.items.length > 4 ? `<div style="color:var(--text-dim);margin-top:4px;">+ ${t.items.length-4} more</div>` : ''}
+               </div>`}
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px;font-size:10px;color:var(--text-dim);text-align:center;">
+      Generated ${new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})} PT · Click any tile to jump to that module
+    </div>
+  `;
+}
+
+function closeImpactDashboard() {
+  document.getElementById('impactDashboardModal').classList.remove('open');
 }
 
 // Show a small tag under the verdict if this result is already linked to an incident
@@ -7140,7 +7412,10 @@ async function saveChannel() {
 // ─────────────────────────────────────────────
 // ICS 205
 // ─────────────────────────────────────────────
+let ics205CurrentIncidentId = null; // tracks which incident (if any) the open ICS 205 preview is scoped to
+
 function openICS205(channelIds, incidentId) {
+  ics205CurrentIncidentId = incidentId || null;
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   const timeStr = `${String(now.getUTCHours()).padStart(2,'0')}${String(now.getUTCMinutes()).padStart(2,'0')} UTC`;
@@ -7288,6 +7563,15 @@ function printICS205() {
     </style></head><body>${content}</body></html>`);
   win.document.close();
   win.print();
+
+  // Record that ICS 205 was generated — used by the Operational Impact Dashboard
+  // to flag incidents that haven't had a comms plan generated yet.
+  if (ics205CurrentIncidentId) {
+    const inc = incidents.find(i => String(i.id) === String(ics205CurrentIncidentId));
+    logEvent('incident', 'ICS 205 Generated', `${inc?.name || 'Incident'} — communications plan printed/exported`, { incident: inc?.name, incidentId: ics205CurrentIncidentId });
+  } else {
+    logEvent('channel', 'ICS 205 Generated', 'Full channel plan ICS 205 printed/exported', {});
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -9622,15 +9906,15 @@ function renderAdminChannels() {
   if (!filtered.length) { el.innerHTML = `<div class="no-data-row">No channels match filter</div>`; return; }
 
   el.innerHTML = filtered.map(ch => `
-    <div class="channel-row" style="cursor:default;">
-      <div class="status-bar ${ch.status}"></div>
-      <div class="ch-designator-wrap"><span class="ch-designator">${escHtml(ch.designator)}</span></div>
+    <div class="admin-ch-row">
+      <div class="status-bar ${ch.status}" style="height:32px;"></div>
+      <div class="ch-designator" title="${escHtml(ch.designator)}">${escHtml(ch.designator)}</div>
       <div class="ch-freq">${ch.freq} MHz</div>
-      <div class="ch-assignment" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(ch.function||'—')}</div>
+      <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.function||'')}">${escHtml(ch.function||'—')}</div>
       <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
-      <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(ch.agency||'—')}</div>
-      <div style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(ch.group||'—')}</div>
-      <div style="display:flex;gap:4px;">
+      <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.agency||'')}">${escHtml(ch.agency||'—')}</div>
+      <div style="font-size:11px;color:var(--text-dim);" title="${escHtml(ch.group||'')}">${escHtml(ch.group||'—')}</div>
+      <div style="display:flex;gap:4px;overflow:visible;">
         <button class="btn-secondary" style="font-size:10px;padding:3px 8px;" onclick="openEditModal(${ch.id})">✏</button>
         ${ch.status !== 'available' ? `<button class="btn-success" style="font-size:10px;padding:3px 7px;" onclick="releaseChannel(${ch.id})" title="Mark Available">✓</button>` : ''}
         <button class="btn-danger"   style="font-size:10px;padding:3px 8px;" onclick="deleteChannel(${ch.id})">✕</button>
@@ -12023,6 +12307,263 @@ function formatConflictMessages(conflicts) {
   });
 }
 
+// ═══════════════════════════════════════════════
+// RECOMMENDED ASSIGNMENT ENGINE
+// ═══════════════════════════════════════════════
+// Scores every available channel against a requested role/category and
+// returns a ranked shortlist. Built directly on top of the unified conflict
+// engine (checkResourceConflicts) so a recommended channel can never be one
+// that's already double-booked. Scoring is 0-100 and intentionally
+// transparent — each candidate carries the line-item breakdown so a COML can
+// see exactly why a channel was or wasn't suggested, rather than a black box.
+//
+// params: {
+//   roleType:    'command' | 'tac' | 'air-ground' | 'trunked' | 'crew-dozer' | 'rotor-victor' | null
+//   category:    'wildland' | 'all-hazards' | null   (drives band preference: wildland→VHF, all-hazards→UHF)
+//   startISO/endISO: proposed window (required for a meaningful conflict check; pass null/null for open-ended)
+//   priority:    'Normal' | 'High' | 'Emergency'
+//   lat/lon:     optional — incident or request location, for geographic relevance scoring
+//   excludeId/excludeType: passed straight through to checkResourceConflicts
+// }
+// Lightweight cache warm-up for the "recent use history" scoring signal —
+// loaded lazily right before a recommendation run rather than at every login,
+// since it's a minor (2pt) signal and not worth the extra round-trip otherwise.
+async function warmChannelHistoryCache() {
+  if (window._channelHistoryCache) return; // already warm this session
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
+    const { data } = await sb.from('channel_history').select('channel_id').gte('created_at', thirtyDaysAgo).limit(500);
+    window._channelHistoryCache = data || [];
+  } catch(e) {
+    window._channelHistoryCache = []; // table may not exist — fail quietly, scoring just treats everything as no-history
+  }
+}
+
+const ROLE_KEYWORDS = {
+  'command':      ['command'],
+  'tac':           ['tac', 'tactical'],
+  'air-ground':    ['air to ground', 'air-to-ground', 'air ground', 'aviation'],
+  'trunked':       ['trunk', 'talkgroup'],
+  'crew-dozer':    ['crew', 'dozer'],
+  'rotor-victor':  ['rotor', 'victor'],
+};
+
+async function recommendChannels(params) {
+  await warmChannelHistoryCache();
+
+  const { roleType, category, startISO, endISO, priority = 'Normal', lat = null, lon = null, excludeId = null, excludeType = null, limit = 5 } = params;
+
+  const preferredBand = category === 'wildland' ? 'VHF' : category === 'all-hazards' ? 'UHF' : null;
+  const keywords = roleType ? (ROLE_KEYWORDS[roleType] || []) : [];
+
+  const candidates = channels
+    .filter(ch => ch.status === 'available') // hard requirement — never recommend a channel that isn't free right now
+    .map(ch => {
+      const breakdown = [];
+      let score = 0;
+
+      // 1. Available status (already filtered above, but log it for transparency)
+      score += 30; breakdown.push({ label: 'Available now', pts: 30 });
+
+      // 2. Matching requested type — band preference + role keyword match against Function/Group
+      let typeScore = 0;
+      if (preferredBand && ch.band === preferredBand) typeScore += 12;
+      if (keywords.length) {
+        const haystack = `${ch.function||''} ${ch.group||''} ${ch.designator||''}`.toLowerCase();
+        if (keywords.some(k => haystack.includes(k))) typeScore += 13;
+      } else if (!preferredBand) {
+        typeScore += 6; // no specific type requested — partial credit so band-agnostic requests still rank channels reasonably
+      }
+      score += typeScore; breakdown.push({ label: 'Matches requested type/band', pts: typeScore });
+
+      // 3 & 4. Conflict check — reuses the same engine as every other module
+      const conflicts = checkResourceConflicts([ch.id], 'channel', startISO, endISO, excludeId, excludeType);
+      const hardConflicts = conflicts.filter(c => c.severity === 'hard' && c.source !== 'frequency');
+      const softFreqConflicts = conflicts.filter(c => c.source === 'frequency');
+
+      if (hardConflicts.length) {
+        // Disqualifying — still show the candidate (so the COML can see why it's excluded)
+        // but with score capped low and a clear flag rather than silently omitting it.
+        breakdown.push({ label: 'Hard conflict — already committed', pts: -100 });
+        return { channel: ch, score: 0, breakdown, disqualified: true, conflicts: hardConflicts };
+      }
+      score += 20; breakdown.push({ label: 'No hard conflict', pts: 20 });
+
+      const freqPts = softFreqConflicts.length ? 0 : 10;
+      score += freqPts; breakdown.push({ label: softFreqConflicts.length ? `Shares frequency with ${softFreqConflicts.length} other channel(s)` : 'No frequency conflict', pts: freqPts });
+
+      // 5. Geographic relevance — if we have a location, prefer channels whose recent
+      // reservations cluster near it. Channels with no nearby history get a small
+      // neutral default rather than being penalized, since most channels simply
+      // don't have geo-tagged history yet.
+      let geoPts = 5; // neutral default
+      if (lat && lon) {
+        const nearbyRes = reservations.filter(r =>
+          (r.channelIds||[]).map(String).includes(String(ch.id)) && r.lat && r.lon &&
+          haversineMiles(lat, lon, r.lat, r.lon) <= 25
+        );
+        geoPts = nearbyRes.length ? 10 : 5;
+      }
+      score += geoPts; breakdown.push({ label: lat && lon ? (geoPts === 10 ? 'Used near this location before' : 'No nearby usage history') : 'No location provided', pts: geoPts });
+
+      // 6. Priority alignment — for Emergency requests, slightly favor channels with
+      // no upcoming reservation in the next 24h (more headroom if the emergency runs long)
+      let priorityPts = 2; // baseline
+      if (priority === 'Emergency') {
+        const soon = reservations.some(r => (r.channelIds||[]).map(String).includes(String(ch.id)) &&
+          new Date(r.start).getTime() < Date.now() + 86400000 && new Date(r.end).getTime() > Date.now());
+        priorityPts = soon ? 0 : 3;
+      }
+      score += priorityPts; breakdown.push({ label: 'Priority/headroom alignment', pts: priorityPts });
+
+      // 7. Recent use history — slight bonus for channels with an established track
+      // record (proxy for reliability), pulled from channel_history cache if loaded
+      let historyPts = 0;
+      const histCount = (window._channelHistoryCache || []).filter(h => String(h.channel_id) === String(ch.id)).length;
+      if (histCount > 0) historyPts = 2;
+      score += historyPts; breakdown.push({ label: histCount ? 'Established usage history' : 'No usage history on record', pts: historyPts });
+
+      return { channel: ch, score: Math.round(score), breakdown, disqualified: false, conflicts: softFreqConflicts };
+    });
+
+  // Disqualified candidates sort to the bottom; everything else by score descending
+  candidates.sort((a, b) => {
+    if (a.disqualified !== b.disqualified) return a.disqualified ? 1 : -1;
+    return b.score - a.score;
+  });
+
+  return candidates.slice(0, limit);
+}
+
+// ── UI orchestration: "🎯 Recommend Channels" button on Comm Plan Requests and Incidents ──
+let recommendSourceType = null; // 'cpr' | 'incident'
+let recommendSourceId   = null;
+
+function openRecommendChannels(sourceType, sourceId) {
+  recommendSourceType = sourceType;
+  recommendSourceId   = sourceId;
+
+  const criteriaBox = document.getElementById('recommendCriteria');
+  const catSel  = document.getElementById('rec-category');
+  const roleSel = document.getElementById('rec-role');
+
+  if (sourceType === 'cpr') {
+    // Comm Plan Requests already encode category + role in their requested_channels
+    // labels — try to infer the most common one automatically rather than asking.
+    const r = commPlanReqs.find(x => String(x.id) === String(sourceId));
+    const labels = r?.requested_channels || [];
+    const inferredCategory = labels.some(l => l.startsWith('Wildland')) ? 'wildland'
+                            : labels.some(l => l.startsWith('All Hazards')) ? 'all-hazards' : '';
+    let inferredRole = '';
+    if (labels.some(l => /command/i.test(l)))        inferredRole = 'command';
+    else if (labels.some(l => /primary tac|secondary tac/i.test(l))) inferredRole = 'tac';
+    else if (labels.some(l => /air to ground/i.test(l))) inferredRole = 'air-ground';
+    else if (labels.some(l => /trunked/i.test(l)))    inferredRole = 'trunked';
+    else if (labels.some(l => /crew.dozer/i.test(l))) inferredRole = 'crew-dozer';
+    else if (labels.some(l => /rotor.victor/i.test(l))) inferredRole = 'rotor-victor';
+
+    catSel.value  = inferredCategory;
+    roleSel.value = inferredRole;
+    criteriaBox.style.display = 'block'; // still show so the COML can override the inference
+  } else {
+    // Incidents have no structured role/category — always ask
+    catSel.value = '';
+    roleSel.value = '';
+    criteriaBox.style.display = 'block';
+  }
+
+  document.getElementById('recommendResults').innerHTML = '';
+  document.getElementById('recommendSummary').textContent = '';
+  document.getElementById('recommendModal').classList.add('open');
+  runRecommendation();
+}
+
+async function runRecommendation() {
+  const resultsEl = document.getElementById('recommendResults');
+  const summaryEl = document.getElementById('recommendSummary');
+  resultsEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">Scoring candidates…</div>';
+
+  const category = document.getElementById('rec-category').value || null;
+  const roleType  = document.getElementById('rec-role').value || null;
+
+  let startISO = null, endISO = null, priority = 'Normal', lat = null, lon = null, excludeId = null, excludeType = null;
+
+  if (recommendSourceType === 'cpr') {
+    const r = commPlanReqs.find(x => String(x.id) === String(recommendSourceId));
+    if (r) {
+      if (r.op_start_date && r.op_start_time) startISO = ptInputToISO(`${r.op_start_date}T${r.op_start_time}`);
+      if (r.op_end_date && r.op_end_time)     endISO   = ptInputToISO(`${r.op_end_date}T${r.op_end_time}`);
+    }
+  } else if (recommendSourceType === 'incident') {
+    const inc = incidents.find(x => String(x.id) === String(recommendSourceId));
+    if (inc) {
+      lat = inc.lat || null; lon = inc.lon || null;
+      excludeId = inc.id; excludeType = 'incident';
+      // Incidents are open-ended by nature — leave startISO/endISO null so the
+      // engine treats this as "needs to be free indefinitely," which is correct
+      // for an active/standby incident assignment.
+    }
+  }
+
+  const results = await recommendChannels({ roleType, category, startISO, endISO, priority, lat, lon, excludeId, excludeType, limit: 6 });
+
+  summaryEl.textContent = `${results.filter(r=>!r.disqualified).length} of ${results.length} shown are available with no conflict` +
+    (category || roleType ? ` · filtered for ${[category, roleType].filter(Boolean).join(' / ')}` : '');
+
+  if (!results.length) {
+    resultsEl.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-dim);font-size:13px;">No available channels found.</div>`;
+    return;
+  }
+
+  resultsEl.innerHTML = results.map((r, i) => {
+    const ch = r.channel;
+    const barColor = r.disqualified ? 'var(--status-active)' : r.score >= 70 ? 'var(--status-available)' : r.score >= 45 ? 'var(--status-reserved)' : 'var(--text-dim)';
+    return `
+    <div style="background:var(--bg-card);border:1px solid ${r.disqualified ? 'rgba(255,82,82,0.35)' : 'var(--border)'};border-radius:8px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);font-family:var(--font-data);">${escHtml(ch.designator)} <span style="font-size:11px;color:var(--text-dim);font-weight:400;">${ch.freq} MHz · ${ch.band}</span></div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escHtml(ch.function||'No function set')}${ch.group ? ' · ' + escHtml(ch.group) : ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-data);font-size:18px;font-weight:700;color:${barColor};">${r.disqualified ? '✕' : r.score}</div>
+          <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">${r.disqualified ? 'Conflict' : 'Score /100'}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px;">
+        ${r.breakdown.map(b => `<span style="font-family:var(--font-data);font-size:9px;padding:2px 7px;border-radius:2px;background:${b.pts>0?'rgba(0,230,118,0.08)':b.pts<0?'rgba(255,82,82,0.1)':'rgba(120,120,120,0.08)'};color:${b.pts>0?'var(--status-available)':b.pts<0?'var(--status-active)':'var(--text-dim)'};border:1px solid ${b.pts>0?'rgba(0,230,118,0.25)':b.pts<0?'rgba(255,82,82,0.3)':'var(--border)'};" title="${b.label}">${b.label} ${b.pts>=0?'+':''}${b.pts}</span>`).join('')}
+      </div>
+      ${r.disqualified && r.conflicts?.length ? `<div style="margin-top:8px;font-size:11px;color:var(--status-active);">${formatConflictMessages(r.conflicts).join('<br>')}</div>` : ''}
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" ${r.disqualified ? 'disabled' : ''} onclick="applyRecommendedChannel('${ch.id}')">
+          ${recommendSourceType === 'cpr' ? '→ Use for Reservation' : '+ Assign to Incident'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function applyRecommendedChannel(channelId) {
+  const ch = channels.find(c => String(c.id) === String(channelId));
+  if (!ch) return;
+
+  if (recommendSourceType === 'cpr') {
+    // Close this modal, then run the existing CPR→reservation conversion and
+    // pre-select the recommended channel inside the reservation's checklist.
+    document.getElementById('recommendModal').classList.remove('open');
+    window._cprRecommendedChannelId = channelId; // read by convertCprToReservation below
+    convertCprToReservation();
+  } else if (recommendSourceType === 'incident') {
+    const chSel = document.getElementById('inc-channels');
+    if (chSel) {
+      [...chSel.options].forEach(o => { if (String(o.value) === String(channelId)) o.selected = true; });
+      renderChecklistFromSelect('inc-channels', 'inc-channels-checklist');
+    }
+    document.getElementById('recommendModal').classList.remove('open');
+    logEvent('incident', 'Channel Recommended & Selected', `${ch.designator} added to incident form via recommendation engine`);
+  }
+}
+
 function showConflictWarning(conflicts) {
   if (!conflicts.length) {
     document.getElementById('conflictWarning')?.remove();
@@ -13834,6 +14375,8 @@ function openIncidentForm(id) {
 
   const exportBtn = document.getElementById('inc-export-btn');
   if (exportBtn) exportBtn.style.display = id ? 'inline-flex' : 'none';
+  const recommendBtn = document.getElementById('inc-recommend-btn');
+  if (recommendBtn) recommendBtn.style.display = id ? 'inline-flex' : 'none';
 
   document.getElementById('incidentModal').classList.add('open');
 }
@@ -15033,6 +15576,16 @@ function convertCprToReservation() {
         document.getElementById('sr-city').value    = parts[1]?.trim() || '';
       } else if (r.location_name) {
         document.getElementById('sr-street').value = r.location_name;
+      }
+
+      // If a channel was chosen via the 🎯 Recommend Channels engine, pre-select it
+      if (window._cprRecommendedChannelId) {
+        const sel = document.getElementById('sr-channel');
+        if (sel) {
+          [...sel.options].forEach(o => { o.selected = String(o.value) === String(window._cprRecommendedChannelId); });
+          renderChecklistFromSelect('sr-channel', 'sr-channel-checklist');
+        }
+        window._cprRecommendedChannelId = null;
       }
 
       checkTimeConflicts();
@@ -16239,6 +16792,7 @@ init();
       <div id="inc-error" style="font-size:12px;color:var(--status-active);font-family:var(--font-data);flex:1;"></div>
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-secondary" id="inc-export-btn" style="display:none;" onclick="exportIncidentPDF()">⬇ Export PDF</button>
+        <button class="btn-secondary" id="inc-recommend-btn" style="display:none;" onclick="openRecommendChannels('incident', incidentEditingId)">🎯 Recommend Channels</button>
         <button class="btn-secondary" onclick="closeIncidentModal()">Cancel</button>
         <button class="btn-primary" onclick="saveIncident()">Save Incident</button>
       </div>
@@ -16272,6 +16826,7 @@ init();
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn-secondary" onclick="closeCprModal()">Close</button>
+        <button class="btn-secondary" onclick="openRecommendChannels('cpr', cprViewingId)">🎯 Recommend Channels</button>
         <button class="btn-primary" onclick="convertCprToReservation()">→ Convert to Reservation</button>
       </div>
     </div>
