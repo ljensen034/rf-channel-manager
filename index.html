@@ -2108,7 +2108,7 @@
     #auditSearch, #auf-uuid, #cprStatusFilter,
     #incStatusFilter, #invModelFilter, #invStatusFilter,
     #lav-active, #lav-available, #lav-reserved,
-    #newRadioBand, #newRadioModel, #resCategoryFilter, #resStatusFilter,
+    #newRadioBand, #newRadioModel, #newChannelFunction, #resCategoryFilter, #resStatusFilter,
     #saUserAgencyFilter, #syslogCategory, #syslogDateFilter,
     #syslogSearch, #toneTableSearch, #trlogSearch, #uf-uuid {
       font-size: 16px !important;
@@ -2342,6 +2342,24 @@
     background: rgba(255,196,0,0.15);
     color: var(--status-reserved);
     border: 1px solid rgba(255,196,0,0.3);
+    white-space: nowrap;
+    cursor: help;
+  }
+
+  .channel-warning-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-data);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(255,152,0,0.15);
+    color: #ff9800;
+    border: 1px solid rgba(255,152,0,0.35);
     white-space: nowrap;
     cursor: help;
   }
@@ -5288,7 +5306,7 @@
         </div>
         <div class="form-field">
           <label class="form-label">Status *</label>
-          <select class="form-select" id="f-status">
+          <select class="form-select" id="f-status" onchange="toggleActiveForField()">
             <option value="available">Available</option>
             <option value="active">In Use</option>
             <option value="reserved">Reserved (Pre-planned)</option>
@@ -5362,6 +5380,18 @@
         <div class="form-field">
           <label class="form-label">Department / Agency</label>
           <input class="form-input" id="f-agency" placeholder="LAFD, LAPD, CalFire…">
+        </div>
+      </div>
+      <div class="form-row single" id="f-activefor-row" style="display:none;">
+        <div class="form-field">
+          <label class="form-label">In Use / Reserved For<span class="form-label-hint">event or incident name</span></label>
+          <input class="form-input" id="f-activefor" placeholder="e.g. Malibu Canyon Fire, Strike Team Staging">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label" style="color:var(--status-reserved);">⚠ Channel Warning<span class="form-label-hint">important use notes for this frequency — shown on the Big Board</span></label>
+          <textarea class="form-textarea" id="f-warning" placeholder="e.g. Shared with mutual aid — coordinate before transmitting, Known interference 1400-1600" style="border-color:rgba(255,196,0,0.4);"></textarea>
         </div>
       </div>
       <div class="form-row single">
@@ -5733,6 +5763,8 @@ function rowToChannel(row) {
     function:      row.function    || '—',
     agency:        row.agency      || '—',
     group:         row.group       || '',
+    activeFor:     row.active_for  || '',
+    warning:       row.warning     || '',
     notes:         row.notes       || '',
     updatedBy:     row.updated_by  || '',
     conflictCheck: row.conflict_check !== false,
@@ -7050,6 +7082,8 @@ function diffChannelFields(before, after, who) {
     { key:'function',  label:'Function',  fmt: v => v },
     { key:'agency',    label:'Agency',    fmt: v => v },
     { key:'tone',      label:'Tone/NAC',  fmt: v => v },
+    { key:'activeFor', label:'In Use/Reserved For', fmt: v => v || '—' },
+    { key:'warning',   label:'Channel Warning', fmt: v => v ? v.slice(0,60)+(v.length>60?'…':'') : '—' },
     { key:'notes',     label:'Notes',     fmt: v => v ? v.slice(0,60)+(v.length>60?'…':'') : '—' },
   ];
   return TRACKED.filter(f => {
@@ -7364,8 +7398,9 @@ function renderChannels() {
           <div class="ch-designator-wrap">
             <span class="ch-designator">${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict">⚠ CONFLICT</span>` : ''}
+            ${ch.warning ? `<span class="channel-warning-badge" title="${escHtml(ch.warning)}">⚠ WARNING</span>` : ''}
           </div>
-          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
+          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
           <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
           <div style="font-size:11px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.notes || '—'}</div>
@@ -7380,9 +7415,10 @@ function renderChannels() {
           <div class="ch-designator-wrap">
             <span class="ch-designator">${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
+            ${ch.warning ? `<span class="channel-warning-badge" title="${escHtml(ch.warning)}">⚠ WARNING</span>` : ''}
           </div>
           <div class="ch-freq">${ch.freq} MHz</div>
-          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}</div>
+          <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
           <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
           <div class="ch-tone">${ch.tone || '—'}</div>
@@ -7510,6 +7546,10 @@ function selectChannel(id) {
       <div class="detail-label">Designator</div>
       <div class="detail-value" style="font-size:18px;letter-spacing:0.04em;">${ch.designator}</div>
     </div>
+    ${ch.warning ? `<div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);border-radius:var(--radius);padding:9px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="font-size:14px;flex-shrink:0;">⚠</span>
+      <div style="font-size:12.5px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
+    </div>` : ''}
     <div class="detail-section">
       <div class="detail-label">Frequency</div>
       <div class="detail-value freq">${ch.freq} MHz</div>
@@ -7523,6 +7563,10 @@ function selectChannel(id) {
       <div class="detail-label">Function</div>
       <div class="detail-value" style="font-size:13px;">${ch.function || '—'}</div>
     </div>
+    ${ch.activeFor ? `<div class="detail-section">
+      <div class="detail-label">${ch.status === 'reserved' ? 'Reserved For' : 'In Use For'}</div>
+      <div class="detail-value" style="font-size:13px;color:var(--accent);font-weight:600;">${escHtml(ch.activeFor)}</div>
+    </div>` : ''}
     <div class="detail-section">
       <div class="detail-label">Agency</div>
       <div class="detail-value" style="font-size:13px;">${ch.agency || '—'}</div>
@@ -7543,6 +7587,10 @@ function selectChannel(id) {
       <span class="status-pill ${ch.status}" style="margin-left:8px;">${statusLabels[ch.status]}</span>`;
     document.getElementById('sheetContent').innerHTML = `
       <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:0;">
+        ${ch.warning ? `<div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);border-radius:var(--radius);padding:9px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+          <span style="font-size:14px;flex-shrink:0;">⚠</span>
+          <div style="font-size:12.5px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
+        </div>` : ''}
         <div class="detail-section">
           <div class="detail-label">Frequency</div>
           <div class="detail-value freq">${ch.freq} MHz</div>
@@ -7553,6 +7601,7 @@ function selectChannel(id) {
           <div style="font-size:13px;color:var(--text-primary);">${ch.tone||'—'}</div>
         </div>
         ${ch.function && ch.function!=='—' ? `<div class="detail-section"><div class="detail-label">Function</div><div style="font-size:13px;color:var(--text-primary);">${ch.function}</div></div>` : ''}
+        ${ch.activeFor ? `<div class="detail-section"><div class="detail-label">${ch.status === 'reserved' ? 'Reserved For' : 'In Use For'}</div><div style="font-size:13px;color:var(--accent);font-weight:600;">${escHtml(ch.activeFor)}</div></div>` : ''}
         ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
         ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
         <div style="padding:12px 0;display:flex;flex-direction:column;gap:8px;">
@@ -7592,7 +7641,10 @@ async function releaseChannel(id) {
   const old = ch.status;
   const who = currentUser ? currentUser.name : 'Unknown';
   const { error } = await sb.from('channels').update({
-    status: 'available', function: '—', agency: '—', updated_by: who, updated_at: new Date().toISOString()
+    // Function/Purpose (e.g. Command, Tactical) describes what the channel IS
+    // and survives a release — only what it was tied up FOR (active_for) and
+    // who's using it (agency) get cleared, since those are deployment-specific.
+    status: 'available', active_for: null, agency: '—', updated_by: who, updated_at: new Date().toISOString()
   }).eq('id', id);
   if (error) { alert('Error releasing channel: ' + error.message); return; }
   await logChannelHistory({
@@ -7642,7 +7694,7 @@ async function deleteChannel(id) {
 function openAddModal() {
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Add Channel';
-  ['designator','freq','function','agency','rxtone','txtone','rxfreq','notes','power'].forEach(f => {
+  ['designator','freq','function','agency','rxtone','txtone','rxfreq','notes','power','activefor','warning'].forEach(f => {
     const el = document.getElementById(`f-${f}`);
     if (el) el.value = '';
   });
@@ -7651,6 +7703,7 @@ function openAddModal() {
   });
   document.getElementById('f-status').value = 'available';
   populateChannelFunctionDropdown('');
+  toggleActiveForField();
   document.getElementById('f-band').value   = 'VHF';
   document.getElementById('f-bw').value     = 'W';
   document.getElementById('f-adm').value    = 'A';
@@ -7675,7 +7728,10 @@ function openEditModal(id) {
   document.getElementById('f-power').value       = ch.power || '';
   populateChannelFunctionDropdown(ch.function !== '—' ? ch.function : '');
   document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
+  document.getElementById('f-activefor').value   = ch.activeFor || '';
+  toggleActiveForField();
   document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
+  document.getElementById('f-warning').value     = ch.warning || '';
   document.getElementById('f-notes').value       = ch.notes || '';
   // Show resolved tone hints
   onToneInput('rx');
@@ -7702,11 +7758,12 @@ async function saveChannel() {
   const rxToneResolved = resolveTone(document.getElementById('f-rxtone').value.trim());
   const txToneResolved = resolveTone(document.getElementById('f-txtone').value.trim());
 
+  const statusVal = document.getElementById('f-status').value;
   const row = {
     designator,
     freq,
     rx_freq:         document.getElementById('f-rxfreq').value.trim()    || freq,
-    status:          document.getElementById('f-status').value,
+    status:          statusVal,
     band:            document.getElementById('f-band').value              || detectBand(freq),
     tone:            document.getElementById('f-rxtone').value.trim()    || '—',  // legacy field mirrors RX tone
     rx_tone:         document.getElementById('f-rxtone').value.trim()    || '',
@@ -7716,6 +7773,16 @@ async function saveChannel() {
     power:           document.getElementById('f-power').value.trim()     || '',
     function:        document.getElementById('f-function').value.trim()  || '—',
     agency:          document.getElementById('f-agency').value.trim()    || '—',
+    // Only meaningful while In Use or Reserved — cleared automatically if the
+    // channel is being set back to Available, so a stale event/incident name
+    // never lingers on a channel that's free again.
+    active_for:      (statusVal === 'active' || statusVal === 'reserved')
+                       ? (document.getElementById('f-activefor').value.trim() || null)
+                       : null,
+    // Unlike active_for, the warning persists regardless of status — a known
+    // interference issue or shared-frequency caution is true whether the
+    // channel is sitting Available or actively In Use.
+    warning:         document.getElementById('f-warning').value.trim()    || null,
     notes:           document.getElementById('f-notes').value.trim()     || '',
     conflict_check:  conflictCheck,
     updated_by:      who,
@@ -9315,16 +9382,12 @@ function renderBigBoard() {
   });
   filteredChannels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
 
-  // Reverse-lookups: which reservation (if any, currently active) and which
-  // active/standby incident (if any) is this channel tied to right now —
-  // built once per render rather than per tile.
-  const now0 = Date.now();
-  const chToReservation = {};
-  reservations.forEach(r => {
-    const start = new Date(r.start).getTime(), end = new Date(r.end).getTime();
-    if (start > now0 || end < now0) return; // only currently-active reservations are relevant on a live board
-    (r.channelIds || (r.channelId ? [r.channelId] : [])).forEach(id => { chToReservation[String(id)] = r; });
-  });
+  // Reverse-lookup: which active/standby incident (if any) is this channel
+  // tied to right now — built once per render rather than per tile. (The
+  // reservation title is no longer looked up separately here — it's read
+  // directly off ch.activeFor, the same field shown everywhere else in the
+  // app, so the Big Board can never show something different from what's
+  // actually stored on the channel.)
   const chToIncident = {};
   incidents.filter(i => i.status !== 'closed').forEach(inc => {
     (inc.channel_ids || []).forEach(id => { chToIncident[String(id)] = inc; });
@@ -9336,7 +9399,6 @@ function renderBigBoard() {
 
   function tile(ch) {
     const s = SC[ch.status] || SC.available;
-    const res = chToReservation[String(ch.id)];
     const inc = chToIncident[String(ch.id)];
     return `<div style="background:${s.bg};border:2px solid ${s.border};border-left:6px solid ${s.color};border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:5px;min-width:0;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -9344,12 +9406,16 @@ function renderBigBoard() {
         <div style="font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:${s.bg};color:${s.color};border:1px solid ${s.border};white-space:nowrap;flex-shrink:0;">${s.label}</div>
       </div>
       ${ch.function && ch.function!=='—' ? `<div style="font-size:14px;color:${t.textSecondary};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.function}</div>` : ''}
-      ${res ? `<div style="font-size:13px;color:${t.textPrimary};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📅 ${escHtml(res.title)}</div>` : ''}
+      ${ch.activeFor ? `<div style="font-size:13px;color:${t.textPrimary};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.status==='reserved'?'📅':'🟢'} ${escHtml(ch.activeFor)}</div>` : ''}
       ${inc ? `<div style="font-size:13px;color:${s.color};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🚨 ${escHtml(inc.name)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">
         ${ch.agency && ch.agency!=='—' ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">${ch.agency}</span>` : ''}
       </div>
       ${ch.notes ? `<div style="font-size:11px;color:${t.textDim};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">💬 ${ch.notes}</div>` : ''}
+      ${ch.warning ? `<div style="margin-top:6px;background:rgba(255,152,0,0.12);border:1px solid rgba(255,152,0,0.4);border-radius:4px;padding:6px 9px;display:flex;gap:6px;align-items:flex-start;">
+        <span style="font-size:12px;flex-shrink:0;">⚠</span>
+        <span style="font-size:11.5px;color:#ff9800;font-weight:600;line-height:1.35;white-space:normal;">${escHtml(ch.warning)}</span>
+      </div>` : ''}
     </div>`;
   }
 
@@ -10555,9 +10621,9 @@ function renderAdminChannels() {
   el.innerHTML = filtered.map(ch => `
     <div class="admin-ch-row">
       <div class="status-bar ${ch.status}" style="height:32px;"></div>
-      <div class="ch-designator" title="${escHtml(ch.designator)}">${escHtml(ch.designator)}</div>
+      <div class="ch-designator" title="${escHtml(ch.designator)}">${escHtml(ch.designator)}${ch.warning ? ` <span class="channel-warning-badge" title="${escHtml(ch.warning)}" style="margin-left:4px;">⚠</span>` : ''}</div>
       <div class="ch-freq">${ch.freq} MHz</div>
-      <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.function||'')}">${escHtml(ch.function||'—')}</div>
+      <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.function||'')}${ch.activeFor ? ' · ' + escHtml(ch.activeFor) : ''}">${escHtml(ch.function||'—')}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
       <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
       <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.agency||'')}">${escHtml(ch.agency||'—')}</div>
       <div style="display:flex;gap:4px;overflow:visible;">
@@ -10569,10 +10635,10 @@ function renderAdminChannels() {
 }
 
 async function adminResetAllChannels() {
-  if (!confirm(`Reset ALL ${channels.length} channels to "Available" status? This will clear their function and agency assignments.`)) return;
+  if (!confirm(`Reset ALL ${channels.length} channels to "Available" status? This will clear their current agency assignment and any in-use/reserved-for event name. Function/Purpose is left as-is, since it describes what the channel IS rather than what it's currently being used for.`)) return;
   const who = currentUser?.name || 'Unknown';
   const { error } = await sb.from('channels').update({
-    status: 'available', function: '—', agency: '—',
+    status: 'available', active_for: null, agency: '—',
     updated_by: who, updated_at: new Date().toISOString()
   }).neq('id', -1); // update all rows (no-op filter, required by Supabase for bulk updates)
   if (error) { alert('Error: ' + error.message); return; }
@@ -12546,7 +12612,7 @@ function applyScheduledReservations() {
       if (start <= now && end > now && ch.status === 'available') {
         sb.from('channels').update({
           status:     'reserved',
-          function:   r.title,
+          active_for: r.title,
           agency:     r.agency || ch.agency,
           updated_by: 'Schedule',
           updated_at: new Date().toISOString()
@@ -12566,7 +12632,7 @@ function applyScheduledReservations() {
       if (start <= now && end > now && ch.status === 'reserved') {
         sb.from('channels').update({
           status:     'active',
-          function:   r.title,
+          active_for: r.title,
           agency:     r.agency || ch.agency,
           updated_by: 'Schedule',
           updated_at: new Date().toISOString()
@@ -13827,6 +13893,18 @@ function populateChannelFunctionDropdown(currentValue) {
     options.map(f => `<option value="${escHtml(f)}"${f===cur?' selected':''}>${escHtml(f)}</option>`).join('');
 }
 
+// Shows the "In Use / Reserved For" field only when the channel's status is
+// In Use or Reserved — deliberately a separate field from Function/Purpose,
+// since Function describes what the channel IS (Command, Tactical, etc.)
+// while this describes what it's CURRENTLY tied up with (an event/incident
+// name), which changes far more often and shouldn't overwrite the former.
+function toggleActiveForField() {
+  const status = document.getElementById('f-status')?.value;
+  const row = document.getElementById('f-activefor-row');
+  if (!row) return;
+  row.style.display = (status === 'active' || status === 'reserved') ? 'block' : 'none';
+}
+
 function switchTriggerTab(tab) {
   document.getElementById('trtab-registry')?.classList.toggle('active', tab === 'registry');
   document.getElementById('trtab-log')?.classList.toggle('active', tab === 'log');
@@ -13885,11 +13963,11 @@ function openTriggerImport() {
 
 function exportChannelsCSV() {
   if (!channels.length) { alert('No channels to export.'); return; }
-  const header = ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','status','function','agency','remarks'];
+  const header = ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','status','function','active_for','warning','agency','remarks'];
   const rows = channels.map(ch => [
     ch.designator||'', ch.freq||'', ch.rxTone||'', ch.rxFreq||ch.freq||'', ch.txTone||'',
     ch.bandwidth||'', ch.power||'', ch.adm||'', ch.status||'', ch.function&&ch.function!=='—'?ch.function:'',
-    ch.agency&&ch.agency!=='—'?ch.agency:'', ch.notes||''
+    ch.activeFor||'', ch.warning||'', ch.agency&&ch.agency!=='—'?ch.agency:'', ch.notes||''
   ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
   const csv = [header.join(','), ...rows].join('\n');
   const a = Object.assign(document.createElement('a'), {
@@ -15497,7 +15575,7 @@ async function applyIncidentChannelStatus(incidentStatus, chIds, incidentName) {
     if (!ch || ch.status === 'active') continue;
     const oldStatus = ch.status;
     const { error } = await sb.from('channels').update({
-      status: 'active', updated_by: who, updated_at: new Date().toISOString(),
+      status: 'active', active_for: incidentName, updated_by: who, updated_at: new Date().toISOString(),
     }).eq('id', id);
     if (!error) {
       await logChannelHistory({
