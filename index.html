@@ -626,7 +626,7 @@
 
   .channel-row {
     display: grid;
-    grid-template-columns: 22px 28px 90px 88px 1fr 120px 100px 90px 100px;
+    grid-template-columns: 22px 28px 90px 88px 1fr 120px 100px 90px;
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
@@ -650,13 +650,13 @@
 
   /* ── ADMIN CHANNELS LIST ROW ──
      Dedicated layout for Admin > Channels — distinct from .channel-row since
-     this view has a different column set (no checkbox, no tone/mode, but adds
-     a Group column and inline action buttons). Reusing .channel-row's grid
-     here caused designator/frequency to overlap because the column counts
-     and content didn't match. */
+     this view has a different column set (no checkbox, no tone, but adds
+     inline action buttons). Reusing .channel-row's grid here caused
+     designator/frequency to overlap because the column counts and content
+     didn't match. */
   .admin-ch-row {
     display: grid;
-    grid-template-columns: 4px 130px 110px 1fr 110px 130px 110px 90px;
+    grid-template-columns: 4px 130px 110px 1fr 110px 130px 90px;
     align-items: center;
     gap: 10px;
     padding: 9px 12px;
@@ -670,7 +670,7 @@
   .admin-ch-row > div { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .admin-ch-grid-header {
     display: grid;
-    grid-template-columns: 4px 130px 110px 1fr 110px 130px 110px 90px;
+    grid-template-columns: 4px 130px 110px 1fr 110px 130px 90px;
     gap: 10px;
     padding: 4px 12px 8px;
     font-family: var(--font-data);
@@ -683,10 +683,8 @@
     .admin-ch-row, .admin-ch-grid-header { grid-template-columns: 4px 110px 1fr 90px; }
     .admin-ch-row > *:nth-child(4),
     .admin-ch-row > *:nth-child(6),
-    .admin-ch-row > *:nth-child(7),
     .admin-ch-grid-header > *:nth-child(4),
-    .admin-ch-grid-header > *:nth-child(6),
-    .admin-ch-grid-header > *:nth-child(7) { display: none; }
+    .admin-ch-grid-header > *:nth-child(6) { display: none; }
   }
 
   .channel-row .status-bar {
@@ -4397,7 +4395,6 @@
         <span>Status</span>
         <span>Agency</span>
         <span>Tone / NAC</span>
-        <span>Mode</span>
       </div>
       <div class="channel-grid" id="channelGrid"></div>
     </div>
@@ -4938,7 +4935,7 @@
           </div>
         </div>
         <div id="adminChSummary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-data);font-size:11px;color:var(--text-dim);"></div>
-        <div class="admin-ch-grid-header"><span></span><span>Designator</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Group</span><span>Actions</span></div>
+        <div class="admin-ch-grid-header"><span></span><span>Designator</span><span>Frequency</span><span>Function</span><span>Status</span><span>Agency</span><span>Actions</span></div>
         <div id="adminChannelList"></div>
       </div>
 
@@ -5031,7 +5028,7 @@
 
       <!-- Radio Config panel -->
       <div id="admin-radioconf-panel" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
           <!-- Radio Models -->
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
             <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -5052,6 +5049,17 @@
             <div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;">
               <input class="form-input" id="newRadioBand" placeholder="Band name…" style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')addRadioBand()">
               <button class="btn-primary" style="font-size:12px;padding:5px 12px;" onclick="addRadioBand()">+ Add</button>
+            </div>
+          </div>
+          <!-- Channel Functions / Purpose -->
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-family:var(--font-data);font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">Channel Functions</div>
+            </div>
+            <div id="channelFunctionList" style="padding:10px 14px;max-height:300px;overflow-y:auto;"></div>
+            <div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;">
+              <input class="form-input" id="newChannelFunction" placeholder="Function/purpose…" style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')addChannelFunction()">
+              <button class="btn-primary" style="font-size:12px;padding:5px 12px;" onclick="addChannelFunction()">+ Add</button>
             </div>
           </div>
         </div>
@@ -5348,33 +5356,12 @@
       </div>
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">Mode</label>
-          <select class="form-select" id="f-mode">
-            <option value="Analog FM">Analog FM</option>
-            <option value="P25 Phase I">P25 Phase I</option>
-            <option value="P25 Phase II">P25 Phase II</option>
-            <option value="DMR">DMR</option>
-            <option value="D-STAR">D-STAR</option>
-            <option value="NXDN">NXDN</option>
-            <option value="TETRA">TETRA</option>
-            <option value="AM">AM (Aviation)</option>
-          </select>
-        </div>
-        <div class="form-field">
           <label class="form-label">Function / Purpose</label>
-          <input class="form-input" id="f-function" placeholder="Command, Fire Attack, EMS, etc.">
+          <select class="form-select" id="f-function"></select>
         </div>
-      </div>
-
-      <div class="form-section-label">Assignment</div>
-      <div class="form-row">
         <div class="form-field">
           <label class="form-label">Department / Agency</label>
           <input class="form-input" id="f-agency" placeholder="LAFD, LAPD, CalFire…">
-        </div>
-        <div class="form-field">
-          <label class="form-label">Group / Category</label>
-          <input class="form-input" id="f-group" placeholder="Fire Ops, Law, EMS, Special Events…">
         </div>
       </div>
       <div class="form-row single">
@@ -5759,7 +5746,6 @@ function channelToRow(ch, userName) {
     freq:        ch.freq,
     rx_freq:     ch.rxFreq || ch.freq,
     status:      ch.status,
-    mode:        ch.mode,
     band:        ch.band || detectBand(ch.freq || ''),
     tone:        ch.tone,
     rx_tone:     ch.rxTone   || '',
@@ -5769,7 +5755,6 @@ function channelToRow(ch, userName) {
     power:       ch.power     || '',
     function:    ch.function,
     agency:      ch.agency,
-    group:       ch.group,
     notes:       ch.notes,
     updated_by:  userName || '',
     updated_at:  new Date().toISOString(),
@@ -7064,9 +7049,7 @@ function diffChannelFields(before, after, who) {
     { key:'rxFreq',    label:'RX Freq',   fmt: v => v + ' MHz' },
     { key:'function',  label:'Function',  fmt: v => v },
     { key:'agency',    label:'Agency',    fmt: v => v },
-    { key:'mode',      label:'Mode',      fmt: v => v },
     { key:'tone',      label:'Tone/NAC',  fmt: v => v },
-    { key:'group',     label:'Group',     fmt: v => v },
     { key:'notes',     label:'Notes',     fmt: v => v ? v.slice(0,60)+(v.length>60?'…':'') : '—' },
   ];
   return TRACKED.filter(f => {
@@ -7403,7 +7386,6 @@ function renderChannels() {
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
           <div class="ch-agency" style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
           <div class="ch-tone">${ch.tone || '—'}</div>
-          <div class="ch-mode">${ch.mode}</div>
         </div>`;
       }
     }).join('');
@@ -7534,16 +7516,8 @@ function selectChannel(id) {
       <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">RX: ${rxNote}</div>
     </div>
     <div class="detail-section">
-      <div class="detail-grid">
-        <div>
-          <div class="detail-label">Mode</div>
-          <div class="detail-value" style="font-size:13px;">${ch.mode}</div>
-        </div>
-        <div>
-          <div class="detail-label">Tone / NAC</div>
-          <div class="detail-value" style="font-size:13px;">${ch.tone || '—'}</div>
-        </div>
-      </div>
+      <div class="detail-label">Tone / NAC</div>
+      <div class="detail-value" style="font-size:13px;">${ch.tone || '—'}</div>
     </div>
     <div class="detail-section">
       <div class="detail-label">Function</div>
@@ -7575,10 +7549,8 @@ function selectChannel(id) {
           <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">RX: ${rxNote}</div>
         </div>
         <div class="detail-section">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div><div class="detail-label">Mode</div><div style="font-size:13px;color:var(--text-primary);">${ch.mode}</div></div>
-            <div><div class="detail-label">Tone / NAC</div><div style="font-size:13px;color:var(--text-primary);">${ch.tone||'—'}</div></div>
-          </div>
+          <div class="detail-label">Tone / NAC</div>
+          <div style="font-size:13px;color:var(--text-primary);">${ch.tone||'—'}</div>
         </div>
         ${ch.function && ch.function!=='—' ? `<div class="detail-section"><div class="detail-label">Function</div><div style="font-size:13px;color:var(--text-primary);">${ch.function}</div></div>` : ''}
         ${ch.agency && ch.agency!=='—' ? `<div class="detail-section"><div class="detail-label">Agency</div><div style="font-size:13px;color:var(--text-primary);">${ch.agency}</div></div>` : ''}
@@ -7638,10 +7610,8 @@ function quickDeploy(id) {
   setTimeout(() => {
     document.getElementById('f-designator').value = ch.designator;
     document.getElementById('f-freq').value        = ch.freq;
-    document.getElementById('f-tone').value        = ch.tone !== '—' ? ch.tone : '';
-    document.getElementById('f-mode').value        = ch.mode;
+    document.getElementById('f-rxtone').value      = ch.rxTone || (ch.tone !== '—' ? ch.tone : '');
     document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
-    document.getElementById('f-group').value       = ch.group || '';
     document.getElementById('f-status').value      = 'active';
     editingId = id;
     document.getElementById('modalTitle').textContent = 'Deploy Channel';
@@ -7672,7 +7642,7 @@ async function deleteChannel(id) {
 function openAddModal() {
   editingId = null;
   document.getElementById('modalTitle').textContent = 'Add Channel';
-  ['designator','freq','function','agency','rxtone','txtone','group','rxfreq','notes','power'].forEach(f => {
+  ['designator','freq','function','agency','rxtone','txtone','rxfreq','notes','power'].forEach(f => {
     const el = document.getElementById(`f-${f}`);
     if (el) el.value = '';
   });
@@ -7680,7 +7650,7 @@ function openAddModal() {
     const el = document.getElementById(id); if (el) el.textContent = '';
   });
   document.getElementById('f-status').value = 'available';
-  document.getElementById('f-mode').value   = 'Analog FM';
+  populateChannelFunctionDropdown('');
   document.getElementById('f-band').value   = 'VHF';
   document.getElementById('f-bw').value     = 'W';
   document.getElementById('f-adm').value    = 'A';
@@ -7697,16 +7667,14 @@ function openEditModal(id) {
   document.getElementById('f-designator').value = ch.designator;
   document.getElementById('f-freq').value        = ch.freq;
   document.getElementById('f-status').value      = ch.status;
-  document.getElementById('f-mode').value        = ch.mode;
   document.getElementById('f-band').value        = ch.band || detectBand(ch.freq || '');
   document.getElementById('f-rxtone').value      = ch.rxTone || (ch.tone !== '—' ? ch.tone : '');
   document.getElementById('f-txtone').value      = ch.txTone || '';
   document.getElementById('f-bw').value          = ch.bandwidth || 'W';
   document.getElementById('f-adm').value         = ch.adm || 'A';
   document.getElementById('f-power').value       = ch.power || '';
-  document.getElementById('f-function').value    = ch.function !== '—' ? ch.function : '';
+  populateChannelFunctionDropdown(ch.function !== '—' ? ch.function : '');
   document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
-  document.getElementById('f-group').value       = ch.group || '';
   document.getElementById('f-rxfreq').value      = ch.rxFreq || '';
   document.getElementById('f-notes').value       = ch.notes || '';
   // Show resolved tone hints
@@ -7739,7 +7707,6 @@ async function saveChannel() {
     freq,
     rx_freq:         document.getElementById('f-rxfreq').value.trim()    || freq,
     status:          document.getElementById('f-status').value,
-    mode:            document.getElementById('f-mode').value,
     band:            document.getElementById('f-band').value              || detectBand(freq),
     tone:            document.getElementById('f-rxtone').value.trim()    || '—',  // legacy field mirrors RX tone
     rx_tone:         document.getElementById('f-rxtone').value.trim()    || '',
@@ -7749,7 +7716,6 @@ async function saveChannel() {
     power:           document.getElementById('f-power').value.trim()     || '',
     function:        document.getElementById('f-function').value.trim()  || '—',
     agency:          document.getElementById('f-agency').value.trim()    || '—',
-    group:           document.getElementById('f-group').value.trim()     || '',
     notes:           document.getElementById('f-notes').value.trim()     || '',
     conflict_check:  conflictCheck,
     updated_by:      who,
@@ -9246,7 +9212,7 @@ const BB_TYPE_DEFS = [
 ];
 
 function classifyChannelType(ch) {
-  const haystack = `${ch.function||''} ${ch.group||''} ${ch.designator||''}`.toLowerCase();
+  const haystack = `${ch.function||''} ${ch.designator||''}`.toLowerCase();
   const band = ch.band || detectBand(ch.freq || '');
   for (const def of BB_TYPE_DEFS) {
     if (def.band && band !== def.band) continue;
@@ -10483,7 +10449,6 @@ function renderOverview() {
         <div class="ov-agency">${ch.agency && ch.agency !== '—' ? ch.agency : '—'}</div>
         <div class="ov-detail">
           <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);">${ch.tone || '—'}</span>
-          <span style="font-family:var(--font-data);font-size:11px;color:var(--text-dim);margin-left:8px;">${ch.mode}</span>
         </div>
       </div>`).join('');
 
@@ -10595,7 +10560,6 @@ function renderAdminChannels() {
       <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.function||'')}">${escHtml(ch.function||'—')}</div>
       <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
       <div style="font-size:12px;color:var(--text-secondary);" title="${escHtml(ch.agency||'')}">${escHtml(ch.agency||'—')}</div>
-      <div style="font-size:11px;color:var(--text-dim);" title="${escHtml(ch.group||'')}">${escHtml(ch.group||'—')}</div>
       <div style="display:flex;gap:4px;overflow:visible;">
         <button class="btn-secondary" style="font-size:10px;padding:3px 8px;" onclick="openEditModal(${ch.id})">✏</button>
         ${ch.status !== 'available' ? `<button class="btn-success" style="font-size:10px;padding:3px 7px;" onclick="releaseChannel(${ch.id})" title="Mark Available">✓</button>` : ''}
@@ -13149,11 +13113,11 @@ async function recommendChannels(params) {
       // 1. Available status (already filtered above, but log it for transparency)
       score += 30; breakdown.push({ label: 'Available now', pts: 30 });
 
-      // 2. Matching requested type — band preference + role keyword match against Function/Group
+      // 2. Matching requested type — band preference + role keyword match against Function
       let typeScore = 0;
       if (preferredBand && ch.band === preferredBand) typeScore += 12;
       if (keywords.length) {
-        const haystack = `${ch.function||''} ${ch.group||''} ${ch.designator||''}`.toLowerCase();
+        const haystack = `${ch.function||''} ${ch.designator||''}`.toLowerCase();
         if (keywords.some(k => haystack.includes(k))) typeScore += 13;
       } else if (!preferredBand) {
         typeScore += 6; // no specific type requested — partial credit so band-agnostic requests still rank channels reasonably
@@ -13381,7 +13345,7 @@ async function runRecommendation() {
       : `${escHtml(ch.designator)} <span style="font-size:11px;color:var(--text-dim);font-weight:400;">${ch.freq} MHz · ${ch.band}</span>`;
     const subLine = r.isTalkgroup
       ? `${escHtml(ch.name||'No name set')}${ch.agency ? ' · ' + escHtml(ch.agency) : ''}`
-      : `${escHtml(ch.function||'No function set')}${ch.group ? ' · ' + escHtml(ch.group) : ''}`;
+      : `${escHtml(ch.function||'No function set')}${ch.agency ? ' · ' + escHtml(ch.agency) : ''}`;
     return `
     <div style="background:var(--bg-card);border:1px solid ${r.disqualified ? 'rgba(255,82,82,0.35)' : 'var(--border)'};border-radius:8px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
@@ -13791,6 +13755,7 @@ async function deleteNotice(id) {
 let triggers        = [];
 let triggerModels   = [];
 let triggerBands    = [];
+let channelFunctions = [];
 let triggerEditingId = null;
 let triggerViewingId = null;
 // (bulk-select removed — control top replaced moved to Inventory module)
@@ -13800,6 +13765,7 @@ const TRLOG_PAGE     = 100;
 
 const DEFAULT_RADIO_MODELS = ['APX8000','APX8000HXE','APX8000XE','APX4500','APX7500','APX7000XE','APX7000','APX4000','NEXT','NEXT XE','NEXT N70'];
 const DEFAULT_RADIO_BANDS  = ['UHF','VHF','800','UHF/VHF','UHF/800','VHF/800','ALL BAND'];
+const DEFAULT_CHANNEL_FUNCTIONS = ['COMMAND','TACTICAL','AIR TO GROUND','AIR TO AIR','ADMIN','TALK AROUND'];
 
 async function loadTriggers() {
   try {
@@ -13823,6 +13789,12 @@ async function loadTriggerLookups() {
     triggerBands = (data||[]).map(r=>r.name);
   } catch(e) {}
   if (!triggerBands.length) triggerBands = [...DEFAULT_RADIO_BANDS];
+  // Load channel functions
+  try {
+    const { data } = await sb.from('channel_functions').select('*').order('name');
+    channelFunctions = (data||[]).map(r=>r.name);
+  } catch(e) {}
+  if (!channelFunctions.length) channelFunctions = [...DEFAULT_CHANNEL_FUNCTIONS];
 }
 
 function populateTriggerDropdowns() {
@@ -13838,6 +13810,21 @@ function populateTriggerDropdowns() {
     bandSel.innerHTML = '<option value="">— Select band —</option>' +
       triggerBands.map(b => `<option value="${escHtml(b)}"${b===cur?' selected':''}>${escHtml(b)}</option>`).join('');
   }
+}
+
+// Populates the Function/Purpose dropdown on the Add/Edit Channel form. If the
+// channel being edited has a function value that ISN'T in the current list
+// (e.g. set before this dropdown existed, or an option was later removed by
+// an admin), that value is still added as a one-off option so it doesn't
+// silently disappear or get blanked out from under the user.
+function populateChannelFunctionDropdown(currentValue) {
+  const sel = document.getElementById('f-function');
+  if (!sel) return;
+  const cur = currentValue !== undefined ? currentValue : sel.value;
+  let options = [...channelFunctions];
+  if (cur && !options.includes(cur)) options.push(cur);
+  sel.innerHTML = '<option value="">— Select function/purpose —</option>' +
+    options.map(f => `<option value="${escHtml(f)}"${f===cur?' selected':''}>${escHtml(f)}</option>`).join('');
 }
 
 function switchTriggerTab(tab) {
@@ -13898,11 +13885,11 @@ function openTriggerImport() {
 
 function exportChannelsCSV() {
   if (!channels.length) { alert('No channels to export.'); return; }
-  const header = ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','status','function','agency','group','remarks'];
+  const header = ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','status','function','agency','remarks'];
   const rows = channels.map(ch => [
     ch.designator||'', ch.freq||'', ch.rxTone||'', ch.rxFreq||ch.freq||'', ch.txTone||'',
     ch.bandwidth||'', ch.power||'', ch.adm||'', ch.status||'', ch.function&&ch.function!=='—'?ch.function:'',
-    ch.agency&&ch.agency!=='—'?ch.agency:'', ch.group||'', ch.notes||''
+    ch.agency&&ch.agency!=='—'?ch.agency:'', ch.notes||''
   ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
   const csv = [header.join(','), ...rows].join('\n');
   const a = Object.assign(document.createElement('a'), {
@@ -14860,6 +14847,7 @@ function initPresence() {
 async function renderAdminRadioConfig() {
   await renderRadioModelList();
   await renderRadioBandList();
+  await renderChannelFunctionList();
   renderToneTable();
 }
 
@@ -14958,6 +14946,41 @@ async function deleteRadioBand(id, name) {
   renderRadioBandList();
 }
 
+async function renderChannelFunctionList() {
+  const el = document.getElementById('channelFunctionList');
+  if (!el) return;
+  const { data } = await sb.from('channel_functions').select('*').order('name');
+  const items = data || [];
+  el.innerHTML = items.length
+    ? items.map(f => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="font-family:var(--font-data);font-size:12px;color:var(--text-primary);">${escHtml(f.name)}</span>
+          <button onclick="deleteChannelFunction(${f.id},'${escHtml(f.name)}')" style="background:none;border:none;color:var(--status-active);cursor:pointer;font-size:14px;padding:0 4px;" title="Delete">✕</button>
+        </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;">No functions yet — using built-in defaults until the first one is added.</div>';
+}
+
+async function addChannelFunction() {
+  const inp = document.getElementById('newChannelFunction');
+  const name = inp?.value.trim().toUpperCase();
+  if (!name) return;
+  const { error } = await sb.from('channel_functions').insert({ name });
+  if (error) { alert(error.message); return; }
+  inp.value = '';
+  await loadTriggerLookups();
+  renderChannelFunctionList();
+  populateChannelFunctionDropdown();
+  logEvent('system', 'Channel Function Added', name);
+}
+
+async function deleteChannelFunction(id, name) {
+  if (!confirm(`Delete function/purpose "${name}"? Channels already using this value keep it — it just won't be offered for new selections.`)) return;
+  await sb.from('channel_functions').delete().eq('id', id);
+  await loadTriggerLookups();
+  renderChannelFunctionList();
+  populateChannelFunctionDropdown();
+}
+
 // ─────────────────────────────────────────────
 // CSV IMPORT / EXPORT TEMPLATES
 // ─────────────────────────────────────────────
@@ -15047,7 +15070,6 @@ async function importCSV(type) {
         freq:       rxFreqVal,
         rx_freq:    r.tx_freq || rxFreqVal,   // DB column rx_freq actually stores TX per current schema
         status:     r.status || 'available',
-        mode:       r.mode || 'Analog FM',
         band:       r.band || detectBand(rxFreqVal),
         tone:       r.rx_tone || '—',
         rx_tone:    r.rx_tone || '',
@@ -15057,7 +15079,6 @@ async function importCSV(type) {
         power:      r.power || '',
         function:   r.function || '—',
         agency:     r.agency || '—',
-        group:      r.group || '',
         notes:      r.remarks || r.notes || '',
         conflict_check: r.conflict_check !== 'false',
         updated_by: currentUser?.name || 'Import', updated_at: new Date().toISOString(),
