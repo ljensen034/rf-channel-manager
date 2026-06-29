@@ -2,8 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>COMM CENTER — Public Safety</title>
+
+<!-- PWA: installable app shell -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d12">
+
+<!-- iOS-specific install behavior — Safari ignores manifest.json display
+     mode and needs these to launch standalone (no address bar) from the
+     home screen, and to use a proper icon instead of a screenshot thumbnail. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="COMM CENTER">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
@@ -1503,6 +1520,80 @@
 
   body.readonly .readonly-banner { display: block; }
 
+  /* ── LIVE ACTIVITY TICKER ── */
+  .live-ticker {
+    display: flex;
+    align-items: center;
+    height: 26px;
+    background: var(--bg-deep);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .live-ticker.hidden { display: none; }
+  .ticker-toggle, .ticker-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0 9px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    transition: color 0.12s;
+  }
+  .ticker-toggle:hover, .ticker-close:hover { color: var(--text-primary); }
+  .ticker-track-wrap {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    height: 100%;
+  }
+  .ticker-track {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    white-space: nowrap;
+    animation: tickerScroll 45s linear infinite;
+    will-change: transform;
+  }
+  .live-ticker.paused .ticker-track { animation-play-state: paused; }
+  @keyframes tickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* track content is duplicated, so -50% loops seamlessly */
+  }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 22px;
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border);
+  }
+  .ticker-item .ticker-cat {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .ticker-empty {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 16px;
+  }
+  @media (max-width: 768px) {
+    .live-ticker { height: 24px; }
+    .ticker-item { font-size: 10px; padding: 0 16px; }
+  }
+
   /* ── USER ADMIN TABLE ── */
   #userTableBody tr {
     border-bottom: 1px solid var(--border);
@@ -2264,7 +2355,7 @@
   /* ── TALKGROUP GRID ── */
   .tg-row {
     display: grid;
-    grid-template-columns: 28px 80px 80px 1fr 120px 100px 100px 80px;
+    grid-template-columns: 22px 28px 80px 80px 1fr 120px 100px 100px 80px;
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
@@ -3862,6 +3953,15 @@
   </div>
 </div>
 
+<!-- ── LIVE ACTIVITY TICKER ── -->
+<div id="liveTicker" class="live-ticker">
+  <button class="ticker-toggle" onclick="toggleTicker()" title="Pause/resume ticker">⏸</button>
+  <div class="ticker-track-wrap">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+  <button class="ticker-close" onclick="hideTicker()" title="Hide ticker">✕</button>
+</div>
+
 <!-- READ-ONLY BANNER -->
 <div class="readonly-banner">🔒 VIEW ONLY MODE — You do not have permission to make changes. Contact your Comms Unit Leader.</div>
 
@@ -3927,6 +4027,9 @@
         </div>
         <div class="nav-group-item" onclick="closeReportsDropdown();openLowAvailSettings();">
           <span class="nav-item-icon">⚠</span>Low Availability Alerts
+        </div>
+        <div class="nav-group-item" onclick="closeReportsDropdown();toggleTickerVisibility();">
+          <span class="nav-item-icon">📡</span><span id="tickerVisibilityLabel">Hide Activity Ticker</span>
         </div>
       </div>
     </div>
@@ -4252,7 +4355,7 @@
       <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="applyBulkStatus('active')">In Use</button>
       <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="applyBulkStatus('reserved')">Reserved</button>
       <span style="color:var(--border-lit);">|</span>
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openBulkAssignIncident()">🚨 Assign to Incident</button>
+      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openBulkAssignIncident('channel')">🚨 Assign to Incident</button>
       <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="bulkExportICS205()">⬇ Export ICS 205</button>
       <button class="btn-secondary" style="font-size:11px;padding:3px 10px;margin-left:auto;" onclick="clearBulkChannelSelection()">✕ Clear Selection</button>
     </div>
@@ -4291,7 +4394,22 @@
         </div>
         <button class="btn-primary" onclick="openTalkgroupModal(null)">+ Add Talkgroup</button>
       </div>
-      <div class="channel-grid-header" style="grid-template-columns:28px 80px 80px 1fr 120px 100px 100px 80px;">
+
+      <!-- Bulk action bar — appears when talkgroups are checkbox-selected -->
+      <div id="tgBulkActionBar" style="display:none;align-items:center;gap:10px;padding:8px 14px;background:var(--accent-glow);border:1px solid var(--accent);border-radius:var(--radius);margin-bottom:8px;flex-wrap:wrap;">
+        <span id="tgBulkCount" style="font-family:var(--font-data);font-size:12px;color:var(--accent);font-weight:600;"></span>
+        <span style="color:var(--border-lit);">|</span>
+        <span style="font-size:11px;color:var(--text-dim);">Set status:</span>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="applyBulkTgStatus('available')">Available</button>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="applyBulkTgStatus('active')">In Use</button>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="applyBulkTgStatus('reserved')">Reserved</button>
+        <span style="color:var(--border-lit);">|</span>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="openBulkAssignIncident('talkgroup')">🚨 Assign to Incident</button>
+        <button class="btn-secondary" style="font-size:11px;padding:3px 10px;margin-left:auto;" onclick="clearBulkTgSelection()">✕ Clear Selection</button>
+      </div>
+
+      <div class="channel-grid-header" style="grid-template-columns:22px 28px 80px 80px 1fr 120px 100px 100px 80px;">
+        <span><input type="checkbox" id="tgBulkSelectAll" onclick="toggleAllTgSelect(this)" title="Select all"></span>
         <span></span>
         <span>TG ID</span>
         <span>System</span>
@@ -5374,6 +5492,12 @@
           <select class="form-select" id="icr-channel" multiple style="height:90px;font-family:var(--font-data);font-size:13px;"></select>
         </div>
       </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Preferred Talkgroup(s) <span style="font-weight:400;color:var(--text-dim);">optional</span></label>
+          <select class="form-select" id="icr-talkgroup" multiple style="height:80px;font-family:var(--font-data);font-size:13px;"></select>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Priority</label>
@@ -5655,11 +5779,61 @@ async function loadActivityLog() {
     return { time: ts, text: r.message };
   });
   renderLog();
+  // Seed the live ticker with the most recent real entries so it isn't sitting
+  // on "Waiting for activity…" until the first new event happens to occur.
+  tickerBuffer = data.slice(0, TICKER_MAX_ITEMS);
+  renderTicker();
 }
 
 // ─────────────────────────────────────────────
 // REALTIME SUBSCRIPTIONS
 // ─────────────────────────────────────────────
+// ── Realtime connection health ──
+// Supabase's client auto-reconnects on its own with exponential backoff, so
+// this doesn't reimplement reconnection logic — it surfaces connection
+// health visibly (the dbStatus indicator previously only reflected the
+// initial page load, never updated again) and forces a full data refresh
+// the moment a channel comes back SUBSCRIBED after an error, since any
+// changes that happened during the outage window won't replay automatically.
+let realtimeChannelStates = {}; // channelName -> 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'TIMED_OUT' | 'CLOSED'
+
+function onRealtimeStatus(channelName, status) {
+  realtimeChannelStates[channelName] = status;
+  const allGood = Object.values(realtimeChannelStates).every(s => s === 'SUBSCRIBED');
+  const anyDown = Object.values(realtimeChannelStates).some(s => s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED');
+
+  if (allGood) {
+    setDbStatus('connected');
+    resetSyncTimer();
+  } else if (anyDown) {
+    setDbStatus('error', 'Reconnecting…');
+  }
+
+  // A channel that just recovered may have missed events while it was down —
+  // pull a fresh copy of everything realtime normally keeps current.
+  if (status === 'SUBSCRIBED' && realtimeChannelStates['_hadOutage']) {
+    realtimeChannelStates['_hadOutage'] = false;
+    refreshAllAfterReconnect();
+  }
+  if (status !== 'SUBSCRIBED') realtimeChannelStates['_hadOutage'] = true;
+}
+
+async function refreshAllAfterReconnect() {
+  try {
+    await Promise.all([
+      loadChannels(), loadTalkgroups(), loadReservations(),
+      loadIncidents(), loadCommPlanReqs(), loadInternalChannelRequests(),
+    ]);
+    renderChannels();
+    if (activeMainTab === 'talkgroups') renderTalkgroups();
+    if (activeMainTab === 'schedule')   renderSchedule();
+    if (activeMainTab === 'incidents')  renderIncidents();
+    if (activeMainTab === 'commreq')    renderCommPlanReqs();
+    updateIcrBadge();
+    pushNotification('available', '🔄 Reconnected — data refreshed after a brief connection interruption');
+  } catch(e) { console.warn('refreshAllAfterReconnect:', e.message); }
+}
+
 function subscribeRealtime() {
   sb.channel('channels-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, async () => {
@@ -5680,7 +5854,7 @@ function subscribeRealtime() {
         }
       }
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('channels', status));
 
   sb.channel('log-changes')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
@@ -5691,8 +5865,9 @@ function subscribeRealtime() {
       activityLog.unshift({ time: ts, text: r.message });
       if (activityLog.length > 50) activityLog.pop();
       renderLog();
+      pushTickerItem(r);
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('log', status));
 
   sb.channel('talkgroups-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'talkgroups' }, async () => {
@@ -5701,7 +5876,7 @@ function subscribeRealtime() {
       if (activeMainTab === 'overview')   renderOverview();
       if (activeMainTab === 'admin')      renderAdminView();
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('talkgroups', status));
 
   sb.channel('reservations-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, async () => {
@@ -5709,14 +5884,14 @@ function subscribeRealtime() {
       if (activeMainTab === 'schedule') renderSchedule();
       applyScheduledReservations();
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('reservations', status));
 
   sb.channel('commreq-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comm_plan_requests' }, async () => {
       await loadCommPlanReqs();
       if (activeMainTab === 'commreq') renderCommPlanReqs();
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('commreq', status));
 
   sb.channel('icr-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'internal_channel_requests' }, async () => {
@@ -5724,8 +5899,94 @@ function subscribeRealtime() {
       const queueOpen = document.getElementById('icrQueueModal')?.classList.contains('open');
       if (queueOpen) renderIcrQueue();
     })
-    .subscribe();
+    .subscribe(status => onRealtimeStatus('icr', status));
 }
+
+// ─────────────────────────────────────────────
+// LIVE ACTIVITY TICKER
+// ─────────────────────────────────────────────
+// Scrolls real events as they happen across every module — fed by the same
+// activity_log realtime stream every other live feature already uses, so
+// there's no separate polling or duplicate subscription. Capped buffer,
+// CSS keyframe animation does the actual scrolling (cheap, GPU-friendly,
+// pauses cleanly on hover/manual toggle without any JS timer).
+const TICKER_MAX_ITEMS = 20;
+let tickerBuffer = [];
+let tickerPaused = false;
+
+function loadTickerHiddenState() {
+  try { return localStorage.getItem('rfTickerHidden') === '1'; } catch(e) { return false; }
+}
+
+function pushTickerItem(row) {
+  if (!row || !row.message) return;
+  tickerBuffer.unshift(row);
+  if (tickerBuffer.length > TICKER_MAX_ITEMS) tickerBuffer.length = TICKER_MAX_ITEMS;
+  renderTicker();
+}
+
+function renderTicker() {
+  const track = document.getElementById('tickerTrack');
+  if (!track) return;
+
+  if (!tickerBuffer.length) {
+    track.innerHTML = `<span class="ticker-empty">📡 Waiting for activity…</span>`;
+    track.style.animation = 'none'; // no point scrolling an empty/short placeholder
+    return;
+  }
+
+  const itemHtml = tickerBuffer.map(r => {
+    const ts = new Date(r.created_at).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false });
+    const chip = syslogCategoryChip(r.category || 'system');
+    const text = (r.action || r.message || '').replace(/<[^>]+>/g, '');
+    return `<span class="ticker-item">${chip}<span style="color:var(--text-dim);">${ts}</span> ${escHtml(text)}${r.actor ? ` <span style="color:var(--text-dim);">— ${escHtml(r.actor)}</span>` : ''}</span>`;
+  }).join('');
+
+  // Duplicate the content back-to-back so the -50% translateX loop is seamless
+  track.innerHTML = itemHtml + itemHtml;
+  track.style.animation = ''; // restore the CSS animation now that there's real content
+}
+
+function toggleTicker() {
+  tickerPaused = !tickerPaused;
+  const ticker = document.getElementById('liveTicker');
+  const btn = ticker?.querySelector('.ticker-toggle');
+  ticker?.classList.toggle('paused', tickerPaused);
+  if (btn) btn.textContent = tickerPaused ? '▶' : '⏸';
+}
+
+function hideTicker() {
+  document.getElementById('liveTicker')?.classList.add('hidden');
+  try { localStorage.setItem('rfTickerHidden', '1'); } catch(e) {}
+  updateTickerVisibilityLabel();
+}
+
+function showTicker() {
+  document.getElementById('liveTicker')?.classList.remove('hidden');
+  try { localStorage.removeItem('rfTickerHidden'); } catch(e) {}
+  updateTickerVisibilityLabel();
+}
+
+function toggleTickerVisibility() {
+  const isHidden = document.getElementById('liveTicker')?.classList.contains('hidden');
+  if (isHidden) showTicker(); else hideTicker();
+}
+
+function updateTickerVisibilityLabel() {
+  const label = document.getElementById('tickerVisibilityLabel');
+  if (!label) return;
+  const isHidden = document.getElementById('liveTicker')?.classList.contains('hidden');
+  label.textContent = isHidden ? 'Show Activity Ticker' : 'Hide Activity Ticker';
+}
+
+// Apply the saved hidden preference and do an initial render on load
+(function initTicker() {
+  if (loadTickerHiddenState()) {
+    document.getElementById('liveTicker')?.classList.add('hidden');
+  }
+  updateTickerVisibilityLabel();
+  renderTicker();
+})();
 
 // ─────────────────────────────────────────────
 // DB STATUS INDICATOR
@@ -7162,12 +7423,19 @@ async function applyBulkStatus(status) {
   renderChannels();
 }
 
-function openBulkAssignIncident() {
-  if (!bulkSelectedChannels.size) return;
+let bulkAssignResourceType = 'channel'; // tracks which bulk selection set the shared modal is currently operating on
+
+function openBulkAssignIncident(resourceType) {
+  resourceType = resourceType || 'channel';
+  bulkAssignResourceType = resourceType;
+  const selection = resourceType === 'talkgroup' ? bulkSelectedTalkgroups : bulkSelectedChannels;
+  if (!selection.size) return;
   if (!incidents.length) { alert('No incidents exist yet. Create one first from the Incidents tab.'); return; }
   const sel = document.getElementById('bulkIncidentSelect');
   sel.innerHTML = incidents.map(i => `<option value="${i.id}">${escHtml(i.name)}${i.number ? ' — ' + escHtml(i.number) : ''}</option>`).join('');
-  document.getElementById('bulkIncidentCount').textContent = bulkSelectedChannels.size;
+  document.getElementById('bulkIncidentCount').textContent = selection.size;
+  document.getElementById('bulkAssignModalTitle').textContent = resourceType === 'talkgroup' ? 'Assign Talkgroups to Incident' : 'Assign Channels to Incident';
+  document.getElementById('bulkAssignResourceLabel').textContent = resourceType === 'talkgroup' ? 'talkgroup(s)' : 'channel(s)';
   document.getElementById('bulkAssignIncidentModal').classList.add('open');
 }
 
@@ -7181,22 +7449,27 @@ async function confirmBulkAssignIncident() {
   const inc = incidents.find(i => String(i.id) === String(incId));
   if (!inc) return;
 
-  const existingChIds = new Set((inc.channel_ids || []).map(String));
-  bulkSelectedChannels.forEach(id => existingChIds.add(String(id)));
+  const isTg = bulkAssignResourceType === 'talkgroup';
+  const selection = isTg ? bulkSelectedTalkgroups : bulkSelectedChannels;
+  const fieldName = isTg ? 'talkgroup_ids' : 'channel_ids';
+
+  const existingIds = new Set((inc[fieldName] || []).map(String));
+  selection.forEach(id => existingIds.add(String(id)));
 
   const { error } = await sb.from('incidents').update({
-    channel_ids: [...existingChIds],
+    [fieldName]: [...existingIds],
     updated_by: currentUser?.name || 'Unknown',
     updated_at: new Date().toISOString(),
   }).eq('id', incId);
 
   if (error) { alert('Error: ' + error.message); return; }
 
-  logEvent('incident', 'Bulk Channel Assignment', `${bulkSelectedChannels.size} channels added to ${inc.name}`, { incident: inc.name });
+  logEvent('incident', isTg ? 'Bulk Talkgroup Assignment' : 'Bulk Channel Assignment',
+    `${selection.size} ${isTg ? 'talkgroups' : 'channels'} added to ${inc.name}`, { incident: inc.name });
   await loadIncidents();
   closeBulkAssignIncident();
-  bulkSelectedChannels.clear();
-  renderChannels();
+  selection.clear();
+  if (isTg) renderTalkgroups(); else renderChannels();
 }
 
 function bulkExportICS205() {
@@ -7983,7 +8256,7 @@ function openMyItems() {
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="document.getElementById('myItemsModal').classList.remove('open');switchMainTab('schedule');">
           <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(r.title)}</div>
           <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-data);margin-top:2px;">${fmtDT(r.start)} → ${fmtDT(r.end_time)}</div>
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Awaiting COML review${r.channel_designator ? ' · preferred: ' + escHtml(r.channel_designator) : ''}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Awaiting COML review${r.channel_designator ? ' · ch: ' + escHtml(r.channel_designator) : ''}${r.talkgroup_designator ? ' · tg: ' + escHtml(r.talkgroup_designator) : ''}</div>
         </div>`).join('')}
     </div>` : '';
 
@@ -8051,6 +8324,12 @@ function openIcrForm() {
   sel.innerHTML = channels.map(c => `<option value="${c.id}">${escHtml(c.designator)} — ${c.freq} MHz</option>`).join('');
   [...sel.options].forEach(o => o.selected = false);
 
+  const tgSel = document.getElementById('icr-talkgroup');
+  if (tgSel) {
+    tgSel.innerHTML = talkgroups.map(t => `<option value="${t.id}">${escHtml(t.tgId)} — ${escHtml(t.name)}</option>`).join('');
+    [...tgSel.options].forEach(o => o.selected = false);
+  }
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const ds = tomorrow.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
@@ -8081,12 +8360,17 @@ async function submitIcrRequest() {
   const channelIds = [...sel.options].filter(o => o.selected).map(o => o.value);
   const channelDesignators = channelIds.map(id => channels.find(c => String(c.id) === String(id))?.designator).filter(Boolean);
 
+  const tgSel = document.getElementById('icr-talkgroup');
+  const talkgroupIds = tgSel ? [...tgSel.options].filter(o => o.selected).map(o => o.value) : [];
+  const talkgroupLabels = talkgroupIds.map(id => talkgroups.find(t => String(t.id) === String(id))?.tgId).filter(Boolean);
+
   // Flag conflicts up front so the requestor knows before submitting — this does not
   // block submission, since a COML reviewing the queue may still choose to resolve it
   // (re-assign a different channel, adjust the time, etc).
-  if (channelIds.length) {
-    const conflicts = checkResourceConflicts(channelIds, 'channel', startISO, endISO, null, null)
-      .filter(c => c.severity === 'hard');
+  if (channelIds.length || talkgroupIds.length) {
+    const chConflicts = channelIds.length ? checkResourceConflicts(channelIds, 'channel', startISO, endISO, null, null).filter(c => c.severity === 'hard') : [];
+    const tgConflicts  = talkgroupIds.length ? checkResourceConflicts(talkgroupIds, 'talkgroup', startISO, endISO, null, null).filter(c => c.severity === 'hard') : [];
+    const conflicts = [...chConflicts, ...tgConflicts];
     if (conflicts.length) {
       const proceed = confirm(
         '⚠ Possible conflict detected:\n\n' + formatConflictMessages(conflicts).join('\n') +
@@ -8105,6 +8389,8 @@ async function submitIcrRequest() {
     requestor_id:   currentUser?.id   || null,
     channel_ids:    channelIds,
     channel_designator: channelDesignators.join(', '),
+    talkgroup_ids:       talkgroupIds,
+    talkgroup_designator: talkgroupLabels.join(', '),
     priority: document.getElementById('icr-priority').value,
     agency:   document.getElementById('icr-agency').value.trim() || null,
     notes:    document.getElementById('icr-notes').value.trim() || null,
@@ -8143,9 +8429,13 @@ function renderIcrQueue() {
   const fmtDT = d => new Date(d).toLocaleString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
 
   body.innerHTML = pending.map(r => {
-    const conflicts = (r.channel_ids || []).length
+    const chConflicts = (r.channel_ids || []).length
       ? checkResourceConflicts(r.channel_ids, 'channel', r.start, r.end_time, r.id, 'icr').filter(c => c.severity === 'hard')
       : [];
+    const tgConflicts = (r.talkgroup_ids || []).length
+      ? checkResourceConflicts(r.talkgroup_ids, 'talkgroup', r.start, r.end_time, r.id, 'icr').filter(c => c.severity === 'hard')
+      : [];
+    const conflicts = [...chConflicts, ...tgConflicts];
     const conflictHtml = conflicts.length
       ? `<div style="font-size:11px;color:var(--status-active);background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);border-radius:4px;padding:6px 9px;margin-top:6px;">⚠ ${formatConflictMessages(conflicts).join('<br>⚠ ')}</div>`
       : '';
@@ -8160,7 +8450,9 @@ function renderIcrQueue() {
           <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">
             Requested by <strong>${escHtml(r.requestor_name)}</strong>${r.agency ? ' · ' + escHtml(r.agency) : ''}
           </div>
-          ${r.channel_designator ? `<div style="font-size:12px;color:var(--accent);margin-top:4px;">📻 Preferred: ${escHtml(r.channel_designator)}</div>` : '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">No preferred channel specified</div>'}
+          ${r.channel_designator ? `<div style="font-size:12px;color:var(--accent);margin-top:4px;">📻 Preferred channel: ${escHtml(r.channel_designator)}</div>` : ''}
+          ${r.talkgroup_designator ? `<div style="font-size:12px;color:var(--accent);margin-top:4px;">🔢 Preferred talkgroup: ${escHtml(r.talkgroup_designator)}</div>` : ''}
+          ${!r.channel_designator && !r.talkgroup_designator ? '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">No preferred channel/talkgroup specified</div>' : ''}
           ${r.notes ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;font-style:italic;">"${escHtml(r.notes)}"</div>` : ''}
           ${conflictHtml}
         </div>
@@ -8198,7 +8490,10 @@ async function approveIcrRequest(id) {
       document.getElementById('sr-requestor').value = r.requestor_name || '';
       document.getElementById('sr-agency').value     = r.agency || '';
       document.getElementById('sr-priority').value   = r.priority || 'Normal';
-      document.getElementById('sr-notes').value      = r.notes || '';
+      // Reservations don't support talkgroup assignment yet — note the
+      // requested talkgroup directly in the notes so it isn't silently lost.
+      const tgNote = r.talkgroup_designator ? `Requested talkgroup: ${r.talkgroup_designator}` : '';
+      document.getElementById('sr-notes').value      = [r.notes, tgNote].filter(Boolean).join('\n\n');
       document.getElementById('sr-start').value      = toLocalDatetimeInput(r.start);
       document.getElementById('sr-end').value        = toLocalDatetimeInput(r.end_time);
 
@@ -10422,6 +10717,7 @@ const SYSLOG_CATEGORY_STYLE = {
   trigger:     { bg:'rgba(255,196,0,0.12)',  color:'#ffd54f',                 label:'TRIGGER'     },
   inventory:   { bg:'rgba(156,39,176,0.12)', color:'#ce93d8',                 label:'INVENTORY'   },
   incident:    { bg:'rgba(255,82,82,0.12)',  color:'var(--status-active)',    label:'INCIDENT'    },
+  conflict:    { bg:'rgba(255,82,82,0.12)',  color:'var(--status-active)',    label:'CONFLICT'    },
   system:      { bg:'rgba(120,120,120,0.12)',color:'var(--text-dim)',         label:'SYSTEM'      },
 };
 
@@ -12271,8 +12567,8 @@ function renderTalkgroups() {
   const tgHdr = document.querySelector('#view-talkgroups .channel-grid-header');
   if (tgHdr) {
     tgHdr.innerHTML = isDispatcher
-      ? `<span></span><span>Name</span><span>Status</span><span>Agency</span><span></span><span></span><span></span><span></span>`
-      : `<span></span><span>TG ID</span><span>System</span><span>Name / Function</span><span>Status</span><span>Agency</span><span>Encryption</span><span>Priority</span>`;
+      ? `<span><input type="checkbox" id="tgBulkSelectAll" onclick="toggleAllTgSelect(this)" title="Select all"></span><span></span><span>Name</span><span>Status</span><span>Agency</span><span></span><span></span><span></span>`
+      : `<span><input type="checkbox" id="tgBulkSelectAll" onclick="toggleAllTgSelect(this)" title="Select all"></span><span></span><span>TG ID</span><span>System</span><span>Name / Function</span><span>Status</span><span>Agency</span><span>Encryption</span><span>Priority</span>`;
   }
 
   if (!filtered.length) {
@@ -12281,8 +12577,10 @@ function renderTalkgroups() {
   }
   grid.innerHTML = filtered.map(tg => {
     const pc = TG_PRIORITY_COLOR[tg.priority] || 'var(--text-dim)';
+    const checkbox = `<input type="checkbox" class="tg-bulk-checkbox" data-id="${tg.id}" onclick="event.stopPropagation();toggleTgSelect(${tg.id},this)" ${bulkSelectedTalkgroups.has(tg.id)?'checked':''}>`;
     if (isDispatcher) {
       return `<div class="tg-row" onclick="openTalkgroupModal('${tg.id}')">
+        ${checkbox}
         <div class="status-bar ${tg.status}" style="width:3px;height:28px;border-radius:2px;flex-shrink:0;"></div>
         <div style="font-size:13px;color:var(--text-primary);grid-column:span 3;">${escHtml(tg.name)}</div>
         <div><span class="status-pill ${tg.status}">${statusLabels[tg.status]||tg.status}</span></div>
@@ -12291,6 +12589,7 @@ function renderTalkgroups() {
       </div>`;
     }
     return `<div class="tg-row" onclick="openTalkgroupModal('${tg.id}')">
+      ${checkbox}
       <div class="status-bar ${tg.status}" style="width:3px;height:28px;border-radius:2px;flex-shrink:0;"></div>
       <div style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(tg.tgId)}</div>
       <div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(tg.system)}</div>
@@ -12301,6 +12600,54 @@ function renderTalkgroups() {
       <div style="font-family:var(--font-data);font-size:11px;font-weight:600;color:${pc};">${tg.priority||'Normal'}</div>
     </div>`;
   }).join('');
+  updateTgBulkActionBar();
+}
+
+// ── Bulk talkgroup selection — mirrors the channel bulk-action system exactly ──
+let bulkSelectedTalkgroups = new Set();
+
+function toggleTgSelect(id, cb) {
+  if (cb.checked) bulkSelectedTalkgroups.add(id);
+  else            bulkSelectedTalkgroups.delete(id);
+  updateTgBulkActionBar();
+}
+
+function toggleAllTgSelect(headerCb) {
+  document.querySelectorAll('.tg-bulk-checkbox').forEach(cb => {
+    cb.checked = headerCb.checked;
+    const id = Number(cb.dataset.id);
+    if (headerCb.checked) bulkSelectedTalkgroups.add(id);
+    else bulkSelectedTalkgroups.delete(id);
+  });
+  updateTgBulkActionBar();
+}
+
+function clearBulkTgSelection() {
+  bulkSelectedTalkgroups.clear();
+  renderTalkgroups();
+}
+
+function updateTgBulkActionBar() {
+  const bar = document.getElementById('tgBulkActionBar');
+  if (!bar) return;
+  const count = bulkSelectedTalkgroups.size;
+  if (count === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  document.getElementById('tgBulkCount').textContent = `${count} selected`;
+}
+
+async function applyBulkTgStatus(status) {
+  if (!bulkSelectedTalkgroups.size) return;
+  if (!confirm(`Set ${bulkSelectedTalkgroups.size} talkgroup(s) to "${statusLabels[status]||status}"?`)) return;
+  const ids = [...bulkSelectedTalkgroups];
+  const who = currentUser?.name || 'Unknown';
+  for (const id of ids) {
+    await sb.from('talkgroups').update({ status, updated_by: who, updated_at: new Date().toISOString() }).eq('id', id);
+  }
+  logEvent('talkgroup', 'Bulk Status Change', `${ids.length} talkgroups → ${statusLabels[status]||status}`, { count: ids.length, status });
+  bulkSelectedTalkgroups.clear();
+  await loadTalkgroups();
+  renderTalkgroups();
 }
 
 function openTalkgroupModal(id) {
@@ -12504,8 +12851,9 @@ function checkResourceConflicts(resourceIds, resourceType, startISO, endISO, exc
     (internalChannelRequests || []).forEach(req => {
       if (excludeType === 'icr' && String(req.id) === String(excludeId)) return;
       if (req.status === 'denied') return;
-      if (resourceType !== 'channel') return; // ICRs are channel-only today
-      const reqIds = (req.channel_ids || []).map(String);
+      const reqIds = resourceType === 'talkgroup'
+        ? (req.talkgroup_ids || []).map(String)
+        : (req.channel_ids || []).map(String);
       if (!reqIds.includes(id)) return;
       if (!overlaps(new Date(req.start).getTime(), new Date(req.end_time).getTime())) return;
       conflicts.push({
@@ -12632,6 +12980,13 @@ async function recommendChannels(params) {
 
   const { roleType, category, startISO, endISO, priority = 'Normal', lat = null, lon = null, excludeId = null, excludeType = null, limit = 5 } = params;
 
+  // "Trunked Talkgroup" is the one role that should score actual talkgroups
+  // instead of channels — everything else (Command, Tac, Air-Ground, Crew/Dozer,
+  // Rotor/Victor) maps to a physical RF channel, not a digital trunked talkgroup.
+  if (roleType === 'trunked') {
+    return recommendTalkgroups({ startISO, endISO, priority, excludeId, excludeType, limit });
+  }
+
   const preferredBand = category === 'wildland' ? 'VHF' : category === 'all-hazards' ? 'UHF' : null;
   const keywords = roleType ? (ROLE_KEYWORDS[roleType] || []) : [];
 
@@ -12706,6 +13061,57 @@ async function recommendChannels(params) {
     });
 
   // Disqualified candidates sort to the bottom; everything else by score descending
+  candidates.sort((a, b) => {
+    if (a.disqualified !== b.disqualified) return a.disqualified ? 1 : -1;
+    return b.score - a.score;
+  });
+
+  return candidates.slice(0, limit);
+}
+
+// Parallel scoring path for talkgroups — used only when roleType === 'trunked'.
+// Talkgroups don't carry band/function/group/frequency fields the way channels
+// do, so this is a simpler version of the same idea: available status, no
+// conflict, priority headroom, recent use. No band/keyword matching (nothing
+// to match against) and no frequency-conflict check (trunked systems don't
+// have the same RF collision concept as a direct-mode channel).
+async function recommendTalkgroups({ startISO, endISO, priority = 'Normal', excludeId = null, excludeType = null, limit = 5 }) {
+  const candidates = talkgroups
+    .filter(tg => tg.status === 'available')
+    .map(tg => {
+      const breakdown = [];
+      let score = 0;
+
+      score += 30; breakdown.push({ label: 'Available now', pts: 30 });
+      score += 13; breakdown.push({ label: 'Trunked talkgroup (role match)', pts: 13 });
+
+      const conflicts = checkResourceConflicts([tg.id], 'talkgroup', startISO, endISO, excludeId, excludeType);
+      const hardConflicts = conflicts.filter(c => c.severity === 'hard');
+
+      if (hardConflicts.length) {
+        breakdown.push({ label: 'Hard conflict — already committed', pts: -100 });
+        return { channel: tg, isTalkgroup: true, score: 0, breakdown, disqualified: true, conflicts: hardConflicts };
+      }
+      score += 20; breakdown.push({ label: 'No hard conflict', pts: 20 });
+      score += 10; breakdown.push({ label: 'No frequency conflict (trunked system)', pts: 10 });
+      score += 5;  breakdown.push({ label: 'No location provided', pts: 5 });
+
+      let priorityPts = 2;
+      if (priority === 'Emergency') {
+        const soon = reservations.some(r => (r.talkgroupIds||[]).map(String).includes(String(tg.id)) &&
+          new Date(r.start).getTime() < Date.now() + 86400000 && new Date(r.end).getTime() > Date.now());
+        priorityPts = soon ? 0 : 3;
+      }
+      score += priorityPts; breakdown.push({ label: 'Priority/headroom alignment', pts: priorityPts });
+
+      let historyPts = 0;
+      const histCount = (window._channelHistoryCache || []).filter(h => String(h.channel_id) === String(tg.id)).length;
+      if (histCount > 0) historyPts = 2;
+      score += historyPts; breakdown.push({ label: histCount ? 'Established usage history' : 'No usage history on record', pts: historyPts });
+
+      return { channel: tg, isTalkgroup: true, score: Math.round(score), breakdown, disqualified: false, conflicts: [] };
+    });
+
   candidates.sort((a, b) => {
     if (a.disqualified !== b.disqualified) return a.disqualified ? 1 : -1;
     return b.score - a.score;
@@ -12820,12 +13226,18 @@ async function runRecommendation() {
   resultsEl.innerHTML = results.map((r, i) => {
     const ch = r.channel;
     const barColor = r.disqualified ? 'var(--status-active)' : r.score >= 70 ? 'var(--status-available)' : r.score >= 45 ? 'var(--status-reserved)' : 'var(--text-dim)';
+    const titleLine = r.isTalkgroup
+      ? `${escHtml(ch.tgId)} <span style="font-size:11px;color:var(--text-dim);font-weight:400;">${escHtml(ch.system||'')}</span>`
+      : `${escHtml(ch.designator)} <span style="font-size:11px;color:var(--text-dim);font-weight:400;">${ch.freq} MHz · ${ch.band}</span>`;
+    const subLine = r.isTalkgroup
+      ? `${escHtml(ch.name||'No name set')}${ch.agency ? ' · ' + escHtml(ch.agency) : ''}`
+      : `${escHtml(ch.function||'No function set')}${ch.group ? ' · ' + escHtml(ch.group) : ''}`;
     return `
     <div style="background:var(--bg-card);border:1px solid ${r.disqualified ? 'rgba(255,82,82,0.35)' : 'var(--border)'};border-radius:8px;padding:12px 14px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div style="min-width:0;">
-          <div style="font-size:14px;font-weight:700;color:var(--text-primary);font-family:var(--font-data);">${escHtml(ch.designator)} <span style="font-size:11px;color:var(--text-dim);font-weight:400;">${ch.freq} MHz · ${ch.band}</span></div>
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escHtml(ch.function||'No function set')}${ch.group ? ' · ' + escHtml(ch.group) : ''}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);font-family:var(--font-data);">${titleLine}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${subLine}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-family:var(--font-data);font-size:18px;font-weight:700;color:${barColor};">${r.disqualified ? '✕' : r.score}</div>
@@ -12837,7 +13249,7 @@ async function runRecommendation() {
       </div>
       ${r.disqualified && r.conflicts?.length ? `<div style="margin-top:8px;font-size:11px;color:var(--status-active);">${formatConflictMessages(r.conflicts).join('<br>')}</div>` : ''}
       <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
-        <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" ${r.disqualified ? 'disabled' : ''} onclick="applyRecommendedChannel('${ch.id}')">
+        <button class="btn-secondary" style="font-size:11px;padding:4px 10px;" ${r.disqualified ? 'disabled' : ''} onclick="applyRecommendedChannel('${ch.id}', ${r.isTalkgroup ? 'true' : 'false'})">
           ${recommendSourceType === 'cpr' ? '→ Use for Reservation' : '+ Assign to Incident'}
         </button>
       </div>
@@ -12845,20 +13257,41 @@ async function runRecommendation() {
   }).join('');
 }
 
-async function applyRecommendedChannel(channelId) {
-  const ch = channels.find(c => String(c.id) === String(channelId));
+async function applyRecommendedChannel(resourceId, isTalkgroup) {
+  if (isTalkgroup) {
+    const tg = talkgroups.find(t => String(t.id) === String(resourceId));
+    if (!tg) return;
+    if (recommendSourceType === 'incident') {
+      const tgSel = document.getElementById('inc-talkgroups');
+      if (tgSel) {
+        [...tgSel.options].forEach(o => { if (String(o.value) === String(resourceId)) o.selected = true; });
+        renderChecklistFromSelect('inc-talkgroups', 'inc-talkgroups-checklist');
+      }
+      document.getElementById('recommendModal').classList.remove('open');
+      logEvent('incident', 'Talkgroup Recommended & Selected', `${tg.tgId} added to incident form via recommendation engine`);
+    } else {
+      // Comm Plan Request conversion has no talkgroup field on the reservation —
+      // note it instead, same honest fallback used by the ICR approval flow.
+      document.getElementById('recommendModal').classList.remove('open');
+      window._cprRecommendedTalkgroupLabel = `${tg.tgId} — ${tg.name}`;
+      convertCprToReservation();
+    }
+    return;
+  }
+
+  const ch = channels.find(c => String(c.id) === String(resourceId));
   if (!ch) return;
 
   if (recommendSourceType === 'cpr') {
     // Close this modal, then run the existing CPR→reservation conversion and
     // pre-select the recommended channel inside the reservation's checklist.
     document.getElementById('recommendModal').classList.remove('open');
-    window._cprRecommendedChannelId = channelId; // read by convertCprToReservation below
+    window._cprRecommendedChannelId = resourceId; // read by convertCprToReservation below
     convertCprToReservation();
   } else if (recommendSourceType === 'incident') {
     const chSel = document.getElementById('inc-channels');
     if (chSel) {
-      [...chSel.options].forEach(o => { if (String(o.value) === String(channelId)) o.selected = true; });
+      [...chSel.options].forEach(o => { if (String(o.value) === String(resourceId)) o.selected = true; });
       renderChecklistFromSelect('inc-channels', 'inc-channels-checklist');
     }
     document.getElementById('recommendModal').classList.remove('open');
@@ -15983,7 +16416,12 @@ function convertCprToReservation() {
       const channelsNote = (r.requested_channels || []).length
         ? 'Requested Channels:\n' + r.requested_channels.map(c => '• ' + c).join('\n')
         : '';
-      document.getElementById('sr-notes').value       = [r.event_description, channelsNote, r.comments].filter(Boolean).join('\n\n');
+      // Reservations don't support talkgroup assignment yet — if one was chosen
+      // via the recommendation engine, note it directly rather than losing it silently.
+      const tgRecNote = window._cprRecommendedTalkgroupLabel
+        ? `Requested talkgroup: ${window._cprRecommendedTalkgroupLabel}` : '';
+      document.getElementById('sr-notes').value       = [r.event_description, channelsNote, tgRecNote, r.comments].filter(Boolean).join('\n\n');
+      window._cprRecommendedTalkgroupLabel = null;
 
       // Combine date + time into datetime-local format
       if (r.op_start_date && r.op_start_time) {
@@ -16049,6 +16487,18 @@ function agencyId() {
 }
 
 init();
+
+// Register the service worker for the installable app shell. Wrapped
+// defensively — if this fails for any reason (unsupported browser, the
+// public-facing comm-plan-request page being embedded somewhere odd, etc.)
+// the main app must keep working exactly as it does today.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('Service worker registration failed (app still works normally):', err.message);
+    });
+  });
+}
 </script>
 
 <!-- ── USER ADMINISTRATION MODAL ── -->
@@ -17270,12 +17720,12 @@ init();
 <div class="modal-overlay" id="bulkAssignIncidentModal">
   <div class="modal" style="max-width:480px;">
     <div class="modal-header">
-      <div class="modal-title">Assign Channels to Incident</div>
+      <div class="modal-title" id="bulkAssignModalTitle">Assign to Incident</div>
       <button class="modal-close" onclick="closeBulkAssignIncident()">✕</button>
     </div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
-        Add <strong id="bulkIncidentCount"></strong> selected channel(s) to:
+        Add <strong id="bulkIncidentCount"></strong> selected <span id="bulkAssignResourceLabel">channel(s)</span> to:
       </p>
       <div class="form-row single">
         <div class="form-field">
