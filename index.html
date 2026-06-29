@@ -1520,18 +1520,35 @@
 
   body.readonly .readonly-banner { display: block; }
 
-  /* ── LIVE ACTIVITY TICKER ── */
+  /* ── LIVE CHANNEL STATUS TICKER ──
+     Static, not scrolling — shows only the single most recent channel
+     status change, left-aligned, replaced in place as new ones arrive.
+     A brief flash-highlight on update draws the eye without any continuous
+     motion (continuous scroll was hard to read and had no natural speed
+     that worked for both short and long messages). */
   .live-ticker {
     display: flex;
     align-items: center;
-    height: 26px;
+    height: 28px;
     background: var(--bg-deep);
     border-bottom: 1px solid var(--border);
     overflow: hidden;
     position: relative;
+    gap: 10px;
+    padding: 0 4px;
   }
   .live-ticker.hidden { display: none; }
-  .ticker-toggle, .ticker-close {
+  .ticker-label {
+    flex-shrink: 0;
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    padding-left: 8px;
+    white-space: nowrap;
+  }
+  .ticker-close {
     flex-shrink: 0;
     background: none;
     border: none;
@@ -1544,36 +1561,40 @@
     align-items: center;
     transition: color 0.12s;
   }
-  .ticker-toggle:hover, .ticker-close:hover { color: var(--text-primary); }
+  .ticker-close:hover { color: var(--text-primary); }
   .ticker-track-wrap {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
     position: relative;
     height: 100%;
+    display: flex;
+    align-items: center;
   }
   .ticker-track {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    height: 100%;
     white-space: nowrap;
-    animation: tickerScroll 45s linear infinite;
-    will-change: transform;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
-  .live-ticker.paused .ticker-track { animation-play-state: paused; }
-  @keyframes tickerScroll {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); } /* track content is duplicated, so -50% loops seamlessly */
+  @keyframes tickerFlash {
+    0%   { background: var(--accent-glow); }
+    100% { background: transparent; }
   }
+  .ticker-track.flash { animation: tickerFlash 1.2s ease-out; border-radius: 4px; }
   .ticker-item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 22px;
+    gap: 8px;
+    padding: 2px 8px;
     font-family: var(--font-data);
-    font-size: 11px;
+    font-size: 11.5px;
     color: var(--text-secondary);
-    border-right: 1px solid var(--border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .ticker-item .ticker-cat {
     font-size: 9px;
@@ -1582,16 +1603,18 @@
     letter-spacing: 0.05em;
     padding: 1px 6px;
     border-radius: 2px;
+    flex-shrink: 0;
   }
   .ticker-empty {
     font-family: var(--font-data);
     font-size: 11px;
     color: var(--text-dim);
-    padding: 0 16px;
+    padding: 0 8px;
   }
   @media (max-width: 768px) {
-    .live-ticker { height: 24px; }
-    .ticker-item { font-size: 10px; padding: 0 16px; }
+    .live-ticker { height: 26px; }
+    .ticker-label { display: none; }
+    .ticker-item { font-size: 10.5px; padding: 2px 6px; }
   }
 
   /* ── USER ADMIN TABLE ── */
@@ -3953,9 +3976,9 @@
   </div>
 </div>
 
-<!-- ── LIVE ACTIVITY TICKER ── -->
+<!-- ── LIVE CHANNEL STATUS TICKER ── -->
 <div id="liveTicker" class="live-ticker">
-  <button class="ticker-toggle" onclick="toggleTicker()" title="Pause/resume ticker">⏸</button>
+  <span class="ticker-label">📻 LATEST</span>
   <div class="ticker-track-wrap">
     <div class="ticker-track" id="tickerTrack"></div>
   </div>
@@ -5779,9 +5802,11 @@ async function loadActivityLog() {
     return { time: ts, text: r.message };
   });
   renderLog();
-  // Seed the live ticker with the most recent real entries so it isn't sitting
-  // on "Waiting for activity…" until the first new event happens to occur.
-  tickerBuffer = data.slice(0, TICKER_MAX_ITEMS);
+  // Seed the ticker with the most recent CHANNEL STATUS CHANGE specifically
+  // (not just any recent log row) so it isn't sitting on the empty state
+  // until the first new qualifying event happens to occur.
+  const latestStatusEvent = data.find(r => isChannelStatusEvent(r));
+  tickerBuffer = latestStatusEvent ? [latestStatusEvent] : [];
   renderTicker();
 }
 
@@ -5903,56 +5928,66 @@ function subscribeRealtime() {
 }
 
 // ─────────────────────────────────────────────
-// LIVE ACTIVITY TICKER
+// LIVE CHANNEL STATUS TICKER
 // ─────────────────────────────────────────────
-// Scrolls real events as they happen across every module — fed by the same
-// activity_log realtime stream every other live feature already uses, so
-// there's no separate polling or duplicate subscription. Capped buffer,
-// CSS keyframe animation does the actual scrolling (cheap, GPU-friendly,
-// pauses cleanly on hover/manual toggle without any JS timer).
-const TICKER_MAX_ITEMS = 20;
-let tickerBuffer = [];
-let tickerPaused = false;
+// Static single-line display of the single most recent CHANNEL STATUS
+// CHANGE only — fed by the same activity_log realtime stream every other
+// live feature already uses, so there's no separate polling or duplicate
+// subscription. Deliberately not scrolling: a continuous scroll has no
+// natural speed that works for both short and long messages, and was hard
+// to read in practice. A brief flash-highlight marks each update instead.
+let tickerBuffer = []; // holds at most one item — the latest channel status change
 
 function loadTickerHiddenState() {
   try { return localStorage.getItem('rfTickerHidden') === '1'; } catch(e) { return false; }
 }
 
-function pushTickerItem(row) {
-  if (!row || !row.message) return;
-  tickerBuffer.unshift(row);
-  if (tickerBuffer.length > TICKER_MAX_ITEMS) tickerBuffer.length = TICKER_MAX_ITEMS;
-  renderTicker();
+// A log row counts as a "channel status change" for ticker purposes if either:
+//  1. It's explicitly tagged category:'channel' with a Status Change action
+//     (covers manual edits, release, and bulk status change), or
+//  2. It's one of the Schedule system's automatic reservation-driven status
+//     flips (available→reserved, reserved→active) — these ARE channel status
+//     changes even though they're logged under category:'reservation', and
+//     are exactly the kind of easy-to-miss automatic change a ticker should
+//     surface. Everything else (incidents, comm plan requests, conflicts,
+//     audit/CSV actions, etc.) is excluded per the requested behavior.
+function isChannelStatusEvent(row) {
+  if (!row) return false;
+  if (row.category === 'channel' && /status change/i.test(row.action || '')) return true;
+  if (row.category === 'reservation' && (row.action === 'Activated' || row.action === 'In Use')) return true;
+  return false;
 }
 
-function renderTicker() {
+function pushTickerItem(row) {
+  if (!isChannelStatusEvent(row)) return;
+  tickerBuffer = [row]; // static display — only ever holds the single latest item
+  renderTicker(true);
+}
+
+function renderTicker(flash) {
   const track = document.getElementById('tickerTrack');
   if (!track) return;
 
   if (!tickerBuffer.length) {
-    track.innerHTML = `<span class="ticker-empty">📡 Waiting for activity…</span>`;
-    track.style.animation = 'none'; // no point scrolling an empty/short placeholder
+    track.innerHTML = `<span class="ticker-empty">📻 No channel status changes yet</span>`;
     return;
   }
 
-  const itemHtml = tickerBuffer.map(r => {
-    const ts = new Date(r.created_at).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false });
-    const chip = syslogCategoryChip(r.category || 'system');
-    const text = (r.action || r.message || '').replace(/<[^>]+>/g, '');
-    return `<span class="ticker-item">${chip}<span style="color:var(--text-dim);">${ts}</span> ${escHtml(text)}${r.actor ? ` <span style="color:var(--text-dim);">— ${escHtml(r.actor)}</span>` : ''}</span>`;
-  }).join('');
+  const r = tickerBuffer[0];
+  const ts = new Date(r.created_at).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  const chip = syslogCategoryChip('channel'); // always shown as a channel event, regardless of which table logged it
+  // r.action is always a short fixed label ("Status Change", "Activated", "In Use") —
+  // the actual descriptive text ("CMD-1 → In Use") lives in r.detail. Fall back to
+  // r.message (which includes the label prefix) only if detail is somehow missing.
+  const text = (r.detail || r.message || r.action || '').replace(/<[^>]+>/g, '');
+  track.innerHTML = `<span class="ticker-item">${chip}<span style="color:var(--text-dim);">${ts}</span> ${escHtml(text)}${r.actor ? ` <span style="color:var(--text-dim);">— ${escHtml(r.actor)}</span>` : ''}</span>`;
 
-  // Duplicate the content back-to-back so the -50% translateX loop is seamless
-  track.innerHTML = itemHtml + itemHtml;
-  track.style.animation = ''; // restore the CSS animation now that there's real content
-}
-
-function toggleTicker() {
-  tickerPaused = !tickerPaused;
-  const ticker = document.getElementById('liveTicker');
-  const btn = ticker?.querySelector('.ticker-toggle');
-  ticker?.classList.toggle('paused', tickerPaused);
-  if (btn) btn.textContent = tickerPaused ? '▶' : '⏸';
+  if (flash) {
+    track.classList.remove('flash');
+    // restart the animation even if it's already mid-flash from a rapid second update
+    void track.offsetWidth;
+    track.classList.add('flash');
+  }
 }
 
 function hideTicker() {
@@ -7592,6 +7627,7 @@ async function releaseChannel(id) {
     channelId: id, designator: ch.designator, action: 'released',
     field: 'Status', oldValue: statusLabels[old], newValue: 'Available', changedBy: who,
   });
+  logEvent('channel', 'Status Change', `${ch.designator} → Available`, { channelId: id, designator: ch.designator, oldStatus: old, newStatus: 'available' });
   logActivity(`<span class="log-ch">${ch.designator}</span> released by ${who} — ${statusLabels[old]} → Available`);
   if (activeMainTab === 'admin') { await loadChannels(); renderAdminChannels(); }
 }
@@ -7741,6 +7777,13 @@ async function saveChannel() {
       for (const d of diffs) await logChannelHistory(d);
       if (!diffs.length) {
         await logChannelHistory({ channelId: editingId, designator, action:'edited', field:'(misc)', newValue: 'Minor edit', changedBy: who });
+      }
+      // Structured, precisely-tagged event for the ticker (and anything else
+      // that needs to react to a real status change specifically, as opposed
+      // to any other field edit on a channel).
+      const statusDiff = diffs.find(d => d.action === 'status');
+      if (statusDiff) {
+        logEvent('channel', 'Status Change', `${designator} → ${statusDiff.newValue}`, { channelId: editingId, designator, oldStatus: prev.status, newStatus: row.status });
       }
     }
     logActivity(`<span class="log-ch">${designator}</span> updated by ${who} — ${statusLabels[row.status]}`);
@@ -9185,6 +9228,61 @@ async function deleteUser(userId) {
 let bigBoardInterval = null;
 let bigBoardCountdown = 30;
 
+// ── Big Board channel type classification ──
+// Combines band (VHF/UHF/700/800/Aviation/HF) with a role keyword match
+// against Function/Group/Designator — reuses the exact same ROLE_KEYWORDS
+// list the Recommend Channels engine already uses, so "what counts as
+// Command/Tac/Air-to-Ground" stays consistent across the whole app instead
+// of having two different definitions drift apart over time.
+const BB_TYPE_DEFS = [
+  { key: 'vhf-command',   label: 'VHF Command',         band: 'VHF', role: 'command'     },
+  { key: 'uhf-command',   label: 'UHF Command',         band: 'UHF', role: 'command'     },
+  { key: 'vhf-tac',       label: 'VHF Tactical',        band: 'VHF', role: 'tac'         },
+  { key: 'uhf-tac',       label: 'UHF Tactical',        band: 'UHF', role: 'tac'         },
+  { key: 'air-ground',    label: 'Air to Ground',       band: null,  role: 'air-ground'  },
+  { key: 'trunked',       label: 'Trunked Talkgroup',   band: null,  role: 'trunked'      },
+  { key: 'crew-dozer',    label: 'Crew / Dozer',        band: null,  role: 'crew-dozer'  },
+  { key: 'rotor-victor',  label: 'Rotor / Victor',      band: null,  role: 'rotor-victor'},
+];
+
+function classifyChannelType(ch) {
+  const haystack = `${ch.function||''} ${ch.group||''} ${ch.designator||''}`.toLowerCase();
+  const band = ch.band || detectBand(ch.freq || '');
+  for (const def of BB_TYPE_DEFS) {
+    if (def.band && band !== def.band) continue;
+    const keywords = ROLE_KEYWORDS[def.role] || [];
+    if (keywords.some(k => haystack.includes(k))) return def.key;
+  }
+  return 'other';
+}
+
+let bigBoardActiveFilters = new Set(); // empty = show everything, otherwise only show matching type keys
+let bigBoardStatusFilters = new Set(); // empty = show all statuses too
+let bigBoardFilterBarOpen = false; // collapsed by default — wall displays want max space until someone needs to change filters
+
+function toggleBigBoardFilter(key) {
+  if (bigBoardActiveFilters.has(key)) bigBoardActiveFilters.delete(key);
+  else bigBoardActiveFilters.add(key);
+  renderBigBoard();
+}
+
+function toggleBigBoardStatusFilter(key) {
+  if (bigBoardStatusFilters.has(key)) bigBoardStatusFilters.delete(key);
+  else bigBoardStatusFilters.add(key);
+  renderBigBoard();
+}
+
+function clearBigBoardFilters() {
+  bigBoardActiveFilters.clear();
+  bigBoardStatusFilters.clear();
+  renderBigBoard();
+}
+
+function toggleBigBoardFilterBar() {
+  bigBoardFilterBarOpen = !bigBoardFilterBarOpen;
+  renderBigBoard();
+}
+
 function openBigBoard() {
   renderBigBoard();
   const overlay = document.getElementById('bigBoardOverlay');
@@ -9243,7 +9341,28 @@ function renderBigBoard() {
   }
 
   const groups = { active:[], reserved:[], available:[] };
-  channels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
+  const hasActiveFilters = bigBoardActiveFilters.size > 0 || bigBoardStatusFilters.size > 0;
+  const filteredChannels = channels.filter(ch => {
+    if (bigBoardActiveFilters.size && !bigBoardActiveFilters.has(classifyChannelType(ch))) return false;
+    if (bigBoardStatusFilters.size && !bigBoardStatusFilters.has(ch.status)) return false;
+    return true;
+  });
+  filteredChannels.forEach(ch => { if (groups[ch.status]) groups[ch.status].push(ch); });
+
+  // Reverse-lookups: which reservation (if any, currently active) and which
+  // active/standby incident (if any) is this channel tied to right now —
+  // built once per render rather than per tile.
+  const now0 = Date.now();
+  const chToReservation = {};
+  reservations.forEach(r => {
+    const start = new Date(r.start).getTime(), end = new Date(r.end).getTime();
+    if (start > now0 || end < now0) return; // only currently-active reservations are relevant on a live board
+    (r.channelIds || (r.channelId ? [r.channelId] : [])).forEach(id => { chToReservation[String(id)] = r; });
+  });
+  const chToIncident = {};
+  incidents.filter(i => i.status !== 'closed').forEach(inc => {
+    (inc.channel_ids || []).forEach(id => { chToIncident[String(id)] = inc; });
+  });
 
   const now = new Date();
   const utcDate = now.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', year:'numeric' });
@@ -9251,17 +9370,18 @@ function renderBigBoard() {
 
   function tile(ch) {
     const s = SC[ch.status] || SC.available;
+    const res = chToReservation[String(ch.id)];
+    const inc = chToIncident[String(ch.id)];
     return `<div style="background:${s.bg};border:2px solid ${s.border};border-left:6px solid ${s.color};border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:5px;min-width:0;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div style="font-family:var(--font-data);font-size:20px;font-weight:700;color:${t.textPrimary};line-height:1;word-break:break-all;">${ch.designator}</div>
         <div style="font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:${s.bg};color:${s.color};border:1px solid ${s.border};white-space:nowrap;flex-shrink:0;">${s.label}</div>
       </div>
-      <div style="font-family:var(--font-data);font-size:24px;font-weight:400;color:${s.color};letter-spacing:0.04em;line-height:1;">${ch.freq} <span style="font-size:13px;opacity:0.7;">MHz</span></div>
       ${ch.function && ch.function!=='—' ? `<div style="font-size:14px;color:${t.textSecondary};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch.function}</div>` : ''}
+      ${res ? `<div style="font-size:13px;color:${t.textPrimary};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📅 ${escHtml(res.title)}</div>` : ''}
+      ${inc ? `<div style="font-size:13px;color:${s.color};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🚨 ${escHtml(inc.name)}</div>` : ''}
       <div style="display:flex;gap:8px;margin-top:3px;flex-wrap:wrap;">
         ${ch.agency && ch.agency!=='—' ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">${ch.agency}</span>` : ''}
-        ${ch.mode ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">${ch.mode}</span>` : ''}
-        ${ch.tone && ch.tone!=='—' ? `<span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};background:${t.bgPanel};padding:2px 7px;border-radius:2px;border:1px solid ${t.border};">T: ${ch.tone}</span>` : ''}
       </div>
       ${ch.notes ? `<div style="font-size:11px;color:${t.textDim};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">💬 ${ch.notes}</div>` : ''}
     </div>`;
@@ -9317,9 +9437,12 @@ function renderBigBoard() {
       <div style="padding:0 24px;border-right:1px solid ${t.border};flex-shrink:0;">
         <div style="font-family:var(--font-data);font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">Channel Plan</div>
         <div style="font-family:var(--font-data);font-size:15px;font-weight:700;color:${t.textPrimary};line-height:1;">Organization-Wide</div>
-        <div style="font-size:11px;color:${t.textDim};margin-top:3px;">${channels.length} channels · ${utcDate}</div>
+        <div style="font-size:11px;color:${t.textDim};margin-top:3px;">${hasActiveFilters ? `${filteredChannels.length} of ${channels.length} channels (filtered)` : `${channels.length} channels`} · ${utcDate}</div>
       </div>
       <div style="display:flex;flex:1;align-items:center;">${summaryStrip}</div>
+      <button onclick="toggleBigBoardFilterBar()" id="bbFilterToggleBtn" style="font-family:var(--font-data);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:${hasActiveFilters ? t.accent : 'transparent'};color:${hasActiveFilters ? '#fff' : t.textSecondary};border:1px solid ${hasActiveFilters ? t.accent : t.border};border-radius:4px;padding:7px 14px;cursor:pointer;flex-shrink:0;margin-left:16px;white-space:nowrap;">
+        ${bigBoardFilterBarOpen ? '▴' : '▾'} Filter${hasActiveFilters ? ` (${bigBoardActiveFilters.size + bigBoardStatusFilters.size})` : ''}
+      </button>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-left:20px;border-left:1px solid ${t.border};flex-shrink:0;">
         <div id="bbClock" style="font-family:var(--font-data);font-size:26px;font-weight:700;color:${SC.available.color};line-height:1;letter-spacing:0.04em;">--:--:--</div>
         <div id="bbDate" style="font-family:var(--font-data);font-size:11px;color:${t.textDim};">${utcDate}</div>
@@ -9327,17 +9450,44 @@ function renderBigBoard() {
       </div>
     </div>
 
+    <!-- Filter bar — collapsed by default, toggled via the Filter button above -->
+    <div id="bbFilterBar" style="display:${bigBoardFilterBarOpen ? 'flex' : 'none'};flex-wrap:wrap;align-items:center;gap:10px;background:${t.bgPanel};border-bottom:1px solid ${t.border};padding:12px 28px;flex-shrink:0;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+        <span style="font-family:var(--font-data);font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.07em;margin-right:4px;">Channel Type:</span>
+        ${BB_TYPE_DEFS.map(def => {
+          const count = channels.filter(ch => classifyChannelType(ch) === def.key).length;
+          const active = bigBoardActiveFilters.has(def.key);
+          return `<button onclick="toggleBigBoardFilter('${def.key}')" style="font-family:var(--font-data);font-size:11px;font-weight:600;background:${active ? t.accent : t.bgCard};color:${active ? '#fff' : t.textSecondary};border:1px solid ${active ? t.accent : t.border};border-radius:4px;padding:6px 11px;cursor:pointer;white-space:nowrap;">${def.label} <span style="opacity:0.7;">(${count})</span></button>`;
+        }).join('')}
+        ${(() => {
+          const otherCount = channels.filter(ch => classifyChannelType(ch) === 'other').length;
+          const active = bigBoardActiveFilters.has('other');
+          return otherCount ? `<button onclick="toggleBigBoardFilter('other')" style="font-family:var(--font-data);font-size:11px;font-weight:600;background:${active ? t.accent : t.bgCard};color:${active ? '#fff' : t.textSecondary};border:1px solid ${active ? t.accent : t.border};border-radius:4px;padding:6px 11px;cursor:pointer;white-space:nowrap;">Other / Unclassified <span style="opacity:0.7;">(${otherCount})</span></button>` : '';
+        })()}
+      </div>
+      <div style="width:1px;height:24px;background:${t.border};flex-shrink:0;"></div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+        <span style="font-family:var(--font-data);font-size:10px;color:${t.textDim};text-transform:uppercase;letter-spacing:0.07em;margin-right:4px;">Status:</span>
+        ${['active','reserved','available'].map(k => {
+          const s = SC[k];
+          const active = bigBoardStatusFilters.has(k);
+          return `<button onclick="toggleBigBoardStatusFilter('${k}')" style="font-family:var(--font-data);font-size:11px;font-weight:600;background:${active ? s.color : t.bgCard};color:${active ? '#000' : s.color};border:1px solid ${s.color};border-radius:4px;padding:6px 11px;cursor:pointer;white-space:nowrap;">${s.label}</button>`;
+        }).join('')}
+      </div>
+      ${hasActiveFilters ? `<button onclick="clearBigBoardFilters()" style="font-family:var(--font-data);font-size:11px;font-weight:600;background:transparent;color:${t.textDim};border:1px solid ${t.border};border-radius:4px;padding:6px 11px;cursor:pointer;margin-left:auto;white-space:nowrap;">✕ Clear All Filters</button>` : ''}
+    </div>
+
     <!-- Body -->
     <div style="padding:24px 28px 80px;overflow-y:auto;flex:1;">
-      ${sectionsHTML || `<div style="text-align:center;padding:80px;font-family:var(--font-data);font-size:18px;color:${t.textDim};">No channels in plan</div>`}
+      ${sectionsHTML || `<div style="text-align:center;padding:80px;font-family:var(--font-data);font-size:18px;color:${t.textDim};">${hasActiveFilters ? 'No channels match the current filters' : 'No channels in plan'}</div>`}
     </div>
 
     <!-- Footer -->
     <div style="position:sticky;bottom:0;left:0;right:0;height:34px;background:${t.bgPanel};border-top:1px solid ${t.border};display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0;">
       <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">COMM CENTER</span>
-      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-right:1px solid ${t.border};">Organization-Wide Channel Plan</span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-right:1px solid ${t.border};">Organization-Wide Channel Plan${hasActiveFilters ? ' — Filtered View' : ''}</span>
       <span style="flex:1;"></span>
-      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-left:1px solid ${t.border};">Total: <span style="color:${t.textSecondary};">${channels.length}</span></span>
+      <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding:0 16px;border-left:1px solid ${t.border};">${hasActiveFilters ? `Showing: <span style="color:${t.textSecondary};">${filteredChannels.length} of ${channels.length}</span>` : `Total: <span style="color:${t.textSecondary};">${channels.length}</span>`}</span>
       <span style="font-family:var(--font-data);font-size:11px;color:${t.textDim};padding-left:16px;">Generated: <span style="color:${t.textSecondary};">${utcDate} ${utcTime}</span></span>
     </div>
   `;
@@ -15294,6 +15444,7 @@ async function saveIncident() {
     const { error } = await sb.from('incidents').update(row).eq('id', incidentEditingId);
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
     logEvent('incident', 'Incident Updated', `${name} — ${chIds.length} channels, ${tgIds.length} talkgroups`, { incident: name, number: row.number });
+    await applyIncidentChannelStatus(newStatus, chIds, name);
     closeIncidentModal();
     await loadIncidents();
     renderIncidents();
@@ -15301,12 +15452,43 @@ async function saveIncident() {
     const { data: inserted, error } = await sb.from('incidents').insert(row).select('id').single();
     if (error) { errEl.textContent = 'Error: ' + error.message; return; }
     logEvent('incident', 'Incident Created', `${name} (${row.type}) — ${row.number||'no number'} — ${chIds.length} channels, ${tgIds.length} talkgroups`, { incident: name, number: row.number, type: row.type });
+    await applyIncidentChannelStatus(newStatus, chIds, name);
     await loadIncidents();
     renderIncidents();
     // Re-open the same incident in edit mode so the user can immediately add notes
     if (inserted?.id) { openIncidentForm(inserted.id); return; }
     closeIncidentModal();
   }
+}
+
+// When a channel is assigned to an active/standby incident, its actual status
+// needs to flip to "In Use" — previously this only ever wrote channel_ids
+// onto the incident row and never touched the channels table itself, so the
+// Big Board (and everywhere else that reads ch.status directly) never
+// reflected the assignment. Only newly-added channels are touched, and only
+// ones not already marked active, so this doesn't fight with reservations
+// or other modules that already set status correctly.
+async function applyIncidentChannelStatus(incidentStatus, chIds, incidentName) {
+  if (incidentStatus === 'closed' || !chIds.length) return;
+  const who = currentUser?.name || 'Unknown';
+  for (const id of chIds) {
+    const ch = channels.find(c => String(c.id) === String(id));
+    if (!ch || ch.status === 'active') continue;
+    const oldStatus = ch.status;
+    const { error } = await sb.from('channels').update({
+      status: 'active', updated_by: who, updated_at: new Date().toISOString(),
+    }).eq('id', id);
+    if (!error) {
+      await logChannelHistory({
+        channelId: id, designator: ch.designator, action: 'status',
+        field: 'Status', oldValue: statusLabels[oldStatus] || oldStatus, newValue: 'In Use', changedBy: who,
+      });
+      logEvent('channel', 'Status Change', `${ch.designator} → In Use (assigned to incident: ${incidentName})`, { channelId: id, designator: ch.designator, oldStatus, newStatus: 'active' });
+    }
+  }
+  await loadChannels();
+  renderChannels();
+  if (document.getElementById('bigBoardOverlay')?.style.display !== 'none') renderBigBoard();
 }
 
 // ── Per-entry timestamped notes log for incidents (same pattern as Trigger Lookup / Inventory) ──
