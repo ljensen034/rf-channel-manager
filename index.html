@@ -626,9 +626,9 @@
 
   .channel-row {
     display: grid;
-    grid-template-columns: 22px 28px 90px 88px 1fr 120px 100px 90px;
+    grid-template-columns: 22px 6px 110px 105px 1fr 130px 115px 100px;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     padding: 9px 12px;
     background: var(--bg-card);
     border: 1px solid transparent;
@@ -772,8 +772,8 @@
   /* grid header */
   .channel-grid-header {
     display: grid;
-    grid-template-columns: 22px 28px 90px 88px 1fr 120px 100px 90px 100px;
-    gap: 8px;
+    grid-template-columns: 22px 6px 110px 105px 1fr 130px 115px 100px 80px;
+    gap: 12px;
     padding: 4px 12px 8px;
     font-family: var(--font-data);
     font-size: 14px;
@@ -4389,14 +4389,10 @@
     <div id="chBulkActionBar" style="display:none;align-items:center;gap:10px;padding:8px 14px;background:var(--accent-glow);border:1px solid var(--accent);border-radius:var(--radius);margin-bottom:8px;flex-wrap:wrap;">
       <span id="chBulkCount" style="font-family:var(--font-data);font-size:14px;color:var(--accent);font-weight:600;"></span>
       <span style="color:var(--border-lit);">|</span>
-      <span style="font-size:13px;color:var(--text-dim);">Set status:</span>
-      <button class="btn-secondary" style="font-size:13px;padding:3px 10px;" onclick="applyBulkStatus('available')">Available</button>
-      <button class="btn-secondary" style="font-size:13px;padding:3px 10px;" onclick="applyBulkStatus('active')">In Use</button>
-      <button class="btn-secondary" style="font-size:13px;padding:3px 10px;" onclick="applyBulkStatus('reserved')">Reserved</button>
-      <span style="color:var(--border-lit);">|</span>
-      <button class="btn-secondary" style="font-size:13px;padding:3px 10px;" onclick="openBulkAssignIncident('channel')">🚨 Assign to Incident</button>
-      <button class="btn-secondary" style="font-size:11px;padding:3px 10px;" onclick="bulkExportICS205()">⬇ Export ICS 205</button>
-      <button class="btn-secondary" style="font-size:13px;padding:3px 10px;margin-left:auto;" onclick="clearBulkChannelSelection()">✕ Clear Selection</button>
+      <button class="btn-primary" style="font-size:13px;padding:4px 14px;" onclick="openBulkEditModal()">✏ Bulk Edit</button>
+      <button class="btn-secondary" style="font-size:13px;padding:4px 12px;" onclick="openBulkAssignIncident('channel')">🚨 Assign to Incident</button>
+      <button class="btn-secondary" style="font-size:13px;padding:4px 12px;" onclick="bulkExportICS205()">⬇ ICS 205</button>
+      <button class="btn-secondary" style="font-size:13px;padding:4px 12px;margin-left:auto;" onclick="clearBulkChannelSelection()">✕ Clear</button>
     </div>
 
     <!-- Channel table -->
@@ -5207,7 +5203,7 @@
           <div id="syslogCount" style="padding:4px 18px;font-family:var(--font-data);font-size:12px;color:var(--text-dim);border-bottom:1px solid var(--border);"></div>
 
           <!-- Column headers -->
-          <div style="display:grid;grid-template-columns:140px 80px 100px 1fr 120px;gap:0;padding:6px 18px;background:var(--bg-deep);font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
+          <div style="display:grid;grid-template-columns:155px 90px 110px 1fr 130px;gap:8px;padding:6px 18px;background:var(--bg-deep);font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border);">
             <span>Timestamp (PT)</span><span>Category</span><span>Action</span><span>Detail</span><span>Actor</span>
           </div>
 
@@ -7383,6 +7379,10 @@ function renderChannels() {
       hdr.innerHTML = isDispatcher
         ? `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Channel</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Notes</span><span></span><span></span>`
         : `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Designator</span><span>Frequency</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Tone / NAC</span><span>Mode</span>`;
+      // Sync grid-template-columns to match channel-row for this view mode
+      hdr.style.gridTemplateColumns = isDispatcher
+        ? '22px 6px 110px 1fr 130px 115px 1fr 80px 80px'
+        : '22px 6px 110px 105px 1fr 130px 115px 100px 80px';
     }
 
     grid.innerHTML = filtered.map(ch => {
@@ -7392,7 +7392,7 @@ function renderChannels() {
       if (isDispatcher) {
         // Dispatcher view: no frequency, tone, mode — operational fields only
         return `
-        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" onclick="selectChannel(${ch.id})">
+        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" style="grid-template-columns:22px 6px 110px 1fr 130px 115px 1fr 80px 80px;" onclick="selectChannel(${ch.id})">
           <input type="checkbox" class="ch-bulk-checkbox" data-id="${ch.id}" onclick="event.stopPropagation();toggleChannelSelect(${ch.id},this)" ${bulkSelectedChannels.has(ch.id)?'checked':''}>
           <div class="status-bar ${ch.status}"></div>
           <div class="ch-designator-wrap">
@@ -7528,6 +7528,72 @@ async function confirmBulkAssignIncident() {
 function bulkExportICS205() {
   if (!bulkSelectedChannels.size) return;
   openICS205([...bulkSelectedChannels]);
+}
+
+// ── Bulk Edit Modal ──
+function openBulkEditModal() {
+  if (!bulkSelectedChannels.size) return;
+  // Reset all fields to unchecked / empty
+  ['status', 'activefor', 'agency'].forEach(f => {
+    const cb = document.getElementById(`bulkEdit-${f}-enabled`);
+    const field = document.getElementById(`bulkEdit-${f}-field`);
+    if (cb) cb.checked = false;
+    if (field) { field.style.opacity = '0.4'; field.style.pointerEvents = 'none'; }
+  });
+  document.querySelectorAll('input[name="bulkEditStatus"]').forEach(r => r.checked = false);
+  document.getElementById('bulkEdit-activefor').value = '';
+  document.getElementById('bulkEdit-agency').value = '';
+  document.getElementById('bulkEditCount').textContent = bulkSelectedChannels.size;
+  document.getElementById('bulkEditModal').classList.add('open');
+}
+
+function closeBulkEditModal() {
+  document.getElementById('bulkEditModal').classList.remove('open');
+}
+
+async function confirmBulkEdit() {
+  const statusEnabled   = document.getElementById('bulkEdit-status-enabled').checked;
+  const activeForEnabled = document.getElementById('bulkEdit-activefor-enabled').checked;
+  const agencyEnabled   = document.getElementById('bulkEdit-agency-enabled').checked;
+
+  if (!statusEnabled && !activeForEnabled && !agencyEnabled) {
+    alert('Check at least one field to apply.');
+    return;
+  }
+
+  const statusVal   = document.querySelector('input[name="bulkEditStatus"]:checked')?.value;
+  if (statusEnabled && !statusVal) { alert('Select a status to apply.'); return; }
+
+  const activeForVal = document.getElementById('bulkEdit-activefor').value.trim();
+  const agencyVal    = document.getElementById('bulkEdit-agency').value.trim();
+  const who = currentUser?.name || 'Unknown';
+  const ids = [...bulkSelectedChannels];
+  const now = new Date().toISOString();
+
+  const summary = [];
+  if (statusEnabled)   summary.push(`status → ${statusLabels[statusVal]}`);
+  if (activeForEnabled) summary.push(`event → "${activeForVal || 'cleared'}"`);
+  if (agencyEnabled)   summary.push(`agency → "${agencyVal || 'cleared'}"`);
+
+  if (!confirm(`Apply to ${ids.length} channel(s):\n${summary.join('\n')}?`)) return;
+
+  for (const id of ids) {
+    const patch = { updated_by: who, updated_at: now };
+    if (statusEnabled) {
+      patch.status = statusVal;
+      // Clear active_for when setting back to available
+      if (statusVal === 'available') { patch.active_for = null; patch.agency = '—'; }
+    }
+    if (activeForEnabled) patch.active_for = activeForVal || null;
+    if (agencyEnabled)    patch.agency     = agencyVal    || '—';
+    await sb.from('channels').update(patch).eq('id', id);
+  }
+
+  logEvent('channel', 'Bulk Edit', `${ids.length} channels — ${summary.join(', ')}`, { count: ids.length });
+  closeBulkEditModal();
+  bulkSelectedChannels.clear();
+  await loadChannels();
+  renderChannels();
 }
 
 // ─────────────────────────────────────────────
@@ -10392,6 +10458,17 @@ const NAV_GROUP_MAP = {
 };
 
 function switchMainTab(tab) {
+  // Collapse the channel detail side panel when leaving the channels tab,
+  // so it doesn't ghost into other modules.
+  if (activeMainTab === 'channels' && tab !== 'channels') {
+    selectedId = null;
+    sidePanelOpen = false;
+    const layout = document.querySelector('.layout');
+    if (layout) layout.classList.remove('panel-open');
+    const btn = document.getElementById('panelToggleBtn');
+    if (btn) btn.classList.remove('active');
+  }
+
   activeMainTab = tab;
   ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
@@ -11006,7 +11083,7 @@ function renderSysLog() {
         if (parts) extraHtml = `<div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${parts}</div>`;
       } catch(e) {}
     }
-    return `<div style="display:grid;grid-template-columns:140px 80px 100px 1fr 120px;gap:0;padding:7px 18px;border-bottom:1px solid var(--border);font-size:13px;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+    return `<div style="display:grid;grid-template-columns:155px 90px 110px 1fr 130px;gap:8px;padding:7px 18px;border-bottom:1px solid var(--border);font-size:13px;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
       <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);padding-right:8px;line-height:1.5;">${ts}</div>
       <div style="padding-right:8px;">${chip}</div>
       <div style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;">${action.split(' — ')[0] || action}</div>
@@ -11418,7 +11495,7 @@ function openResourceCategoryModal() {
 // SCHEDULE / RESERVATIONS
 // ─────────────────────────────────────────────
 let reservations    = [];             // loaded from Supabase
-let schedViewMode   = 'week';         // 'week' | 'list' | 'month'
+let schedViewMode   = 'list';         // 'week' | 'list' | 'month'
 let schedWeekOffset = 0;              // 0 = current week/month
 let schedEditingId  = null;
 
@@ -18016,6 +18093,76 @@ if ('serviceWorker' in navigator) {
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeBulkAssignIncident()">Cancel</button>
       <button class="btn-primary" onclick="confirmBulkAssignIncident()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BULK EDIT MODAL ── -->
+<div class="modal-overlay" id="bulkEditModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div class="modal-title">Bulk Edit Channels</div>
+      <button class="modal-close" onclick="closeBulkEditModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+
+      <p style="font-size:15px;color:var(--text-secondary);margin:0 0 18px;">
+        Editing <strong id="bulkEditCount" style="color:var(--accent);"></strong> selected channel(s).
+        Only checked fields will be applied — unchecked fields are left as-is.
+      </p>
+
+      <!-- Status field -->
+      <div style="margin-bottom:16px;padding:14px 16px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="bulkEdit-status-enabled" onchange="document.getElementById('bulkEdit-status-field').style.opacity=this.checked?'1':'0.4';document.getElementById('bulkEdit-status-field').style.pointerEvents=this.checked?'':'none';" style="width:16px;height:16px;accent-color:var(--accent);">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.07em;">Status</span>
+        </label>
+        <div id="bulkEdit-status-field" style="opacity:0.4;pointer-events:none;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius);flex:1;min-width:120px;">
+              <input type="radio" name="bulkEditStatus" value="available" style="accent-color:var(--status-available);">
+              <span class="status-pill available" style="font-size:13px;">Available</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius);flex:1;min-width:120px;">
+              <input type="radio" name="bulkEditStatus" value="active" style="accent-color:var(--status-active);">
+              <span class="status-pill active" style="font-size:13px;">In Use</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius);flex:1;min-width:120px;">
+              <input type="radio" name="bulkEditStatus" value="reserved" style="accent-color:var(--status-reserved);">
+              <span class="status-pill reserved" style="font-size:13px;">Reserved</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inc/Event name field -->
+      <div style="margin-bottom:16px;padding:14px 16px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="bulkEdit-activefor-enabled" onchange="document.getElementById('bulkEdit-activefor-field').style.opacity=this.checked?'1':'0.4';document.getElementById('bulkEdit-activefor-field').style.pointerEvents=this.checked?'':'none';" style="width:16px;height:16px;accent-color:var(--accent);">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.07em;">Incident / Event Name</span>
+        </label>
+        <div id="bulkEdit-activefor-field" style="opacity:0.4;pointer-events:none;">
+          <input class="form-input" type="text" id="bulkEdit-activefor" placeholder="e.g. Station Fire — Div Alpha" style="width:100%;box-sizing:border-box;">
+          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Leave blank to clear the event name on all selected channels.</div>
+        </div>
+      </div>
+
+      <!-- Agency field -->
+      <div style="padding:14px 16px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="bulkEdit-agency-enabled" onchange="document.getElementById('bulkEdit-agency-field').style.opacity=this.checked?'1':'0.4';document.getElementById('bulkEdit-agency-field').style.pointerEvents=this.checked?'':'none';" style="width:16px;height:16px;accent-color:var(--accent);">
+          <span style="font-family:var(--font-data);font-size:13px;font-weight:600;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.07em;">Agency</span>
+        </label>
+        <div id="bulkEdit-agency-field" style="opacity:0.4;pointer-events:none;">
+          <input class="form-input" type="text" id="bulkEdit-agency" placeholder="e.g. LACoFD, LASD, LAPD" style="width:100%;box-sizing:border-box;">
+          <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Leave blank to clear agency on all selected channels.</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeBulkEditModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmBulkEdit()">Apply to Selected</button>
     </div>
   </div>
 </div>
