@@ -2084,6 +2084,29 @@
   }
   .nav-group.open .nav-group-dropdown { display: block; }
 
+  /* ── TOPBAR DROPDOWN — used by Reports & Alerts (and reusable for similar
+     low-frequency action groups). Lighter-weight than .nav-group-dropdown:
+     position:absolute anchored to its own button, since it lives in the
+     topbar rather than the horizontally-scrolling main nav bar. ── */
+  .topbar-dropdown-wrap { position: relative; display: inline-flex; }
+  .topbar-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-lit);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    z-index: 300;
+    min-width: 220px;
+    padding: 6px;
+  }
+  .topbar-dropdown.open { display: block; }
+  @media (max-width: 768px) {
+    .topbar-dropdown { position: fixed; left: 8px; right: 8px; top: auto; min-width: 0; }
+  }
+
   .nav-group-item {
     display: flex;
     align-items: center;
@@ -3435,7 +3458,16 @@
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Operational Location * <span style="font-weight:400;color:var(--text-dim);">required only if not a common place above</span></label>
-          <input class="form-input" id="pr-loc-address" placeholder="Street address, city, or cross streets">
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <input class="form-input" id="pr-loc-address" placeholder="Street address, city, or cross streets" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();prGeocodeLocation();}">
+            <button class="btn-secondary" type="button" style="font-size:12px;padding:9px 12px;flex-shrink:0;" onclick="prGeocodeLocation()">📍 Validate</button>
+          </div>
+          <div id="pr-loc-status" style="font-size:11px;color:var(--text-dim);min-height:14px;font-family:var(--font-data);margin-top:4px;"></div>
+          <div id="pr-map-wrap" style="display:none;border-radius:4px;overflow:hidden;border:1px solid var(--border);margin-top:6px;">
+            <div id="pr-map" style="height:180px;width:100%;"></div>
+          </div>
+          <input type="hidden" id="pr-loc-lat">
+          <input type="hidden" id="pr-loc-lon">
         </div>
       </div>
 
@@ -3879,11 +3911,25 @@
     <span class="badge">LACoFD</span>
   </div>
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
+    <button class="btn-secondary" id="myItemsBtn" style="position:relative;" onclick="openMyItems()">
+      👤 My Items <span class="nav-badge" id="myItemsBadge" style="display:none;margin-left:4px;">0</span>
+    </button>
     <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
     <button class="btn-secondary" onclick="openICS205A()">⬇ ICS 205A</button>
-    <button class="btn-secondary" onclick="openShiftHandoff()">📋 Shift Handoff</button>
-    <button class="btn-secondary" onclick="openMorningReport()" title="Morning Report Settings">📋 Report</button>
-    <button class="btn-secondary" onclick="openLowAvailSettings()" title="Low Availability Alert Settings">⚠ Alerts</button>
+    <div class="topbar-dropdown-wrap" id="reportsDropdownWrap">
+      <button class="btn-secondary" onclick="toggleReportsDropdown(event)">📋 Reports &amp; Alerts <span style="font-size:9px;opacity:0.6;">▾</span></button>
+      <div class="topbar-dropdown" id="reportsDropdown">
+        <div class="nav-group-item" onclick="closeReportsDropdown();openShiftHandoff();">
+          <span class="nav-item-icon">📋</span>Shift Handoff
+        </div>
+        <div class="nav-group-item" onclick="closeReportsDropdown();openMorningReport();">
+          <span class="nav-item-icon">📋</span>Morning Report Settings
+        </div>
+        <div class="nav-group-item" onclick="closeReportsDropdown();openLowAvailSettings();">
+          <span class="nav-item-icon">⚠</span>Low Availability Alerts
+        </div>
+      </div>
+    </div>
     <button class="btn-secondary" onclick="openBigBoard()" title="Open full-screen wall display" style="letter-spacing:0.03em;">⛶ Big Board</button>
   </div>
   <!-- Mobile: hamburger only — bell is in desktop actions above -->
@@ -4182,7 +4228,7 @@
     <!-- Toolbar -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <input class="search-input" type="text" id="searchBox" placeholder="Search channel / frequency / assignment…" oninput="renderChannels()">
+        <input class="search-input" type="text" id="searchBox" placeholder="Search channel / frequency / assignment…" oninput="renderChannels()" title="Press / to focus search from anywhere · N for a new channel · Esc to close any window">
         <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
         <button class="filter-btn" data-filter="available" onclick="setFilter('available', this)">
           <span class="filter-dot available"></span>Available
@@ -4744,6 +4790,7 @@
             </select>
           </div>
           <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" style="font-size:12px;" onclick="exportChannelsCSV()">⬇ Export CSV</button>
             <button class="btn-secondary" style="font-size:12px;" onclick="adminResetAllChannels()">↺ Reset All to Available</button>
             <button class="btn-danger"    style="font-size:12px;" onclick="adminDeleteAllChannels()">✕ Delete All Channels</button>
             <button class="btn-primary"   style="font-size:12px;" onclick="openAddModal()">+ Add Channel</button>
@@ -4759,6 +4806,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
           <input class="search-input" id="adminTgSearch" type="text" placeholder="Search talkgroups…" oninput="renderAdminTalkgroups()" style="width:220px;">
           <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" style="font-size:12px;" onclick="exportTalkgroupsCSV()">⬇ Export CSV</button>
             <button class="btn-danger"  style="font-size:12px;" onclick="adminDeleteAllTalkgroups()">✕ Delete All Talkgroups</button>
             <button class="btn-primary" style="font-size:12px;" onclick="openTalkgroupModal(null)">+ Add Talkgroup</button>
           </div>
@@ -4976,6 +5024,7 @@
                 <option value="trigger">Trigger Lookup</option>
                 <option value="inventory">Radio Inventory</option>
                 <option value="incident">Incidents</option>
+                <option value="conflict">Conflicts</option>
                 <option value="risk">RF Risk</option>
                 <option value="system">System</option>
               </select>
@@ -5447,6 +5496,15 @@
     </div>
     <div class="modal-body" style="flex:1;overflow-y:auto;">
 
+      <!-- One-time onboarding callout — dismissed permanently via localStorage -->
+      <div id="recommendOnboarding" style="display:none;background:rgba(30,136,229,0.08);border:1px solid rgba(30,136,229,0.3);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;position:relative;">
+        <button onclick="dismissOnboarding('recommend')" style="position:absolute;top:8px;right:10px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;">✕</button>
+        <strong style="color:var(--accent);">How this works:</strong> every available channel gets scored 0–100 against what you're requesting —
+        type/band match, no conflicts, location history, priority. The score breakdown under each result shows exactly where
+        the points came from, so nothing here is a black box. A channel marked <strong style="color:var(--status-active);">✕ Conflict</strong>
+        is already committed elsewhere and is shown for transparency, not as a real option.
+      </div>
+
       <!-- Criteria picker — shown when the source didn't already imply a role/category -->
       <div id="recommendCriteria" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
         <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;">Recommendation Criteria</div>
@@ -5482,6 +5540,22 @@
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="document.getElementById('recommendModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MY PENDING ITEMS ── -->
+<div class="modal-overlay" id="myItemsModal">
+  <div class="modal" style="max-width:680px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;">
+      <div class="modal-title">👤 My Pending Items</div>
+      <button class="modal-close" onclick="document.getElementById('myItemsModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="myItemsBody" style="flex:1;overflow-y:auto;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="openMyItems()">↺ Refresh</button>
+      <button class="btn-secondary" onclick="document.getElementById('myItemsModal').classList.remove('open')">Close</button>
     </div>
   </div>
 </div>
@@ -6190,6 +6264,7 @@ async function openImpactDashboard() {
   body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-dim);font-size:12px;">Computing operational impact…</div>';
   document.getElementById('impactDashboardModal').classList.add('open');
 
+  const conflictStats = await getConflictStats(30);
   const tiles = [];
 
   // ── 1. Channels below minimum availability — reuses the same threshold logic as the live banner ──
@@ -6313,6 +6388,20 @@ async function openImpactDashboard() {
   // ── Render ──
   window._impactTileActions = tiles.map(t => t.action);
   body.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;" onclick="closeImpactDashboard();switchMainTab('admin');setTimeout(()=>{switchAdminTab('system');document.getElementById('syslogCategory').value='conflict';renderSysLog();},100);">
+        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;color:${conflictStats.total ? 'var(--status-active)' : 'var(--status-available)'};line-height:1;">${conflictStats.total}</div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Conflicts Caught — Last 30 Days</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;color:var(--status-active);line-height:1;">${conflictStats.blocked}</div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Blocked Outright</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;color:var(--status-reserved);line-height:1;">${conflictStats.overridden}</div>
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;">Overridden by a User</div>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       ${tiles.map((t, i) => {
         const clear = !t.items.length;
@@ -7830,6 +7919,91 @@ function updateIcrBadge() {
   // Flash the Schedule nav item directly — Internal Channel Requests live under Schedule
   document.getElementById('navitem-schedule')?.classList.toggle('flashing', pending > 0);
   updateOperationsNavFlash();
+  updateMyItemsBadge();
+}
+
+// ── "My Pending Items" — pulls together everything the logged-in user has a
+// personal stake in, scattered today across Schedule/Incidents/Comm Plan Req.
+// Internal Channel Requests match on the real requestor_id (exact, reliable).
+// Incidents match on the free-text COML field against the user's display name
+// (best-effort — there's no structured "COML user ID" column on incidents
+// today, so this is a case-insensitive name match, not a guaranteed identity
+// link). Comm Plan Requests are intentionally excluded — they're public,
+// unauthenticated submissions with no link to any logged-in user account, so
+// there's no honest way to claim one as "mine."
+function getMyPendingItems() {
+  const myName = (currentUser?.name || '').toLowerCase().trim();
+  const myId   = currentUser?.id;
+
+  const myIcrs = (internalChannelRequests || []).filter(r =>
+    r.status === 'pending' && (String(r.requestor_id) === String(myId) || (r.requestor_name||'').toLowerCase().trim() === myName)
+  );
+
+  const myIncidents = (incidents || []).filter(i =>
+    i.status !== 'closed' && (i.coml||'').toLowerCase().trim() === myName && myName
+  );
+
+  return { myIcrs, myIncidents };
+}
+
+function updateMyItemsBadge() {
+  const btn   = document.getElementById('myItemsBtn');
+  const badge = document.getElementById('myItemsBadge');
+  if (!btn || !badge) return;
+  const { myIcrs, myIncidents } = getMyPendingItems();
+  const total = myIcrs.length + myIncidents.length;
+  if (total > 0) {
+    badge.textContent = total > 99 ? '99+' : total;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function openMyItems() {
+  const body = document.getElementById('myItemsBody');
+  const { myIcrs, myIncidents } = getMyPendingItems();
+
+  if (!myIcrs.length && !myIncidents.length) {
+    body.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-dim);">
+      <div style="font-size:28px;margin-bottom:10px;">✅</div>
+      <div style="font-size:13px;">Nothing pending under your name right now.</div>
+      <div style="font-size:11px;margin-top:6px;">Channel requests you've submitted and incidents where you're listed as COML will show up here.</div>
+    </div>`;
+    document.getElementById('myItemsModal').classList.add('open');
+    return;
+  }
+
+  const fmtDT = d => new Date(d).toLocaleString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+
+  const icrSection = myIcrs.length ? `
+    <div style="margin-bottom:18px;">
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">📥 Your Pending Channel Requests (${myIcrs.length})</div>
+      ${myIcrs.map(r => `
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="document.getElementById('myItemsModal').classList.remove('open');switchMainTab('schedule');">
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(r.title)}</div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-data);margin-top:2px;">${fmtDT(r.start)} → ${fmtDT(r.end_time)}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Awaiting COML review${r.channel_designator ? ' · preferred: ' + escHtml(r.channel_designator) : ''}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  const incSection = myIncidents.length ? `
+    <div>
+      <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">🚨 Incidents Where You're Listed as COML (${myIncidents.length})</div>
+      ${myIncidents.map(i => `
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="document.getElementById('myItemsModal').classList.remove('open');switchMainTab('incidents');setTimeout(()=>openIncidentForm('${i.id}'),100);">
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${escHtml(i.name)}${i.number ? ' — ' + escHtml(i.number) : ''}</div>
+          <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-data);margin-top:2px;">${i.status === 'active' ? '🔴 Active' : '🟡 Standby'}${i.location ? ' · ' + escHtml(i.location) : ''}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  body.innerHTML = `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;">
+      Matched by your name (${escHtml(currentUser?.name||'—')}) — channel requests use your account directly; incident COML matching is name-based since incidents don't yet store a linked user ID.
+    </div>
+    ${icrSection}${incSection}
+  `;
+  document.getElementById('myItemsModal').classList.add('open');
 }
 
 // Combines all "needs attention under Operations" signals — Internal Channel Requests
@@ -7918,7 +8092,8 @@ async function submitIcrRequest() {
         '⚠ Possible conflict detected:\n\n' + formatConflictMessages(conflicts).join('\n') +
         '\n\nYou can still submit — the COML will see this conflict when reviewing your request. Submit anyway?'
       );
-      if (!proceed) return;
+      if (!proceed) { logConflictEvent('blocked', 'Internal Channel Request', conflicts); return; }
+      logConflictEvent('overridden', 'Internal Channel Request', conflicts);
     }
   }
 
@@ -8884,10 +9059,58 @@ function closeBigBoard() {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
-// Close Big Board on Escape key
+// ─────────────────────────────────────────────
+// KEYBOARD SHORTCUTS
+// ─────────────────────────────────────────────
+// / focuses the search box for whichever tab is active
+// Escape closes the Big Board, or any open modal
+// N opens the "new record" action for whichever tab is active
+// All shortcuts are suppressed while typing in any input/textarea/select,
+// so normal typing (including a literal "n" or "/" in a text field) is
+// never intercepted.
+const SEARCH_BOX_BY_TAB = {
+  channels:    'searchBox',
+  talkgroups:  'tgSearchBox',
+  triggers:    'triggerSearch',
+  inventory:   'invSearch',
+  commreq:     'cprSearch',
+};
+
+const NEW_ACTION_BY_TAB = {
+  channels:    () => openAddModal(),
+  talkgroups:  () => openTalkgroupModal(null),
+  schedule:    () => openSchedModal(null),
+  incidents:   () => openIncidentForm(null),
+  triggers:    () => openTriggerEditForm(null),
+  inventory:   () => openInventoryForm(null),
+};
+
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && document.getElementById('bigBoardOverlay').style.display !== 'none') {
-    closeBigBoard();
+  const tag = document.activeElement?.tagName;
+  const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable;
+
+  // Escape always works, even while typing (so you can back out of a field and close a modal in one press)
+  if (e.key === 'Escape') {
+    const bigBoard = document.getElementById('bigBoardOverlay');
+    if (bigBoard && bigBoard.style.display !== 'none') { closeBigBoard(); return; }
+    const openModal = document.querySelector('.modal-overlay.open');
+    if (openModal) { openModal.classList.remove('open'); return; }
+    return;
+  }
+
+  if (isTyping) return; // every other shortcut is suppressed while typing anywhere
+
+  if (e.key === '/') {
+    const searchId = SEARCH_BOX_BY_TAB[activeMainTab];
+    const el = searchId && document.getElementById(searchId);
+    if (el) { e.preventDefault(); el.focus(); el.select?.(); }
+    return;
+  }
+
+  if (e.key === 'n' || e.key === 'N') {
+    const action = NEW_ACTION_BY_TAB[activeMainTab];
+    if (action) { e.preventDefault(); action(); }
+    return;
   }
 });
 
@@ -9721,6 +9944,20 @@ function switchMainTab(tab) {
 }
 
 // ── Grouped nav dropdown interaction ──
+// ── Reports & Alerts topbar dropdown (consolidates Shift Handoff / Morning
+// Report settings / Low Availability Alerts — three low-frequency settings
+// screens that don't need their own permanent topbar slot each) ──
+function toggleReportsDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('reportsDropdown')?.classList.toggle('open');
+}
+function closeReportsDropdown() {
+  document.getElementById('reportsDropdown')?.classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#reportsDropdownWrap')) closeReportsDropdown();
+});
+
 function toggleNavGroup(groupKey, e) {
   e.stopPropagation();
   const group  = document.getElementById(`navgroup-${groupKey}`);
@@ -11056,6 +11293,7 @@ function openSchedModal(id) {
   }
   renderChecklistFromSelect('sr-channel', 'sr-channel-checklist');
   clearRisk();
+  showOnboardingIfNeeded('conflict');
   document.getElementById('schedModal').classList.add('open');
   // Restore map for existing reservation, run risk engine
   if (id) { checkTimeConflicts(); restoreSchedMapIfNeeded(); runSimplexRiskEngine(); }
@@ -11803,6 +12041,7 @@ async function saveReservation() {
   if (conflicts.length) {
     errEl.textContent = '⚠ Conflicts: ' + formatConflictMessages(conflicts).join(' · ');
     errEl.style.display = 'block';
+    logConflictEvent('blocked', 'Reservation', conflicts);
     return;
   }
 
@@ -12307,6 +12546,46 @@ function formatConflictMessages(conflicts) {
   });
 }
 
+// ── Conflict audit logging ──
+// Records every real decision point where checkResourceConflicts caught
+// something — not the live-typing preview (checkTimeConflicts fires on every
+// keystroke and would flood the log), only the moments where an action was
+// actually blocked or a user explicitly chose to override a warning. Reuses
+// the existing activity_log infrastructure under category 'conflict' so the
+// System Log viewer, its filters, and its CSV export all work on this data
+// immediately with no new table or UI.
+//
+// outcome: 'blocked'    — the save was refused outright (e.g. reservation save)
+//          'overridden' — a confirm() dialog warned the user and they chose to proceed anyway
+async function logConflictEvent(outcome, moduleName, conflicts) {
+  if (!conflicts.length) return;
+  const summary = formatConflictMessages(conflicts).join(' | ');
+  await logEvent('conflict', outcome === 'blocked' ? 'Conflict Blocked' : 'Conflict Overridden',
+    `${moduleName}: ${summary}`,
+    { outcome, module: moduleName, conflictCount: conflicts.length, sources: [...new Set(conflicts.map(c=>c.source))] }
+  );
+}
+
+// Pulls a quick count of blocked vs overridden conflicts in a given window —
+// used by the Operational Impact Dashboard and available for any future
+// "how many conflicts has the system caught" reporting need.
+async function getConflictStats(daysBack = 30) {
+  try {
+    const since = new Date(Date.now() - daysBack*86400000).toISOString();
+    const { data } = await sb.from('activity_log')
+      .select('action, extra, created_at')
+      .eq('category', 'conflict')
+      .gte('created_at', since)
+      .limit(1000);
+    const rows = data || [];
+    const blocked    = rows.filter(r => r.action === 'Conflict Blocked').length;
+    const overridden = rows.filter(r => r.action === 'Conflict Overridden').length;
+    return { blocked, overridden, total: rows.length, since };
+  } catch(e) {
+    return { blocked: 0, overridden: 0, total: 0, since: null };
+  }
+}
+
 // ═══════════════════════════════════════════════
 // RECOMMENDED ASSIGNMENT ENGINE
 // ═══════════════════════════════════════════════
@@ -12439,6 +12718,28 @@ async function recommendChannels(params) {
 let recommendSourceType = null; // 'cpr' | 'incident'
 let recommendSourceId   = null;
 
+// ── One-time onboarding callouts ──
+// Each callout has a unique key; once dismissed it's gone permanently for that
+// browser/device (localStorage), never shown again. Kept deliberately simple —
+// no tour library, no multi-step sequence, just "explain it once, then get out
+// of the way."
+const ONBOARDING_KEY_PREFIX = 'rfOnboardSeen_';
+
+function shouldShowOnboarding(key) {
+  try { return !localStorage.getItem(ONBOARDING_KEY_PREFIX + key); } catch(e) { return true; }
+}
+
+function dismissOnboarding(key) {
+  try { localStorage.setItem(ONBOARDING_KEY_PREFIX + key, '1'); } catch(e) {}
+  const el = document.getElementById(key === 'recommend' ? 'recommendOnboarding' : 'conflictOnboarding');
+  if (el) el.style.display = 'none';
+}
+
+function showOnboardingIfNeeded(key) {
+  const el = document.getElementById(key === 'recommend' ? 'recommendOnboarding' : 'conflictOnboarding');
+  if (el) el.style.display = shouldShowOnboarding(key) ? 'block' : 'none';
+}
+
 function openRecommendChannels(sourceType, sourceId) {
   recommendSourceType = sourceType;
   recommendSourceId   = sourceId;
@@ -12474,6 +12775,7 @@ function openRecommendChannels(sourceType, sourceId) {
 
   document.getElementById('recommendResults').innerHTML = '';
   document.getElementById('recommendSummary').textContent = '';
+  showOnboardingIfNeeded('recommend');
   document.getElementById('recommendModal').classList.add('open');
   runRecommendation();
 }
@@ -13009,6 +13311,38 @@ function openTriggerImport() {
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 50);
+}
+
+function exportChannelsCSV() {
+  if (!channels.length) { alert('No channels to export.'); return; }
+  const header = ['channel_name','rx_freq','rx_tone','tx_freq','tx_tone','bandwidth','power','adm','status','function','agency','group','remarks'];
+  const rows = channels.map(ch => [
+    ch.designator||'', ch.freq||'', ch.rxTone||'', ch.rxFreq||ch.freq||'', ch.txTone||'',
+    ch.bandwidth||'', ch.power||'', ch.adm||'', ch.status||'', ch.function&&ch.function!=='—'?ch.function:'',
+    ch.agency&&ch.agency!=='—'?ch.agency:'', ch.group||'', ch.notes||''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv),
+    download: `channel-plan-${new Date().toLocaleDateString('en-CA')}.csv`,
+  });
+  a.click();
+  logEvent('channel', 'CSV Export', `${channels.length} channels exported`);
+}
+
+function exportTalkgroupsCSV() {
+  if (!talkgroups.length) { alert('No talkgroups to export.'); return; }
+  const header = ['tg_id','system','name','agency','status','encryption','priority','notes'];
+  const rows = talkgroups.map(tg => [
+    tg.tgId||'', tg.system||'', tg.name||'', tg.agency||'', tg.status||'', tg.encryption||'', tg.priority||'', tg.notes||''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv),
+    download: `talkgroups-${new Date().toLocaleDateString('en-CA')}.csv`,
+  });
+  a.click();
+  logEvent('talkgroup', 'CSV Export', `${talkgroups.length} talkgroups exported`);
 }
 
 function exportTriggersCSV() {
@@ -14501,7 +14835,8 @@ async function saveIncident() {
         formatConflictMessages(allConflicts).join('\n') +
         '\n\nAssigning them to this incident takes priority and will not automatically release the other commitment. Continue?'
       );
-      if (!proceed) return;
+      if (!proceed) { logConflictEvent('blocked', 'Incident', allConflicts); return; }
+      logConflictEvent('overridden', 'Incident', allConflicts);
     }
   }
 
@@ -15243,6 +15578,89 @@ function collectRequestedChannels() {
     .map(([, label]) => label);
 }
 
+// ── Address validation map for the public Comm Plan Request form ──
+// Same geocode-with-pin-fallback pattern as the Incident form and RF
+// Deconflicter — the public form is the one place a non-technical person
+// outside the department is typing an address, so it benefits most from
+// catching a bad address before submission rather than after.
+let prMap = null, prMarker = null;
+
+async function prGeocodeLocation() {
+  const query = document.getElementById('pr-loc-address').value.trim();
+  const statusEl = document.getElementById('pr-loc-status');
+  if (!query) { statusEl.textContent = '⚠ Enter a location or address first'; statusEl.style.color = 'var(--status-reserved)'; return; }
+
+  statusEl.textContent = '🔍 Searching…'; statusEl.style.color = 'var(--text-dim)';
+  const isIntersection = /\s(&|and|\/)\s/i.test(query);
+
+  try {
+    const tryQuery = async (q) => {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=us`;
+      const res = await fetch(url, { headers:{'Accept-Language':'en','User-Agent':'COMM-CENTER/1.0'}, signal: AbortSignal.timeout(6000) });
+      return res.json();
+    };
+
+    let results = await tryQuery(`${query}, California`);
+    if (!results.length && isIntersection) {
+      results = await tryQuery(`${query.replace(/\s(&|\/)\s/, ' and ')}, California`);
+    }
+
+    if (!results.length) {
+      statusEl.innerHTML = isIntersection
+        ? '⚠ Intersection not found — drop a pin on the map below instead'
+        : '⚠ Not found — drop a pin on the map below instead';
+      statusEl.style.color = 'var(--status-reserved)';
+      prInitMap(34.0522, -118.2437); // LA County default center, draggable pin to adjust
+      return;
+    }
+
+    const lat = parseFloat(results[0].lat);
+    const lon = parseFloat(results[0].lon);
+    const displayName = results[0].display_name.split(',').slice(0,3).join(',');
+
+    document.getElementById('pr-loc-lat').value = lat;
+    document.getElementById('pr-loc-lon').value = lon;
+    statusEl.innerHTML = `✓ ${escHtml(displayName)}`;
+    statusEl.style.color = 'var(--status-available)';
+
+    prInitMap(lat, lon);
+  } catch(e) {
+    statusEl.textContent = '⚠ Geocoding failed — check connection or drop a pin manually';
+    statusEl.style.color = 'var(--status-reserved)';
+  }
+}
+
+function prInitMap(lat, lon) {
+  const wrap = document.getElementById('pr-map-wrap');
+  const mapEl = document.getElementById('pr-map');
+  if (!wrap || !mapEl) return;
+  wrap.style.display = 'block';
+
+  const icon = L.divIcon({
+    html: `<div style="width:16px;height:16px;border-radius:50%;background:#1e88e5;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+    iconSize:[16,16], iconAnchor:[8,8], className:''
+  });
+
+  if (prMap) {
+    prMap.setView([lat, lon], 14);
+    prMarker.setLatLng([lat, lon]);
+    return;
+  }
+
+  prMap = L.map(mapEl, { zoomControl:true, scrollWheelZoom:false }).setView([lat, lon], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap contributors', maxZoom:18
+  }).addTo(prMap);
+  prMarker = L.marker([lat, lon], { draggable:true, icon }).addTo(prMap);
+  prMarker.on('dragend', e => {
+    const ll = e.target.getLatLng();
+    document.getElementById('pr-loc-lat').value = ll.lat;
+    document.getElementById('pr-loc-lon').value = ll.lng;
+    document.getElementById('pr-loc-status').innerHTML = `📍 Pin moved — ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+    document.getElementById('pr-loc-status').style.color = 'var(--accent)';
+  });
+  setTimeout(() => prMap.invalidateSize(), 150);
+}
 
 async function submitPublicRequest() {
   const errEl = document.getElementById('pubFormError');
@@ -15315,6 +15733,8 @@ async function submitPublicRequest() {
     event_name:          eventName,
     location_name:       locName || null,
     location_address:    locAddr || null,
+    location_lat:        parseFloat(document.getElementById('pr-loc-lat')?.value) || null,
+    location_lon:        parseFloat(document.getElementById('pr-loc-lon')?.value) || null,
     contact_name:        opName,
     contact_phone:       opPhone,
     contact_email:       opEmail,
@@ -15350,6 +15770,10 @@ function resetPublicForm() {
   document.getElementById('pr-category-picker-row').style.display   = 'none';
   document.getElementById('pr-channels-allhazards').style.display   = 'none';
   document.getElementById('pr-channels-wildland').style.display     = 'none';
+  // Clear the location map/status so a second submission starts fresh
+  document.getElementById('pr-loc-status').textContent = '';
+  document.getElementById('pr-map-wrap').style.display = 'none';
+  if (prMap) { prMap.remove(); prMap = null; prMarker = null; }
   document.getElementById('pubFormCard').style.display = 'block';
   document.getElementById('pubSuccessCard').style.display = 'none';
   document.getElementById('pubFormError').style.display = 'none';
@@ -15502,7 +15926,7 @@ function openCprModal(id) {
       <div style="font-family:var(--font-data);font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Location</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         ${field('Location Name', r.location_name)}
-        ${field('Address',       r.location_address)}
+        ${field('Address',       r.location_address ? r.location_address + (r.location_lat && r.location_lon ? ` (validated: ${r.location_lat.toFixed(5)}, ${r.location_lon.toFixed(5)})` : '') : null)}
       </div>
     </div>
     ${r.comments ? `<div style="border-top:1px solid var(--border);padding-top:12px;">
@@ -15959,6 +16383,15 @@ init();
       <button class="modal-close" onclick="closeSchedModal()">✕</button>
     </div>
     <div class="modal-body">
+
+      <!-- One-time onboarding callout — dismissed permanently via localStorage -->
+      <div id="conflictOnboarding" style="display:none;background:rgba(30,136,229,0.08);border:1px solid rgba(30,136,229,0.3);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text-secondary);line-height:1.6;position:relative;">
+        <button onclick="dismissOnboarding('conflict')" style="position:absolute;top:8px;right:10px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;">✕</button>
+        <strong style="color:var(--accent);">Conflict checking is automatic.</strong> As soon as you pick channels and a time window, this
+        form checks them against every other reservation, active incident, and pending channel request in the system — the same engine
+        every module shares. A red warning here means the channel is already committed somewhere else during this window; it's not a
+        suggestion, it's a real overlap.
+      </div>
 
       <!-- Title + Channel -->
       <div class="form-row single">
