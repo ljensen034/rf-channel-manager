@@ -15090,6 +15090,7 @@ async function saveUasAircraft() {
     notes:                 document.getElementById('uas-acnotes').value.trim() || null,
     updated_by:            who,
     updated_at:            new Date().toISOString(),
+    agency_id:             agencyId(),
   };
 
   if (uasFleetEditingId) {
@@ -15230,6 +15231,7 @@ async function saveUasPerson() {
     notes:           document.getElementById('uas-p-notes').value.trim()  || null,
     updated_by:      who,
     updated_at:      new Date().toISOString(),
+    agency_id:       agencyId(),
   };
 
   if (uasPersonEditingId) {
@@ -15373,6 +15375,7 @@ async function saveUasMission() {
     notes:         document.getElementById('uas-m-notes').value.trim() || null,
     updated_by:    who,
     updated_at:    new Date().toISOString(),
+    agency_id:     agencyId(),
   };
 
   if (uasMissionEditingId) {
@@ -15660,6 +15663,7 @@ async function savePerson() {
     notes:        document.getElementById('per-p-notes').value.trim()    || null,
     updated_by:   who,
     updated_at:   new Date().toISOString(),
+    agency_id:    agencyId(),
   };
 
   if (personEditingId) {
@@ -15759,6 +15763,7 @@ async function saveTeam() {
     logo_url:    document.getElementById('per-t-logo').value.trim()  || null,
     updated_by:  who,
     updated_at:  new Date().toISOString(),
+    agency_id:   agencyId(),
   };
 
   if (personTeamEditingId) {
