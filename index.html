@@ -95,8 +95,8 @@
     --text-primary:  #4dff7a;
     --text-secondary:#2eb84f;
     --text-dim:      #1a5c2a;
-    --accent:        #00e5ff;
-    --accent-glow:   rgba(0,229,255,0.18);
+    --accent:        #00ff66;
+    --accent-glow:   rgba(0,255,102,0.18);
     --font-ui:   'IBM Plex Mono', monospace;
     --font-data: 'IBM Plex Mono', monospace;
   }
@@ -104,8 +104,6 @@
   [data-theme="nightvision"] .topbar,
   [data-theme="nightvision"] .channel-row,
   [data-theme="nightvision"] .modal { box-shadow: 0 0 18px rgba(0,255,102,0.04) inset; }
-  [data-theme="nightvision"] .topbar-clock,
-  [data-theme="nightvision"] .topbar-logo span:first-child { text-shadow: 0 0 4px rgba(0,229,255,0.5); }
 
   /* ── THEME SWITCHER UI ── */
   .theme-switcher {
@@ -4007,7 +4005,7 @@
         <div class="theme-swatch">
           <span style="background:#000000;border:1px solid #133313;"></span>
           <span style="background:#061206;border:1px solid #133313;"></span>
-          <span style="background:#00e5ff;"></span>
+          <span style="background:#00ff66;"></span>
         </div>
         <div class="theme-option-info">
           <div class="theme-option-name">Night Vision</div>
@@ -5867,7 +5865,7 @@ async function refreshAllAfterReconnect() {
       loadChannels(), loadTalkgroups(), loadReservations(),
       loadIncidents(), loadCommPlanReqs(), loadInternalChannelRequests(),
       loadUasFleet(), loadUasPersonnel(), loadUasMissions(),
-      loadPersonnelTeams(), loadPersonnelRoster(),
+      loadPersonnelTeams(), loadPersonnelRoster(), loadResources(),
     ]);
     renderChannels();
     if (activeMainTab === 'talkgroups') renderTalkgroups();
@@ -5876,6 +5874,7 @@ async function refreshAllAfterReconnect() {
     if (activeMainTab === 'commreq')    renderCommPlanReqs();
     if (activeMainTab === 'uas')        renderUasTab();
     if (activeMainTab === 'personnel')  renderPersonnelTab();
+    if (activeMainTab === 'resources')  renderResources();
     updateIcrBadge();
     pushNotification('available', '🔄 Reconnected — data refreshed after a brief connection interruption');
   } catch(e) { console.warn('refreshAllAfterReconnect:', e.message); }
@@ -5935,6 +5934,13 @@ function subscribeRealtime() {
       applyScheduledReservations();
     })
     .subscribe(status => onRealtimeStatus('reservations', status));
+
+  sb.channel('resources-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, async () => {
+      await loadResources();
+      if (activeMainTab === 'resources') renderResources();
+    })
+    .subscribe(status => onRealtimeStatus('resources', status));
 
   sb.channel('commreq-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comm_plan_requests' }, async () => {
@@ -9487,7 +9493,7 @@ function renderBigBoard() {
   const themeVars = {
     night:       { bgDeep:'#0b0e13', bgPanel:'#12161e', bgCard:'#181d28', border:'#232c3d', borderLit:'#34415c', textPrimary:'#e3eaf5', textSecondary:'#7e94b3', textDim:'#44546e', accent:'#3b8fdc' },
     day:         { bgDeep:'#f0f2f5', bgPanel:'#ffffff', bgCard:'#f7f9fc', border:'#d0d8e4', borderLit:'#aab8cc', textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8', accent:'#1565c0' },
-    nightvision: { bgDeep:'#000000', bgPanel:'#030a03', bgCard:'#061206', border:'#133313', borderLit:'#1f5c1f', textPrimary:'#4dff7a', textSecondary:'#2eb84f', textDim:'#1a5c2a', accent:'#00e5ff' },
+    nightvision: { bgDeep:'#000000', bgPanel:'#030a03', bgCard:'#061206', border:'#133313', borderLit:'#1f5c1f', textPrimary:'#4dff7a', textSecondary:'#2eb84f', textDim:'#1a5c2a', accent:'#00ff66' },
   };
   const t = themeVars[theme] || themeVars.night;
 
@@ -9676,8 +9682,23 @@ const TRO_ZONES = [
 ];
 
 let troDashboardInterval = null;
+let troDashboardNotices  = [];
 
-function openTroDashboard() {
+async function loadTroDashboardNotices() {
+  try {
+    const now = new Date().toISOString();
+    const { data } = await sb.from('system_notices')
+      .select('*')
+      .eq('active', true)
+      .eq('show_dashboard', true)
+      .or(`expires.is.null,expires.gt.${now}`)
+      .order('created_at', { ascending: false });
+    troDashboardNotices = data || [];
+  } catch(e) { troDashboardNotices = []; }
+}
+
+async function openTroDashboard() {
+  await loadTroDashboardNotices();
   renderTroDashboard();
   const overlay = document.getElementById('troDashboardOverlay');
   overlay.style.display = 'flex';
@@ -9685,7 +9706,10 @@ function openTroDashboard() {
 
   // Auto-refresh every 30s, same cadence as Big Board
   clearInterval(troDashboardInterval);
-  troDashboardInterval = setInterval(renderTroDashboard, 30000);
+  troDashboardInterval = setInterval(async () => {
+    await loadTroDashboardNotices();
+    renderTroDashboard();
+  }, 30000);
 }
 
 function closeTroDashboard() {
@@ -9726,8 +9750,8 @@ function renderTroDashboard() {
 
   const zoneRow = (label, count) => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);">
-      <span style="font-family:var(--font-data);font-size:1.6vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">${label}</span>
-      <span style="font-family:var(--font-data);font-size:1.9vw;font-weight:700;color:${count > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${count}</span>
+      <span style="font-family:var(--font-data);font-size:2.4vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">${label}</span>
+      <span style="font-family:var(--font-data);font-size:2.8vw;font-weight:700;color:${count > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${count}</span>
     </div>`;
 
   content.innerHTML = `
@@ -9742,19 +9766,33 @@ function renderTroDashboard() {
         ${unassignedCount > 0 ? `<div style="font-family:var(--font-data);font-size:0.95vw;color:var(--text-dim);">${unassignedCount} available channel${unassignedCount!==1?'s':''} not assigned to a TRO zone</div>` : ''}
       </div>
 
+      <!-- System Notices flagged for this dashboard -->
+      ${troDashboardNotices.length ? `
+      <div style="flex-shrink:0;display:flex;flex-direction:column;gap:0.4vw;margin-bottom:1vw;">
+        ${troDashboardNotices.map(n => {
+          const col = n.type === 'critical' ? 'var(--status-active)' : n.type === 'warning' ? 'var(--status-reserved)' : 'var(--accent)';
+          const icon = n.type === 'critical' ? '🚨' : n.type === 'warning' ? '⚠' : 'ℹ';
+          return `<div style="display:flex;align-items:center;gap:0.7vw;padding:0.5vw 1vw;background:${col}14;border:1px solid ${col}55;border-radius:6px;">
+            <span style="font-size:1.1vw;flex-shrink:0;">${icon}</span>
+            <span style="font-family:var(--font-data);font-size:1vw;font-weight:700;color:${col};flex-shrink:0;">${escHtml(n.title)}:</span>
+            <span style="font-family:var(--font-data);font-size:0.95vw;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(n.message)}</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
       <!-- Main grid: grand total on the left, zone rows on the right -->
-      <div style="flex:1;display:grid;grid-template-columns:1fr 2fr;gap:1.4vw;min-height:0;">
+      <div style="flex:1;display:grid;grid-template-columns:1fr 2.3fr;gap:1.4vw;min-height:0;">
 
         <!-- Left: grand total + LARTCS combined -->
         <div style="display:flex;flex-direction:column;gap:1vw;min-height:0;">
           <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
             <div style="font-family:var(--font-data);font-size:1.1vw;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.3vw;">Total Available</div>
-            <div style="font-family:var(--font-data);font-size:6.5vw;font-weight:700;line-height:1;color:var(--status-available);">${grandTotal}</div>
+            <div style="font-family:var(--font-data);font-size:9vw;font-weight:700;line-height:1;color:var(--status-available);">${grandTotal}</div>
             <div style="font-family:var(--font-data);font-size:1vw;color:var(--text-dim);margin-top:0.3vw;">across all TRO zones</div>
           </div>
           <div style="flex:0 0 auto;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1vw 1.2vw;display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-family:var(--font-data);font-size:1.2vw;font-weight:700;color:var(--text-primary);">LARTCS (Combined)</span>
-            <span style="font-family:var(--font-data);font-size:2.2vw;font-weight:700;color:${lartcsTotal > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${lartcsTotal}</span>
+            <span style="font-family:var(--font-data);font-size:1.6vw;font-weight:700;color:var(--text-primary);">LARTCS (Combined)</span>
+            <span style="font-family:var(--font-data);font-size:2.8vw;font-weight:700;color:${lartcsTotal > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${lartcsTotal}</span>
           </div>
         </div>
 
@@ -9767,8 +9805,8 @@ function renderTroDashboard() {
           ${zoneRow('SGV',            byZone['SGV'].length)}
           ${zoneRow('NORTH',          byZone['NORTH'].length)}
           <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;">
-            <span style="font-family:var(--font-data);font-size:1.6vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">LARTCS UHF / VHF / 800</span>
-            <span style="font-family:var(--font-data);font-size:1.5vw;font-weight:600;color:var(--text-secondary);">${byZone['LARTCS UHF'].length} / ${byZone['LARTCS VHF'].length} / ${byZone['LARTCS 800'].length}</span>
+            <span style="font-family:var(--font-data);font-size:2.4vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">LARTCS UHF / VHF / 800</span>
+            <span style="font-family:var(--font-data);font-size:2.1vw;font-weight:600;color:var(--text-secondary);">${byZone['LARTCS UHF'].length} / ${byZone['LARTCS VHF'].length} / ${byZone['LARTCS 800'].length}</span>
           </div>
         </div>
       </div>
@@ -10180,72 +10218,110 @@ function closeMobileSheet() {
 // ─────────────────────────────────────────────
 // MORNING REPORT
 // ─────────────────────────────────────────────
-let morningReportSettings = loadMorningReportSettings();
-let morningReportCheckInterval = null;
+// ─────────────────────────────────────────────
+// MORNING REPORT — server-side scheduled report
+// Settings live in Supabase (morning_report_settings); the actual report is
+// computed and emailed by a Supabase Edge Function on a cron schedule, so it
+// fires reliably whether or not anyone has the app open. This client-side
+// code only manages settings and offers a manual "Preview Now" using the
+// same data, for sanity-checking what the scheduled run will contain.
+// ─────────────────────────────────────────────
+let morningReportSettings = { enabled: false, time: '07:00', recipients: '', isOverride: false };
+let morningReportAgencyDefault = null; // the agency-level row, shown for reference when viewing your own override
 
-function loadMorningReportSettings() {
+async function loadMorningReportSettings() {
+  const aId = agencyId();
+  const uId = currentUser?.id || null;
+  if (!aId) return;
+
   try {
-    const s = localStorage.getItem('rfMorningReport');
-    return s ? JSON.parse(s) : { enabled: false, time: '07:00', lastSent: null };
-  } catch(e) { return { enabled: false, time: '07:00', lastSent: null }; }
+    // Agency-level default (user_id is null)
+    const { data: agencyRow } = await sb.from('morning_report_settings')
+      .select('*').eq('agency_id', aId).is('user_id', null).maybeSingle();
+    morningReportAgencyDefault = agencyRow || null;
+
+    // This user's personal override, if any
+    let userRow = null;
+    if (uId) {
+      const { data } = await sb.from('morning_report_settings')
+        .select('*').eq('agency_id', aId).eq('user_id', uId).maybeSingle();
+      userRow = data || null;
+    }
+
+    const active = userRow || agencyRow;
+    morningReportSettings = {
+      enabled:    active?.enabled    ?? false,
+      time:       active?.send_time  ?? '07:00',
+      recipients: active?.recipients ?? (currentUser?.email || ''),
+      isOverride: !!userRow,
+      lastSentAt: active?.last_sent_at || null,
+    };
+  } catch(e) { console.warn('loadMorningReportSettings:', e.message); }
 }
 
-function saveMorningReportSettings() {
-  try { localStorage.setItem('rfMorningReport', JSON.stringify(morningReportSettings)); } catch(e) {}
+function renderMrScopeHint() {
+  const scope = document.getElementById('mr-scope').value;
+  const hint = document.getElementById('mr-scope-hint');
+  if (!hint) return;
+  hint.textContent = scope === 'mine'
+    ? 'Saves a personal schedule/recipient list tied only to your account — the agency default keeps running for everyone else.'
+    : 'Saves the shared schedule used by anyone at this agency who hasn\'t set up a personal override.';
 }
 
 function openMorningReport() {
-  // Sync UI to settings
-  document.getElementById('mr-enabled').checked  = morningReportSettings.enabled;
-  document.getElementById('mr-time').value        = morningReportSettings.time || '07:00';
-  const lastEl = document.getElementById('mr-last-sent');
-  if (lastEl) lastEl.textContent = morningReportSettings.lastSent
-    ? 'Last sent: ' + morningReportSettings.lastSent
-    : 'Not yet sent this session';
-  document.getElementById('morningReportModal').classList.add('open');
+  loadMorningReportSettings().then(() => {
+    document.getElementById('mr-enabled').checked = morningReportSettings.enabled;
+    document.getElementById('mr-time').value       = morningReportSettings.time || '07:00';
+    document.getElementById('mr-recipients').value = morningReportSettings.recipients || '';
+    document.getElementById('mr-scope').value      = morningReportSettings.isOverride ? 'mine' : 'agency';
+    renderMrScopeHint();
+    const lastEl = document.getElementById('mr-last-sent');
+    if (lastEl) lastEl.textContent = morningReportSettings.lastSentAt
+      ? 'Last sent: ' + new Date(morningReportSettings.lastSentAt).toLocaleString('en-US', { timeZone:'America/Los_Angeles' }) + ' PT'
+      : 'Not yet sent';
+    document.getElementById('morningReportModal').classList.add('open');
+  });
 }
 
 function closeMorningReport() {
   document.getElementById('morningReportModal').classList.remove('open');
 }
 
-function saveMorningReportConfig() {
-  morningReportSettings.enabled = document.getElementById('mr-enabled').checked;
-  morningReportSettings.time    = document.getElementById('mr-time').value;
-  saveMorningReportSettings();
-  scheduleMorningReport();
+// scope: 'agency' saves the shared agency default (user_id null);
+// 'mine' saves a personal override tied to this user only.
+async function saveMorningReportConfig() {
+  const enabled    = document.getElementById('mr-enabled').checked;
+  const time       = document.getElementById('mr-time').value || '07:00';
+  const recipients = document.getElementById('mr-recipients').value.trim();
+  const scope      = document.getElementById('mr-scope').value; // 'agency' | 'mine'
+  const aId = agencyId();
+  const uId = currentUser?.id || null;
+
+  if (!aId) { alert('No agency context — cannot save report settings.'); return; }
+  if (enabled && !recipients) { alert('Enter at least one recipient email address.'); return; }
+
+  const row = {
+    agency_id:  aId,
+    user_id:    scope === 'mine' ? uId : null,
+    enabled,
+    send_time:  time,
+    recipients,
+    updated_by: currentUser?.name || 'Unknown',
+    updated_at: new Date().toISOString(),
+  };
+
+  // Upsert on the (agency_id, user_id) pair — user_id null = agency default
+  const { error } = await sb.from('morning_report_settings')
+    .upsert(row, { onConflict: 'agency_id,user_id' });
+
+  if (error) { alert('Error saving report settings: ' + error.message); return; }
+
+  logEvent('system', 'Morning Report Settings Updated',
+    `${scope === 'mine' ? 'Personal' : 'Agency default'} · ${enabled ? 'enabled' : 'disabled'} · ${time} PT`,
+    { scope, enabled, time });
+
+  await loadMorningReportSettings();
   closeMorningReport();
-  if (morningReportSettings.enabled) {
-    logActivityLocal(`Morning report scheduled for ${morningReportSettings.time} PT daily`);
-  }
-}
-
-function scheduleMorningReport() {
-  clearInterval(morningReportCheckInterval);
-  if (!morningReportSettings.enabled) return;
-  // Check every 60 seconds if it's time to send
-  morningReportCheckInterval = setInterval(checkMorningReport, 60000);
-  checkMorningReport(); // run immediately too
-}
-
-function checkMorningReport() {
-  if (!morningReportSettings.enabled) return;
-  const now = new Date();
-  const ptStr = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
-  const pt = new Date(ptStr);
-  const hh = String(pt.getHours()).padStart(2,'0');
-  const mm = String(pt.getMinutes()).padStart(2,'0');
-  const currentTime = `${hh}:${mm}`;
-  const todayKey = `${pt.getFullYear()}-${pt.getMonth()}-${pt.getDate()}`;
-
-  if (currentTime === morningReportSettings.time && morningReportSettings.lastSentKey !== todayKey) {
-    sendMorningReport();
-    morningReportSettings.lastSentKey = todayKey;
-    morningReportSettings.lastSent = getPacificTimeStr(false) + ' · ' + getPacificDateStr();
-    saveMorningReportSettings();
-    const lastEl = document.getElementById('mr-last-sent');
-    if (lastEl) lastEl.textContent = 'Last sent: ' + morningReportSettings.lastSent;
-  }
 }
 
 function generateReportHTML() {
@@ -10333,6 +10409,87 @@ function generateReportHTML() {
       </table>`;
   }
 
+  // ── OPERATIONAL SUMMARY (server-side report additions) ──
+  // 1. Active incidents
+  const activeIncidents = incidents.filter(i => i.status === 'active' || i.status === 'standby');
+
+  // 2. Pending comm plan requests + pending internal channel requests
+  const pendingCommReqs = commPlanReqs.filter(r => r.status === 'pending');
+  const pendingIcrReqs  = internalChannelRequests.filter(r => r.status === 'pending');
+
+  // 3. Reservations starting today (PT)
+  const reservationsToday = reservations.filter(r => {
+    const ds = new Date(r.start).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+    return ds === todayISO;
+  }).sort((a,b) => new Date(a.start) - new Date(b.start));
+
+  // 4. Overdue resources — signed-out/deployed items past their expected return time
+  const nowMs = Date.now();
+  const overdueResources = resources.filter(r =>
+    r.expectedReturn && new Date(r.expectedReturn).getTime() < nowMs && r.status !== 'available'
+  );
+
+  // 5. Low channel availability — same thresholds as the in-app banner
+  const chCounts = { available:0, active:0, reserved:0 };
+  channels.forEach(c => { if (chCounts[c.status] !== undefined) chCounts[c.status]++; });
+  const lowAvailAlerts = [];
+  if (lowAvailSettings.enabled) {
+    if (chCounts.available <= (lowAvailSettings.available ?? 0)) lowAvailAlerts.push(`Only ${chCounts.available} channel(s) Available (threshold: ${lowAvailSettings.available})`);
+    if (lowAvailSettings.active    > 0 && chCounts.active    >= lowAvailSettings.active)    lowAvailAlerts.push(`${chCounts.active} channel(s) In Use (threshold: ${lowAvailSettings.active})`);
+    if (lowAvailSettings.reserved  > 0 && chCounts.reserved  >= lowAvailSettings.reserved)  lowAvailAlerts.push(`${chCounts.reserved} channel(s) Reserved (threshold: ${lowAvailSettings.reserved})`);
+  }
+
+  // 6. Frequency conflicts among currently active/reserved channels
+  const conflictPairs = [];
+  const seenPairs = new Set();
+  [...active, ...reserved].forEach(ch => {
+    const matches = checkFrequencyConflict(ch.freq, ch.rxFreq, ch.id);
+    matches.forEach(m => {
+      const key = [ch.id, m.id].sort().join('-');
+      if (!seenPairs.has(key)) { seenPairs.add(key); conflictPairs.push([ch, m]); }
+    });
+  });
+
+  function listSection(title, color, icon, items, emptyText) {
+    return `
+      <h3 style="margin:18px 0 6px;font-size:15px;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;text-transform:uppercase;letter-spacing:0.07em;">
+        ${icon} ${title} <span style="font-weight:400;font-size:13px;">(${items.length})</span>
+      </h3>
+      ${items.length ? `<ul style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.7;">${items.map(t => `<li>${t}</li>`).join('')}</ul>`
+        : `<div style="padding:8px 10px;color:#888;font-style:italic;font-size:13px;">${emptyText}</div>`}
+    `;
+  }
+
+  const opSummaryHTML = `
+    <div style="background:#2c3e50;color:#fff;font-size:15px;font-weight:700;padding:7px 12px;border-radius:4px;margin:22px 0 2px;text-transform:uppercase;letter-spacing:0.06em;">
+      🛰 Operational Summary
+    </div>
+    ${listSection('Active Incidents', '#c0392b', '🚨',
+      activeIncidents.map(i => `<strong>${i.name}</strong>${i.number ? ' ('+i.number+')' : ''} — ${i.status}${i.location ? ' · '+i.location : ''}${i.coml ? ' · COML: '+i.coml : ''}`),
+      'No active or standby incidents.')}
+    ${listSection('Pending Requests', '#b8860b', '📝',
+      [
+        ...pendingCommReqs.map(r => `Comm Plan Request: <strong>${r.title || r.requestor_name || 'Untitled'}</strong>${r.requestor_name ? ' — '+r.requestor_name : ''}`),
+        ...pendingIcrReqs.map(r => `Channel Request: <strong>${r.title || 'Untitled'}</strong>${r.requestor_name ? ' — '+r.requestor_name : ''}`),
+      ],
+      'No pending requests awaiting review.')}
+    ${listSection('Reservations Starting Today', '#1565c0', '📅',
+      reservationsToday.map(r => {
+        const t = new Date(r.start).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
+        return `${t} — <strong>${r.title}</strong>${r.channelDesignator ? ' · '+r.channelDesignator : ''}${r.requestor ? ' · '+r.requestor : ''}`;
+      }),
+      'No reservations begin today.')}
+    ${listSection('Overdue Resources', '#c0392b', '🚒',
+      overdueResources.map(r => `<strong>${r.name}</strong>${r.unitId ? ' ('+r.unitId+')' : ''} — expected back ${new Date(r.expectedReturn).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})}${r.assignedTo ? ' · '+r.assignedTo : ''}`),
+      'No overdue resources.')}
+    ${listSection('Low Channel Availability', '#c0392b', '⚠',
+      lowAvailAlerts,
+      lowAvailSettings.enabled ? 'All channel counts within configured thresholds.' : 'Low availability alerts are disabled for this agency.')}
+    ${listSection('Frequency Conflicts', '#c0392b', '⚡',
+      conflictPairs.map(([a,b]) => `<strong>${a.designator}</strong> ↔ <strong>${b.designator}</strong> — both on ${a.freq} MHz`),
+      'No frequency conflicts detected among active/reserved channels.')}
+  `;
+
   return `
     <div style="font-family:Arial,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:24px;">
 
@@ -10355,6 +10512,8 @@ function generateReportHTML() {
             <div style="font-size:12px;text-transform:uppercase;color:#555;letter-spacing:0.06em;margin-top:4px;">${s.label}</div>
           </div>`).join('')}
       </div>
+
+      ${opSummaryHTML}
 
       <div style="background:#1565c0;color:#fff;font-size:15px;font-weight:700;padding:7px 12px;border-radius:4px;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em;">
         📻 Radio Channels
@@ -11494,7 +11653,7 @@ function schedGoToDay(ds) {
 // ─────────────────────────────────────────────
 // RESOURCES MODULE
 // ─────────────────────────────────────────────
-let resources         = loadResources();
+let resources         = [];
 let resourceEditingId = null;
 let resFilterStatus   = 'all';
 
@@ -11508,17 +11667,54 @@ const RES_STATUS_LABELS = {
 
 const RES_CONDITION_ICON = { Good:'🟢', Fair:'🟡', Poor:'🟠', Damaged:'🔴', Unknown:'⚪' };
 
-function loadResources() {
-  try { const s = localStorage.getItem('rfResources'); return s ? JSON.parse(s) : getDefaultResources(); }
-  catch(e) { return getDefaultResources(); }
+// Map a Supabase row → the app's internal resource object shape
+function rowToResource(row) {
+  return {
+    id:             row.id,
+    name:           row.name            || '',
+    unitId:         row.unit_id         || '',
+    category:       row.category        || 'Vehicle',
+    status:         row.status          || 'available',
+    assignedTo:     row.assigned_to     || '',
+    location:       row.location        || '',
+    signedOutBy:    row.signed_out_by   || '',
+    expectedReturn: row.expected_return || '',
+    condition:      row.condition       || 'Good',
+    quantity:       row.quantity        || 1,
+    home:           row.home            || '',
+    notes:          row.notes           || '',
+    updatedAt:      row.updated_at      || '',
+    updatedBy:      row.updated_by      || '',
+  };
 }
 
-function saveResources() {
-  try { localStorage.setItem('rfResources', JSON.stringify(resources)); } catch(e) {}
+// Map the app's internal resource object → a Supabase row
+function resourceToRow(data) {
+  return {
+    name:             data.name,
+    unit_id:          data.unitId         || null,
+    category:         data.category,
+    status:           data.status,
+    assigned_to:      data.assignedTo     || null,
+    location:         data.location       || null,
+    signed_out_by:    data.signedOutBy    || null,
+    expected_return:  data.expectedReturn || null,
+    condition:        data.condition      || 'Good',
+    quantity:         data.quantity       || 1,
+    home:             data.home           || null,
+    notes:            data.notes          || null,
+    updated_at:       data.updatedAt,
+    updated_by:       data.updatedBy,
+    agency_id:        agencyId(),
+  };
 }
 
-function getDefaultResources() {
-  return [];
+async function loadResources() {
+  try {
+    const { data, error } = await sb.from('resources').select('*').order('name', { ascending: true });
+    if (error) { console.warn('loadResources:', error.message); return; }
+    resources = (data || []).map(rowToResource);
+  } catch(e) {}
 }
 
 function renderResources() {
@@ -11594,15 +11790,22 @@ function renderResources() {
 }
 
 // Quick-cycle status with one click: available → deployed → signed-out → available
-function quickStatusCycle(id) {
+async function quickStatusCycle(id) {
   const r = resources.find(x => x.id === id);
   if (!r) return;
   const cycle = ['available','deployed','signed-out','maintenance','oos'];
   const next = cycle[(cycle.indexOf(r.status)+1) % cycle.length];
+  const who  = currentUser?.name || 'Unknown';
+  const now  = new Date().toISOString();
+
+  const { error } = await sb.from('resources').update({
+    status: next, updated_at: now, updated_by: who,
+  }).eq('id', id);
+  if (error) { alert('Error updating resource: ' + error.message); return; }
+
   r.status = next;
-  r.updatedAt = new Date().toISOString();
-  r.updatedBy = currentUser?.name || 'Unknown';
-  saveResources();
+  r.updatedAt = now;
+  r.updatedBy = who;
   renderResources();
   logActivity(`Resource <span class="log-ch">${r.name}</span> → ${RES_STATUS_LABELS[next]}`);
 }
@@ -11656,7 +11859,7 @@ function toggleReturnFields() {
   document.getElementById('rm-checkout-row').style.display = showCheckout ? 'grid' : 'none';
 }
 
-function saveResource() {
+async function saveResource() {
   const name = document.getElementById('rm-name').value.trim();
   if (!name) { alert('Resource Name is required.'); return; }
 
@@ -11679,11 +11882,13 @@ function saveResource() {
     updatedBy:      currentUser?.name || 'Unknown',
   };
 
+  const row = resourceToRow(data);
+
   if (resourceEditingId) {
     const prev = resources.find(r => r.id === resourceEditingId);
     const prevStatus = prev?.status;
-    const idx = resources.findIndex(r => r.id === resourceEditingId);
-    resources[idx] = { ...resources[idx], ...data };
+    const { error } = await sb.from('resources').update(row).eq('id', resourceEditingId);
+    if (error) { alert('Error saving resource: ' + error.message); return; }
     logActivity(`Resource <span class="log-ch">${name}</span> updated — ${RES_STATUS_LABELS[status]}`);
     // Email on sign-out
     if ((status === 'signed-out' || status === 'deployed') && prevStatus !== status) {
@@ -11694,21 +11899,23 @@ function saveResource() {
       );
     }
   } else {
-    resources.push({ id: 'res' + Date.now(), ...data });
+    const { error } = await sb.from('resources').insert(row);
+    if (error) { alert('Error saving resource: ' + error.message); return; }
     logActivity(`Resource <span class="log-ch">${name}</span> added — ${RES_STATUS_LABELS[status]}`);
   }
 
-  saveResources();
+  await loadResources();
   closeResourceModal();
   renderResources();
 }
 
-function deleteResource(id) {
+async function deleteResource(id) {
   const r = resources.find(x => x.id === id);
   if (!r || !confirm(`Remove "${r.name}" from resources?`)) return;
-  resources = resources.filter(x => x.id !== id);
-  saveResources();
+  const { error } = await sb.from('resources').delete().eq('id', id);
+  if (error) { alert('Error deleting resource: ' + error.message); return; }
   logActivity(`Resource <span class="log-ch">${r.name}</span> removed`);
+  await loadResources();
   closeResourceModal();
   renderResources();
 }
@@ -13160,7 +13367,6 @@ function checkOverdueResources() {
     // Only fire once — mark as notified to avoid repeated alerts
     if (returnTime < now && !r._overdueNotified) {
       r._overdueNotified = true;
-      saveResources();
       pushNotification('active', `⏰ Overdue: <span class="log-ch">${r.name}</span> — expected return has passed`);
       sendEmailNotification(
         `⚠ Resource Overdue — ${r.name}`,
@@ -14006,33 +14212,62 @@ function onFreqInput() {
 // ─────────────────────────────────────────────
 // LOW AVAILABILITY ALERTS
 // ─────────────────────────────────────────────
-let lowAvailSettings = loadLowAvailSettings();
+let lowAvailSettings = { enabled: true, available:2, active:0, reserved:0 };
 let lowAvailDismissed = false;
 
-function loadLowAvailSettings() {
+async function loadLowAvailSettings() {
+  const aId = agencyId();
+  if (!aId) return;
   try {
-    const s = localStorage.getItem('rfLowAvail');
-    return s ? JSON.parse(s) : { enabled: true, available:2, active:0, reserved:0 };
-  } catch(e) { return { enabled: true, available:2, active:0, reserved:0 }; }
+    const { data } = await sb.from('morning_report_settings')
+      .select('low_avail_enabled, low_avail_available, low_avail_active, low_avail_reserved')
+      .eq('agency_id', aId).is('user_id', null).maybeSingle();
+    if (data) {
+      lowAvailSettings = {
+        enabled:   data.low_avail_enabled   ?? true,
+        available: data.low_avail_available ?? 2,
+        active:    data.low_avail_active    ?? 0,
+        reserved:  data.low_avail_reserved  ?? 0,
+      };
+    }
+  } catch(e) { console.warn('loadLowAvailSettings:', e.message); }
+  checkLowAvailability();
 }
 
-function saveLowAvailSettings() {
+async function saveLowAvailSettings() {
   lowAvailSettings = {
     enabled:   document.getElementById('lav-enabled')?.checked ?? true,
     available: parseInt(document.getElementById('lav-available')?.value || 2),
     active:    parseInt(document.getElementById('lav-active')?.value    || 0),
     reserved:  parseInt(document.getElementById('lav-reserved')?.value  || 0),
   };
-  try { localStorage.setItem('rfLowAvail', JSON.stringify(lowAvailSettings)); } catch(e) {}
   checkLowAvailability();
+
+  const aId = agencyId();
+  if (!aId) return;
+  const row = {
+    agency_id: aId,
+    user_id:   null, // low-availability thresholds are agency-wide, not per-user
+    low_avail_enabled:   lowAvailSettings.enabled,
+    low_avail_available: lowAvailSettings.available,
+    low_avail_active:    lowAvailSettings.active,
+    low_avail_reserved:  lowAvailSettings.reserved,
+    updated_by: currentUser?.name || 'Unknown',
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    await sb.from('morning_report_settings').upsert(row, { onConflict: 'agency_id,user_id' });
+  } catch(e) { console.warn('saveLowAvailSettings:', e.message); }
 }
 
 function openLowAvailSettings() {
-  document.getElementById('lav-enabled').checked         = lowAvailSettings.enabled !== false;
-  document.getElementById('lav-available').value = lowAvailSettings.available ?? 2;
-  document.getElementById('lav-active').value    = lowAvailSettings.active    ?? 0;
-  document.getElementById('lav-reserved').value  = lowAvailSettings.reserved  ?? 0;
-  document.getElementById('lowAvailSettingsModal').classList.add('open');
+  loadLowAvailSettings().then(() => {
+    document.getElementById('lav-enabled').checked = lowAvailSettings.enabled !== false;
+    document.getElementById('lav-available').value = lowAvailSettings.available ?? 2;
+    document.getElementById('lav-active').value    = lowAvailSettings.active    ?? 0;
+    document.getElementById('lav-reserved').value  = lowAvailSettings.reserved  ?? 0;
+    document.getElementById('lowAvailSettingsModal').classList.add('open');
+  });
 }
 
 function closeLowAvailSettings() {
@@ -14115,7 +14350,7 @@ async function init() {
   snapshotChannels();
   await loadActivityLog();
   subscribeRealtime();
-  scheduleMorningReport();
+  loadMorningReportSettings();
   checkLowAvailability();
   applyScheduledReservations();
   checkOverdueResources();
@@ -14218,6 +14453,7 @@ function openNoticeEditor(id) {
         ? toLocalDatetimeInput(data.expires) : '';
       document.getElementById('ne-show-popup').checked  = data.show_popup  ?? true;
       document.getElementById('ne-show-banner').checked = data.show_banner ?? false;
+      document.getElementById('ne-show-dashboard').checked = data.show_dashboard ?? false;
       document.getElementById('ne-active').checked      = data.active      ?? true;
       document.getElementById('noticeEditorModal').classList.add('open');
     });
@@ -14229,6 +14465,7 @@ function openNoticeEditor(id) {
     document.getElementById('ne-expires').value = '';
     document.getElementById('ne-show-popup').checked  = true;
     document.getElementById('ne-show-banner').checked = false;
+    document.getElementById('ne-show-dashboard').checked = false;
     document.getElementById('ne-active').checked      = true;
     document.getElementById('noticeEditorModal').classList.add('open');
   }
@@ -14253,6 +14490,7 @@ async function saveNotice() {
     expires:     expiresVal ? ptInputToISO(expiresVal) : null,
     show_popup:  document.getElementById('ne-show-popup').checked,
     show_banner: document.getElementById('ne-show-banner').checked,
+    show_dashboard: document.getElementById('ne-show-dashboard').checked,
     active:      document.getElementById('ne-active').checked,
     posted_by:   currentUser?.name || 'Admin',
     updated_at:  new Date().toISOString(),
@@ -14287,7 +14525,7 @@ async function renderAdminNotices() {
         <span style="font-size:16px;">${typeIcon}</span>
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;color:var(--text-primary);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.title}</div>
-          <div style="font-size:12px;color:var(--text-dim);">${ts} · ${n.show_popup?'Popup ':''}${n.show_banner?'Banner ':''}</div>
+          <div style="font-size:12px;color:var(--text-dim);">${ts} · ${n.show_popup?'Popup ':''}${n.show_banner?'Banner ':''}${n.show_dashboard?'Dashboard ':''}</div>
         </div>
         ${statusTag}
         <button class="btn-secondary" style="font-size:12px;padding:2px 8px;" onclick="openNoticeEditor('${n.id}')">Edit</button>
@@ -17191,6 +17429,7 @@ async function postLoginRouter() {
     // Regular user: load their agency, proceed to app
     await loadUserAgency();
     await loadAllData();
+    await loadLowAvailSettings();
     checkSystemNotices();
     initPresence();
     showLandingPage();
@@ -17264,6 +17503,7 @@ async function loadAllData() {
     loadUasMissions(),
     loadPersonnelTeams(),
     loadPersonnelRoster(),
+    loadResources(),
   ]);
 }
 
@@ -18380,7 +18620,7 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <div class="modal-overlay" id="morningReportModal">
-  <div class="modal" style="max-width:500px;">
+  <div class="modal" style="max-width:520px;">
     <div class="modal-header">
       <div class="modal-title">📋 Daily Morning Report</div>
       <button class="modal-close" onclick="closeMorningReport()">✕</button>
@@ -18389,45 +18629,45 @@ if ('serviceWorker' in navigator) {
 
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
         <div style="font-size:15px;color:var(--text-secondary);line-height:1.6;">
-          Automatically generates a daily channel status report at a set time each morning.
-          The report covers all <strong style="color:var(--status-active);">In Use</strong> and
-          <strong style="color:var(--status-reserved);">Reserved</strong> channels.
+          Sent automatically by the server at a set time each morning — no need to keep this app open.
+          Covers channel status, talkgroups, active incidents, pending requests, today's reservations,
+          overdue resources, low availability, and frequency conflicts.
         </div>
+      </div>
+
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <label class="form-label">Settings Scope</label>
+        <select class="form-select" id="mr-scope" onchange="renderMrScopeHint()">
+          <option value="agency">Agency Default — shared by everyone unless overridden</option>
+          <option value="mine">Just Me — personal override for my account only</option>
+        </select>
+        <div id="mr-scope-hint" style="font-size:13px;color:var(--text-dim);margin-top:6px;"></div>
       </div>
 
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div style="font-size:15px;color:var(--text-primary);font-weight:500;">Enable Daily Report</div>
-            <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">Opens report automatically at scheduled time</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">Server sends automatically at the time below</div>
           </div>
           <label class="toggle-switch">
-            <input type="checkbox" id="mr-enabled" onchange="saveMorningReportConfig()">
+            <input type="checkbox" id="mr-enabled">
             <span class="toggle-slider"></span>
           </label>
         </div>
         <div class="form-field">
           <label class="form-label">Report Time (Pacific Time)</label>
-          <input class="form-input" type="time" id="mr-time" value="07:00" onchange="saveMorningReportConfig()" style="width:160px;">
+          <input class="form-input" type="time" id="mr-time" value="07:00" style="width:160px;">
         </div>
-        <div id="mr-last-sent" style="font-family:var(--font-data);font-size:13px;color:var(--text-dim);">Not yet sent this session</div>
+        <div class="form-field">
+          <label class="form-label">Recipients <span style="font-weight:400;color:var(--text-dim);">comma-separated email addresses</span></label>
+          <input class="form-input" id="mr-recipients" placeholder="coml@agency.gov, dispatch@agency.gov">
+        </div>
+        <div id="mr-last-sent" style="font-family:var(--font-data);font-size:13px;color:var(--text-dim);">Not yet sent</div>
       </div>
 
-      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
-        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Report Includes</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">
-          <span class="status-pill active">In Use</span>
-          <span class="status-pill reserved">Reserved</span>
-          <span class="status-pill available">Available</span>
-        </div>
-        <div style="font-size:13px;color:var(--text-dim);margin-top:10px;">
-          Report opens as a printable page — save as PDF from your browser.
-          <br><strong>📱 On Mobile:</strong> Tap menu (☰) → "📋 Morning Report" → Print icon → "Save as PDF" or "Print to file"
-        </div>
-      </div>
-
-      <div style="padding:10px 20px;background:rgba(255,196,0,0.06);border-top:1px solid rgba(255,196,0,0.15);">
-        <div style="font-size:13px;color:var(--status-reserved);font-family:var(--font-data);">⚠ Report runs while this tab is open. For automated email delivery, configure email notifications in Notification Settings.</div>
+      <div style="padding:10px 20px;background:rgba(0,229,170,0.06);border-top:1px solid rgba(0,229,170,0.15);">
+        <div style="font-size:13px;color:var(--status-available);font-family:var(--font-data);">✓ Delivery runs server-side via a scheduled Supabase Edge Function — reliable even if every dispatcher logs out.</div>
       </div>
 
     </div>
@@ -19083,6 +19323,10 @@ if ('serviceWorker' in navigator) {
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;">
           <input type="checkbox" id="ne-show-banner" style="accent-color:var(--accent);width:14px;height:14px;">
           Show as top banner
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;">
+          <input type="checkbox" id="ne-show-dashboard" style="accent-color:var(--accent);width:14px;height:14px;">
+          Show in Operational Dashboard
         </label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;">
           <input type="checkbox" id="ne-active" style="accent-color:var(--accent);width:14px;height:14px;" checked>
