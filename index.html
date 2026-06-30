@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>COMM CENTER — Public Safety</title>
+<title>WARDEN — Public Safety</title>
 
 <!-- PWA: installable app shell -->
 <link rel="manifest" href="manifest.json">
@@ -14,7 +14,7 @@
      home screen, and to use a proper icon instead of a screenshot thumbnail. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="COMM CENTER">
+<meta name="apple-mobile-web-app-title" content="WARDEN">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
 <!-- Favicons -->
@@ -3796,8 +3796,8 @@
   <div class="login-card">
     <div class="login-card-header">
       <span class="login-logo">📡</span>
-      <div class="login-title">COMM CENTER</div>
-      <div class="login-subtitle" id="loginSubtitle">COMM CENTER — Public Safety</div>
+      <div class="login-title">WARDEN</div>
+      <div class="login-subtitle" id="loginSubtitle">WARDEN — Public Safety</div>
     </div>
     <div class="login-body">
       <div class="login-field">
@@ -3828,7 +3828,7 @@
   <div style="position:relative;z-index:1;width:100%;max-width:680px;padding:40px 24px;">
     <div class="login-bg-grid" style="position:fixed;"></div>
     <div style="text-align:center;margin-bottom:32px;">
-      <div style="font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary);margin-bottom:4px;">📡 COMM CENTER</div>
+      <div style="font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary);margin-bottom:4px;">📡 WARDEN</div>
       <div style="font-size:15px;color:var(--text-dim);font-family:var(--font-data);">Super Admin — Select Agency to Manage</div>
     </div>
     <div id="agencyCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px;"></div>
@@ -3970,7 +3970,7 @@
     <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:16px;">
       <div>
-        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary);">📡 COMM CENTER</div>
+        <div style="font-family:var(--font-data);font-size:22px;font-weight:700;letter-spacing:0.08em;color:var(--text-primary);">📡 WARDEN</div>
         <div style="font-size:14px;color:var(--text-dim);font-family:var(--font-data);margin-top:4px;" id="landingSubtitle">Public Safety Operations</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
@@ -4044,7 +4044,7 @@
 <header class="topbar">
   <div class="topbar-logo" onclick="goHome()" title="Return to module home" style="cursor:pointer;">
     <span>📡</span>
-    COMM CENTER
+    WARDEN
     <span class="badge">LACoFD</span>
   </div>
   <div class="topbar-desktop-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
@@ -7134,7 +7134,7 @@ function exportRFAReport() {
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111;max-width:780px;margin:0 auto;padding:24px;">
       <div style="text-align:center;border-bottom:3px solid #1565c0;padding-bottom:14px;margin-bottom:18px;">
-        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">COMM CENTER — Public Safety Operations</div>
+        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">WARDEN — Public Safety Operations</div>
         <div style="font-size:20px;font-weight:700;letter-spacing:0.03em;">RF Deconfliction Report</div>
         <div style="font-size:14px;color:#888;margin-top:4px;">Generated ${dateStr} at ${timeStr} PT</div>
       </div>
@@ -7173,7 +7173,7 @@ function exportRFAReport() {
       <div style="margin-top:24px;font-size:12px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
         This report reflects a computational terrain estimate using USGS 3DEP elevation data and is intended as a planning aid.
         Field verification is recommended before relying on these results operationally.<br>
-        COMM CENTER — Public Safety Operations &nbsp;·&nbsp; Generated ${dateStr} ${timeStr} PT
+        WARDEN — Public Safety Operations &nbsp;·&nbsp; Generated ${dateStr} ${timeStr} PT
       </div>
     </div>`;
 
@@ -8235,7 +8235,7 @@ function openICS205(channelIds, incidentId) {
         </tr>
       </table>
       <div style="margin-top:6px;font-size:11px;color:#555;">
-        Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations
+        Generated ${dateStr} ${timeStr} &nbsp;|&nbsp; WARDEN — Public Safety Operations
       </div>
     </div>
     </div>
@@ -8383,7 +8383,7 @@ function printICS205A() {
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <div class="sig">Prepared by: ${currentUser?.name || '—'} &nbsp;|&nbsp; ${dateStr} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations</div>
+      <div class="sig">Prepared by: ${currentUser?.name || '—'} &nbsp;|&nbsp; ${dateStr} &nbsp;|&nbsp; WARDEN — Public Safety Operations</div>
     </body></html>`);
   win.document.close();
   win.print();
@@ -8476,7 +8476,7 @@ function openShiftHandoff() {
     <div id="shiftHandoffPrint" style="background:#fff;color:#000;font-family:Arial,sans-serif;font-size:14px;padding:16px;border-radius:4px;">
       <div style="text-align:center;font-size:16px;font-weight:bold;margin-bottom:2px;">SHIFT HANDOFF REPORT</div>
       <div style="text-align:center;font-size:13px;color:#555;margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:8px;">
-        Generated ${ts} &nbsp;by ${currentUser?.name || '—'} &nbsp;|&nbsp; COMM CENTER — Public Safety Operations
+        Generated ${ts} &nbsp;by ${currentUser?.name || '—'} &nbsp;|&nbsp; WARDEN — Public Safety Operations
       </div>
       ${section('🚨 Incidents — Active &amp; Standby', incidentsHtml)}
       ${section('📅 Reservations — Next 12 Hours', reservationsHtml)}
@@ -9219,7 +9219,7 @@ function showLandingPage() {
   }
 
   const footer = document.getElementById('landingFooter');
-  if (footer) footer.textContent = `${agencyName} · COMM CENTER · ${new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',weekday:'long',month:'long',day:'numeric',year:'numeric'})} · ${getPacificTimeStr(false)}`;
+  if (footer) footer.textContent = `${agencyName} · WARDEN · ${new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',weekday:'long',month:'long',day:'numeric',year:'numeric'})} · ${getPacificTimeStr(false)}`;
 }
 
 function openModule(id) {
@@ -9822,7 +9822,7 @@ function renderBigBoard() {
 
     <!-- Footer -->
     <div style="position:sticky;bottom:0;left:0;right:0;height:34px;background:${t.bgPanel};border-top:1px solid ${t.border};display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0;">
-      <span style="font-family:var(--font-data);font-size:13px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">COMM CENTER</span>
+      <span style="font-family:var(--font-data);font-size:13px;color:${t.textDim};padding-right:16px;border-right:1px solid ${t.border};">WARDEN</span>
       <span style="font-family:var(--font-data);font-size:13px;color:${t.textDim};padding:0 16px;border-right:1px solid ${t.border};">Organization-Wide Channel Plan${hasActiveFilters ? ' — Filtered View' : ''}</span>
       <span style="flex:1;"></span>
       <span style="font-family:var(--font-data);font-size:13px;color:${t.textDim};padding:0 16px;border-left:1px solid ${t.border};">${hasActiveFilters ? `Showing: <span style="color:${t.textSecondary};">${filteredChannels.length} of ${channels.length}</span>` : `Total: <span style="color:${t.textSecondary};">${channels.length}</span>`}</span>
@@ -10030,7 +10030,7 @@ async function sendEmailNotification(subject, body, type) {
       subject: subject,
       body: body,
       timestamp: new Date().toISOString(),
-      app: 'COMM CENTER',
+      app: 'WARDEN',
       type: type
     };
     
@@ -10077,7 +10077,7 @@ function pushNotification(type, text) {
   if (type === 'active') {
     sendEmailNotification(
       '🚨 Channel Activated - RF Manager',
-      `${text}\n\nTime: ${getPacificTimeStr(true)}\nApp: COMM CENTER`,
+      `${text}\n\nTime: ${getPacificTimeStr(true)}\nApp: WARDEN`,
       'active'
     );
   }
@@ -10438,7 +10438,7 @@ function generateReportHTML() {
         </div>` : ''}
 
       <div style="margin-top:24px;font-size:12px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
-        COMM CENTER — LACoFD Public Safety Operations &nbsp;·&nbsp; ${channels.length} total channels &nbsp;·&nbsp; ${talkgroups.length} total talkgroups &nbsp;·&nbsp; Auto-generated ${time} PT
+        WARDEN — LACoFD Public Safety Operations &nbsp;·&nbsp; ${channels.length} total channels &nbsp;·&nbsp; ${talkgroups.length} total talkgroups &nbsp;·&nbsp; Auto-generated ${time} PT
       </div>
 
     </div>`;
@@ -12103,7 +12103,7 @@ function printScheduleDay() {
       </tr>`;
   }).join('') : `<tr><td colspan="5" style="padding:20px;text-align:center;color:#888;border:1px solid #ccc;">No reservations scheduled for today.</td></tr>`;
 
-  const agencyName = currentUser?.agencyName || 'COMM CENTER';
+  const agencyName = currentUser?.agencyName || 'WARDEN';
   const printedBy  = currentUser?.name ? ` · Printed by ${currentUser.name}` : '';
   const printTime  = new Date().toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
 
@@ -12128,7 +12128,7 @@ function printScheduleDay() {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
-  <div style="margin-top:16px;font-size:11px;color:#888;">Total: ${todays.length} reservation${todays.length!==1?'s':''} · ${agencyName} COMM CENTER</div>
+  <div style="margin-top:16px;font-size:11px;color:#888;">Total: ${todays.length} reservation${todays.length!==1?'s':''} · ${agencyName} WARDEN</div>
   <script>window.onload = () => window.print();<\/script>
   </body></html>`;
 
@@ -14118,7 +14118,7 @@ function checkLowAvailability() {
     pushNotification('active', alertMsg);
     sendEmailNotification(
       '⚠ Low Channel Availability - RF Manager',
-      `${alerts.join('\n')}\n\nTime: ${getPacificTimeStr(true)}\nApp: COMM CENTER`,
+      `${alerts.join('\n')}\n\nTime: ${getPacificTimeStr(true)}\nApp: WARDEN`,
       'lowavail'
     );
   } else {
@@ -15571,7 +15571,7 @@ function exportPersonnelCSV() {
 
 function exportPersonnelPDF() {
   if (!personnelRoster.length) { alert('No personnel to export.'); return; }
-  const agencyName = currentAgency?.name || currentUser?.agencyName || 'COMM CENTER';
+  const agencyName = currentAgency?.name || currentUser?.agencyName || 'WARDEN';
   const rows = personnelRoster.map(p => {
     const team = personnelTeams.find(t => String(t.id) === String(p.team_id));
     const cs = certStatusOf(p.cert_expires);
@@ -17119,7 +17119,7 @@ async function exportIncidentPDF() {
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111;max-width:780px;margin:0 auto;padding:24px;">
       <div style="text-align:center;border-bottom:3px solid #1565c0;padding-bottom:14px;margin-bottom:18px;">
-        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">COMM CENTER — Public Safety Operations</div>
+        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.12em;color:#888;margin-bottom:4px;">WARDEN — Public Safety Operations</div>
         <div style="font-size:20px;font-weight:700;letter-spacing:0.03em;">${TYPE_ICONS[inc.type]||'📋'} ${escHtml(inc.name)}</div>
         <div style="font-size:14px;color:#888;margin-top:4px;">Incident Report — Generated ${dateStr} at ${timeStr} PT</div>
       </div>
@@ -17155,7 +17155,7 @@ async function exportIncidentPDF() {
       </div>
 
       <div style="margin-top:24px;font-size:12px;color:#aaa;text-align:center;border-top:1px solid #ddd;padding-top:10px;">
-        COMM CENTER — Public Safety Operations &nbsp;·&nbsp; Generated ${dateStr} ${timeStr} PT &nbsp;·&nbsp; by ${currentUser?.name || '—'}
+        WARDEN — Public Safety Operations &nbsp;·&nbsp; Generated ${dateStr} ${timeStr} PT &nbsp;·&nbsp; by ${currentUser?.name || '—'}
       </div>
     </div>`;
 
@@ -17618,7 +17618,7 @@ function getAgencyModules() {
 // Called from: postLoginRouter, selectAgencyAndEnter
 // ── Landing page agency branding ──
 function getAgencyDisplayName() {
-  return currentAgency?.name || 'COMM CENTER';
+  return currentAgency?.name || 'WARDEN';
 }
 function getAgencySubtitle() {
   return currentAgency?.subtitle || 'Public Safety Operations';
