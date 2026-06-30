@@ -5195,6 +5195,15 @@
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
                   <input type="checkbox" id="auf-can-admin"     style="accent-color:var(--accent);"> ⚙ Admin
                 </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-uas"       style="accent-color:var(--accent);"> 🛸 UAS Manager
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-personnel" style="accent-color:var(--accent);" onchange="if(!this.checked)document.getElementById('auf-can-personnel-edit').checked=false;"> 👥 Personnel (View)
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+                  <input type="checkbox" id="auf-can-personnel-edit" style="accent-color:var(--accent);" onchange="if(this.checked)document.getElementById('auf-can-personnel').checked=true;"> 👥 Personnel (Editor)
+                </label>
               </div>
             </div>
           </div>
@@ -11123,6 +11132,9 @@ function openAdminUserForm(userId) {
     document.getElementById('auf-can-vehicles').checked    = u.can_vehicles  === true  || u.role === 'admin';
     document.getElementById('auf-can-equipment').checked   = u.can_equipment === true  || u.role === 'admin';
     document.getElementById('auf-can-admin').checked       = u.can_admin     === true  || u.role === 'admin';
+    if (document.getElementById('auf-can-uas'))            document.getElementById('auf-can-uas').checked            = u.can_uas === true || u.role === 'admin';
+    if (document.getElementById('auf-can-personnel'))      document.getElementById('auf-can-personnel').checked      = u.can_personnel === true || u.role === 'admin';
+    if (document.getElementById('auf-can-personnel-edit'))  document.getElementById('auf-can-personnel-edit').checked = u.can_personnel_edit === true || u.role === 'admin';
     if (inst) inst.style.display = 'none';
   } else {
     document.getElementById('adminUserFormTitle').textContent = 'Add New User';
@@ -11137,6 +11149,9 @@ function openAdminUserForm(userId) {
     document.getElementById('auf-can-vehicles').checked    = false;
     document.getElementById('auf-can-equipment').checked   = false;
     document.getElementById('auf-can-admin').checked       = false;
+    if (document.getElementById('auf-can-uas'))            document.getElementById('auf-can-uas').checked = false;
+    if (document.getElementById('auf-can-personnel'))      document.getElementById('auf-can-personnel').checked = false;
+    if (document.getElementById('auf-can-personnel-edit'))  document.getElementById('auf-can-personnel-edit').checked = false;
     if (document.getElementById('auf-uuid')) document.getElementById('auf-uuid').value = '';
     if (inst) inst.style.display = 'block';
   }
@@ -11160,6 +11175,9 @@ async function saveAdminUserForm() {
   const canVeh    = document.getElementById('auf-can-vehicles')?.checked  ?? false;
   const canEquip  = document.getElementById('auf-can-equipment')?.checked ?? false;
   const canAdm    = document.getElementById('auf-can-admin')?.checked     ?? false;
+  const canUas    = document.getElementById('auf-can-uas')?.checked            ?? false;
+  const canPers   = document.getElementById('auf-can-personnel')?.checked      ?? false;
+  const canPersEdit = document.getElementById('auf-can-personnel-edit')?.checked ?? false;
   const errEl     = document.getElementById('auf-error');
   errEl.textContent = ''; errEl.style.color = 'var(--status-active)';
 
@@ -11168,6 +11186,7 @@ async function saveAdminUserForm() {
 
   const modulePerms = {
     can_freq: canFreq, can_vehicles: canVeh, can_equipment: canEquip, can_admin: canAdm,
+    can_uas: canUas, can_personnel: canPers, can_personnel_edit: canPersEdit,
     can_view_resources: canVeh || canEquip
   };
 
