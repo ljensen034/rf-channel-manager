@@ -7,7 +7,7 @@
 
 <!-- PWA: installable app shell -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0d12">
+<meta name="theme-color" content="#0b0e13">
 
 <!-- iOS-specific install behavior — Safari ignores manifest.json display
      mode and needs these to launch standalone (no address bar) from the
@@ -27,24 +27,25 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --bg-deep:     #0a0d12;
-    --bg-panel:    #111620;
-    --bg-card:     #161d2b;
-    --bg-hover:    #1c2540;
-    --border:      #1f2d44;
-    --border-lit:  #2b3f62;
+    /* NIGHT MODE — blue/gray dispatcher console look (default) */
+    --bg-deep:     #0b0e13;
+    --bg-panel:    #12161e;
+    --bg-card:     #181d28;
+    --bg-hover:    #1e2533;
+    --border:      #232c3d;
+    --border-lit:  #34415c;
 
-    --status-available: #00e676;
+    --status-available: #00e5aa;
     --status-active:    #ff5252;
-    --status-reserved:  #ffc400;
-    --status-interop:   #ce93d8;
+    --status-reserved:  #ffb300;
+    --status-interop:   #a29bfe;
 
-    --text-primary:  #e8edf5;
-    --text-secondary:#7a8fac;
-    --text-dim:      #3e5272;
+    --text-primary:  #e3eaf5;
+    --text-secondary:#7e94b3;
+    --text-dim:      #44546e;
 
-    --accent:        #1e88e5;
-    --accent-glow:   rgba(30,136,229,0.15);
+    --accent:        #3b8fdc;
+    --accent-glow:   rgba(59,143,220,0.15);
 
     --font-ui:   'IBM Plex Sans', sans-serif;
     --font-data: 'IBM Plex Mono', monospace;
@@ -53,26 +54,7 @@
     --transition: 180ms ease;
   }
 
-  /* ── THEME: HIGH CONTRAST DARK ── */
-  [data-theme="contrast"] {
-    --bg-deep:     #000000;
-    --bg-panel:    #0a0a0a;
-    --bg-card:     #111111;
-    --bg-hover:    #1a1a1a;
-    --border:      #2a2a2a;
-    --border-lit:  #444444;
-    --status-available: #00ff88;
-    --status-active:    #ff3333;
-    --status-reserved:  #ffcc00;
-    --status-interop:   #dd88ff;
-    --text-primary:  #ffffff;
-    --text-secondary:#aaaaaa;
-    --text-dim:      #555555;
-    --accent:        #00aaff;
-    --accent-glow:   rgba(0,170,255,0.18);
-  }
-
-  /* ── THEME: DAY / LIGHT ── */
+  /* ── THEME: DAY MODE (light, bright environments) ── */
   [data-theme="day"] {
     --bg-deep:     #f0f2f5;
     --bg-panel:    #ffffff;
@@ -90,169 +72,6 @@
     --accent:        #1565c0;
     --accent-glow:   rgba(21,101,192,0.12);
   }
-
-  /* ── THEME: AMBER TACTICAL ── */
-  [data-theme="amber"] {
-    --bg-deep:     #0d0900;
-    --bg-panel:    #161000;
-    --bg-card:     #1e1600;
-    --bg-hover:    #271d00;
-    --border:      #332600;
-    --border-lit:  #4d3900;
-    --status-available: #00e676;
-    --status-active:    #ff5252;
-    --status-reserved:  #ffc400;
-    --status-interop:   #ce93d8;
-    --text-primary:  #ffe082;
-    --text-secondary:#b8922a;
-    --text-dim:      #5c4400;
-    --accent:        #ffb300;
-    --accent-glow:   rgba(255,179,0,0.15);
-  }
-
-  /* ── THEME: FOREST OPS ── */
-  [data-theme="forest"] {
-    --bg-deep:     #060d06;
-    --bg-panel:    #0c160c;
-    --bg-card:     #111d11;
-    --bg-hover:    #172417;
-    --border:      #1e2e1e;
-    --border-lit:  #2e4a2e;
-    --status-available: #69ff47;
-    --status-active:    #ff5252;
-    --status-reserved:  #ffd740;
-    --status-interop:   #ce93d8;
-    --text-primary:  #c8e6c9;
-    --text-secondary:#6a9b6a;
-    --text-dim:      #2e4a2e;
-    --accent:        #4caf50;
-    --accent-glow:   rgba(76,175,80,0.15);
-  }
-
-
-  /* ── THEME: DISPATCH BLUE ── */
-  [data-theme="dispatch"] {
-    --bg-deep:     #05080f;
-    --bg-panel:    #0c1220;
-    --bg-card:     #111b2e;
-    --bg-hover:    #172238;
-    --border:      #1e3048;
-    --border-lit:  #2a4470;
-    --status-available: #00e5aa;
-    --status-active:    #ff4757;
-    --status-reserved:  #ffa502;
-    --status-interop:   #a29bfe;
-    --text-primary:  #ddeeff;
-    --text-secondary:#6a9fcf;
-    --text-dim:      #2e4a6a;
-    --accent:        #0097ff;
-    --accent-glow:   rgba(0,151,255,0.15);
-  }
-  /* ── THEME: RED OPS ── */
-  [data-theme="redops"] {
-    --bg-deep:     #0d0304;
-    --bg-panel:    #170507;
-    --bg-card:     #1f080a;
-    --bg-hover:    #280b0d;
-    --border:      #3a1215;
-    --border-lit:  #5c1e22;
-    --status-available: #00e676;
-    --status-active:    #ff1744;
-    --status-reserved:  #ffab00;
-    --status-interop:   #ce93d8;
-    --text-primary:  #ffd7d9;
-    --text-secondary:#c2737a;
-    --text-dim:      #5c1e22;
-    --accent:        #ff5252;
-    --accent-glow:   rgba(255,82,82,0.15);
-  }
-  /* ── THEME: BIG BOARD (high-vis wall display) ── */
-  [data-theme="bigboard"] {
-    --bg-deep:     #000000;
-    --bg-panel:    #050505;
-    --bg-card:     #0a0a0a;
-    --bg-hover:    #111111;
-    --border:      #1a1a1a;
-    --border-lit:  #2a2a2a;
-    --status-available: #00ff7f;
-    --status-active:    #ff2222;
-    --status-reserved:  #ffdd00;
-    --status-interop:   #cc88ff;
-    --text-primary:  #ffffff;
-    --text-secondary:#cccccc;
-    --text-dim:      #555555;
-    --accent:        #00aaff;
-    --accent-glow:   rgba(0,170,255,0.2);
-    --font-ui:   'IBM Plex Mono', monospace;
-    --font-data: 'IBM Plex Mono', monospace;
-  }
-  [data-theme="bigboard"] .channel-row { font-size: 15px !important; min-height: 52px !important; }
-  [data-theme="bigboard"] .ch-designator { font-size: 16px !important; letter-spacing: 0.1em; }
-  [data-theme="bigboard"] .ch-freq { font-size: 16px !important; }
-  [data-theme="bigboard"] .status-badge { font-size: 15px !important; padding: 3px 10px !important; }
-
-  /* ── THEME: DISPATCH GRAY (clean, low-eye-strain for long shifts) ── */
-  [data-theme="dispgray"] {
-    --bg-deep:     #141618;
-    --bg-panel:    #1c1f23;
-    --bg-card:     #23272d;
-    --bg-hover:    #2c3139;
-    --border:      #333a44;
-    --border-lit:  #4a5568;
-    --status-available: #48bb78;
-    --status-active:    #fc5c65;
-    --status-reserved:  #f6a623;
-    --status-interop:   #b794f4;
-    --text-primary:  #e2e8f0;
-    --text-secondary:#8899aa;
-    --text-dim:      #4a5568;
-    --accent:        #4299e1;
-    --accent-glow:   rgba(66,153,225,0.15);
-  }
-
-  /* ── THEME: HIGH-VIS ORANGE (high-contrast field use / bright environments) ── */
-  [data-theme="hiviz"] {
-    --bg-deep:     #0e0800;
-    --bg-panel:    #1a1000;
-    --bg-card:     #221500;
-    --bg-hover:    #2d1c00;
-    --border:      #3d2800;
-    --border-lit:  #5c3d00;
-    --status-available: #00e676;
-    --status-active:    #ff1744;
-    --status-reserved:  #ff9100;
-    --status-interop:   #e040fb;
-    --text-primary:  #fff3e0;
-    --text-secondary:#ffb74d;
-    --text-dim:      #5c3d00;
-    --accent:        #ff6d00;
-    --accent-glow:   rgba(255,109,0,0.18);
-  }
-
-  /* ── THEME: BIG BOARD PLUS (wall display — maximum readability, bold colors) ── */
-  [data-theme="bigboard2"] {
-    --bg-deep:     #000000;
-    --bg-panel:    #030303;
-    --bg-card:     #080808;
-    --bg-hover:    #111111;
-    --border:      #1c1c1c;
-    --border-lit:  #2e2e2e;
-    --status-available: #00ff7f;
-    --status-active:    #ff2020;
-    --status-reserved:  #ffee00;
-    --status-interop:   #cc88ff;
-    --text-primary:  #ffffff;
-    --text-secondary:#e0e0e0;
-    --text-dim:      #666666;
-    --accent:        #00d4ff;
-    --accent-glow:   rgba(0,212,255,0.2);
-    --font-ui:   'IBM Plex Mono', monospace;
-    --font-data: 'IBM Plex Mono', monospace;
-  }
-  [data-theme="bigboard2"] .channel-row { font-size: 16px !important; min-height: 56px !important; }
-  [data-theme="bigboard2"] .ch-designator { font-size: 18px !important; letter-spacing: 0.12em; font-weight: 700 !important; }
-  [data-theme="bigboard2"] .ch-freq { font-size: 15px !important; }
-  [data-theme="bigboard2"] .status-badge { font-size: 16px !important; padding: 4px 12px !important; font-weight: 700 !important; }
   [data-theme="day"] .topbar,
   [data-theme="day"] .stats-bar,
   [data-theme="day"] .stat-cell { box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -260,6 +79,31 @@
   [data-theme="day"] .login-bg-grid { opacity: 0.15; }
   [data-theme="day"] .modal { box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
   [data-theme="day"] .topbar-clock { color: var(--accent); }
+
+  /* ── THEME: NIGHT VISION (black + green, matrix/CAD hybrid) ── */
+  [data-theme="nightvision"] {
+    --bg-deep:     #000000;
+    --bg-panel:    #030a03;
+    --bg-card:     #061206;
+    --bg-hover:    #0a1c0a;
+    --border:      #133313;
+    --border-lit:  #1f5c1f;
+    --status-available: #39ff6a;
+    --status-active:    #ff3b3b;
+    --status-reserved:  #d4ff39;
+    --status-interop:   #39ffd4;
+    --text-primary:  #4dff7a;
+    --text-secondary:#2eb84f;
+    --text-dim:      #1a5c2a;
+    --accent:        #00ff66;
+    --accent-glow:   rgba(0,255,102,0.18);
+    --font-ui:   'IBM Plex Mono', monospace;
+    --font-data: 'IBM Plex Mono', monospace;
+  }
+  [data-theme="nightvision"] body { text-shadow: 0 0 1px rgba(0,255,102,0.25); }
+  [data-theme="nightvision"] .topbar,
+  [data-theme="nightvision"] .channel-row,
+  [data-theme="nightvision"] .modal { box-shadow: 0 0 18px rgba(0,255,102,0.04) inset; }
 
   /* ── THEME SWITCHER UI ── */
   .theme-switcher {
@@ -1581,7 +1425,12 @@
     0%   { background: var(--accent-glow); }
     100% { background: transparent; }
   }
-  .ticker-track.flash { animation: tickerFlash 1.2s ease-out; border-radius: 4px; }
+  .ticker-item.flash { animation: tickerFlash 1.2s ease-out; border-radius: 4px; }
+  .ticker-sep {
+    color: var(--text-dim);
+    flex-shrink: 0;
+    opacity: 0.4;
+  }
   .ticker-item {
     display: inline-flex;
     align-items: center;
@@ -1593,6 +1442,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .ticker-item .ticker-cat {
     font-size: 11px;
@@ -4051,11 +3901,15 @@
     <button class="btn-secondary" id="myItemsBtn" style="position:relative;" onclick="openMyItems()">
       👤 My Items <span class="nav-badge" id="myItemsBadge" style="display:none;margin-left:4px;">0</span>
     </button>
-    <button class="btn-secondary" onclick="openICS205()">⬇ ICS 205</button>
-    <button class="btn-secondary" onclick="openICS205A()">⬇ ICS 205A</button>
     <div class="topbar-dropdown-wrap" id="reportsDropdownWrap">
-      <button class="btn-secondary" onclick="toggleReportsDropdown(event)">📋 Reports &amp; Alerts <span style="font-size:11px;opacity:0.6;">▾</span></button>
+      <button class="btn-secondary" onclick="toggleReportsDropdown(event)">🛠 Tools &amp; Reports <span style="font-size:11px;opacity:0.6;">▾</span></button>
       <div class="topbar-dropdown" id="reportsDropdown">
+        <div class="nav-group-item" onclick="closeReportsDropdown();openICS205();">
+          <span class="nav-item-icon">⬇</span>ICS 205 Export
+        </div>
+        <div class="nav-group-item" onclick="closeReportsDropdown();openICS205A();">
+          <span class="nav-item-icon">⬇</span>ICS 205A Export
+        </div>
         <div class="nav-group-item" onclick="closeReportsDropdown();openShiftHandoff();">
           <span class="nav-item-icon">📋</span>Shift Handoff
         </div>
@@ -4078,34 +3932,22 @@
   </div>
   <div class="theme-switcher" id="themeSwitcher">
     <button class="theme-btn" onclick="toggleThemeDropdown(event)" title="Change theme">
-      <span id="themeIcon">🌑</span>
-      <span id="themeLabel">Midnight</span>
+      <span id="themeIcon">🌙</span>
+      <span id="themeLabel">Night Mode</span>
       <span style="font-size:11px;opacity:0.5;">▾</span>
     </button>
     <div class="theme-dropdown" id="themeDropdown">
-      <div class="theme-option active" data-theme="midnight" onclick="setTheme('midnight',this)">
+      <div class="theme-option active" data-theme="night" onclick="setTheme('night',this)">
         <div class="theme-swatch">
-          <span style="background:#0a0d12;border:1px solid #1f2d44;"></span>
-          <span style="background:#111620;border:1px solid #1f2d44;"></span>
-          <span style="background:#1e88e5;"></span>
+          <span style="background:#0b0e13;border:1px solid #232c3d;"></span>
+          <span style="background:#181d28;border:1px solid #232c3d;"></span>
+          <span style="background:#3b8fdc;"></span>
         </div>
         <div class="theme-option-info">
-          <div class="theme-option-name">Midnight</div>
-          <div class="theme-option-desc">Dark navy — default</div>
+          <div class="theme-option-name">Night Mode</div>
+          <div class="theme-option-desc">Blue/gray dispatcher console — default</div>
         </div>
-        <span class="theme-check" id="check-midnight">✓</span>
-      </div>
-      <div class="theme-option" data-theme="contrast" onclick="setTheme('contrast',this)">
-        <div class="theme-swatch">
-          <span style="background:#000000;border:1px solid #333;"></span>
-          <span style="background:#111111;border:1px solid #333;"></span>
-          <span style="background:#00aaff;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">High Contrast</div>
-          <div class="theme-option-desc">Max legibility, pure black</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-contrast">✓</span>
+        <span class="theme-check" id="check-night">✓</span>
       </div>
       <div class="theme-option" data-theme="day" onclick="setTheme('day',this)">
         <div class="theme-swatch">
@@ -4119,111 +3961,22 @@
         </div>
         <span class="theme-check" style="display:none;" id="check-day">✓</span>
       </div>
-      <div class="theme-option" data-theme="amber" onclick="setTheme('amber',this)">
+      <div class="theme-option" data-theme="nightvision" onclick="setTheme('nightvision',this)">
         <div class="theme-swatch">
-          <span style="background:#0d0900;border:1px solid #332600;"></span>
-          <span style="background:#1e1600;border:1px solid #332600;"></span>
-          <span style="background:#ffb300;"></span>
+          <span style="background:#000000;border:1px solid #133313;"></span>
+          <span style="background:#061206;border:1px solid #133313;"></span>
+          <span style="background:#00ff66;"></span>
         </div>
         <div class="theme-option-info">
-          <div class="theme-option-name">Amber Tactical</div>
-          <div class="theme-option-desc">Night-vision safe, warm</div>
+          <div class="theme-option-name">Night Vision</div>
+          <div class="theme-option-desc">Black + green, matrix/CAD hybrid</div>
         </div>
-        <span class="theme-check" style="display:none;" id="check-amber">✓</span>
-      </div>
-      <div class="theme-option" data-theme="forest" onclick="setTheme('forest',this)">
-        <div class="theme-swatch">
-          <span style="background:#060d06;border:1px solid #1e2e1e;"></span>
-          <span style="background:#111d11;border:1px solid #1e2e1e;"></span>
-          <span style="background:#4caf50;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Forest Ops</div>
-          <div class="theme-option-desc">Green tactical display</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-forest">✓</span>
-      </div>
-      <div class="theme-option" data-theme="dispatch" onclick="setTheme('dispatch',this)">
-        <div class="theme-swatch">
-          <span style="background:#05080f;border:1px solid #1e3048;"></span>
-          <span style="background:#111b2e;border:1px solid #1e3048;"></span>
-          <span style="background:#0097ff;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Dispatch Blue</div>
-          <div class="theme-option-desc">Deep blue dispatcher theme</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-dispatch">✓</span>
-      </div>
-      <div class="theme-option" data-theme="redops" onclick="setTheme('redops',this)">
-        <div class="theme-swatch">
-          <span style="background:#0d0304;border:1px solid #3a1215;"></span>
-          <span style="background:#1f080a;border:1px solid #3a1215;"></span>
-          <span style="background:#ff5252;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Red Ops</div>
-          <div class="theme-option-desc">Emergency / fire ops red</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-redops">✓</span>
-      </div>
-      <div class="theme-option" data-theme="bigboard" onclick="setTheme('bigboard',this)">
-        <div class="theme-swatch">
-          <span style="background:#000;border:1px solid #1a1a1a;"></span>
-          <span style="background:#0a0a0a;border:1px solid #1a1a1a;"></span>
-          <span style="background:#00ff7f;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Big Board</div>
-          <div class="theme-option-desc">High-vis wall display mode</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-bigboard">✓</span>
-      </div>
-      <div class="theme-option" data-theme="bigboard2" onclick="setTheme('bigboard2',this)">
-        <div class="theme-swatch">
-          <span style="background:#000;border:1px solid #1c1c1c;"></span>
-          <span style="background:#080808;border:1px solid #1c1c1c;"></span>
-          <span style="background:#00d4ff;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Big Board +</div>
-          <div class="theme-option-desc">Bold wall display, mono font</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-bigboard2">✓</span>
-      </div>
-      <div class="theme-option" data-theme="dispgray" onclick="setTheme('dispgray',this)">
-        <div class="theme-swatch">
-          <span style="background:#1c1f23;border:1px solid #333a44;"></span>
-          <span style="background:#23272d;border:1px solid #333a44;"></span>
-          <span style="background:#4299e1;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Dispatch Gray</div>
-          <div class="theme-option-desc">Clean gray, easy on eyes</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-dispgray">✓</span>
-      </div>
-      <div class="theme-option" data-theme="hiviz" onclick="setTheme('hiviz',this)">
-        <div class="theme-swatch">
-          <span style="background:#1a1000;border:1px solid #3d2800;"></span>
-          <span style="background:#221500;border:1px solid #3d2800;"></span>
-          <span style="background:#ff6d00;"></span>
-        </div>
-        <div class="theme-option-info">
-          <div class="theme-option-name">Hi-Viz Orange</div>
-          <div class="theme-option-desc">High-contrast field use</div>
-        </div>
-        <span class="theme-check" style="display:none;" id="check-hiviz">✓</span>
+        <span class="theme-check" style="display:none;" id="check-nightvision">✓</span>
       </div>
     </div>
   </div>
   <div class="topbar-user" id="topbarUser" style="margin-left:4px;"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-left:8px;">
-    <!-- Realtime presence indicator -->
-    <div id="presenceIndicator" style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);cursor:default;" title="Users currently online">
-      <span style="width:7px;height:7px;border-radius:50%;background:var(--status-available);box-shadow:0 0 6px var(--status-available);flex-shrink:0;animation:pulse 2s infinite;"></span>
-      <span id="presenceCount" style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);">1 online</span>
-    </div>
     <div id="dbStatus" style="font-family:var(--font-data);font-size:13px;color:var(--text-dim);display:flex;align-items:center;white-space:nowrap;">Connecting…</div>
     <div id="syncTimer" style="font-family:var(--font-data);font-size:13px;color:var(--text-dim);white-space:nowrap;display:none;">↻ <span id="syncSeconds">0</span>s ago</div>
   </div>
@@ -5341,6 +5094,18 @@
       <!-- System panel -->
       <div id="admin-system-panel" style="display:none;">
 
+        <!-- Online Users (admin-only, moved off the main topbar) -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
+          <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.08em;">🟢 Online Users</div>
+            <div id="presenceIndicatorAdmin" style="display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);cursor:default;" title="Users currently online">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--status-available);box-shadow:0 0 6px var(--status-available);flex-shrink:0;animation:pulse 2s infinite;"></span>
+              <span id="presenceCountAdmin" style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);">1 online</span>
+            </div>
+          </div>
+          <div id="presenceListAdmin" style="padding:12px 18px;font-size:14px;color:var(--text-secondary);">Loading…</div>
+        </div>
+
         <!-- System Notices management -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;">
           <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -5995,11 +5760,10 @@ async function loadActivityLog() {
     return { time: ts, text: r.message };
   });
   renderLog();
-  // Seed the ticker with the most recent CHANNEL STATUS CHANGE specifically
-  // (not just any recent log row) so it isn't sitting on the empty state
-  // until the first new qualifying event happens to occur.
-  const latestStatusEvent = data.find(r => isChannelStatusEvent(r));
-  tickerBuffer = latestStatusEvent ? [latestStatusEvent] : [];
+  // Seed the ticker with the most recent CHANNEL STATUS CHANGES (not just any
+  // recent log row) so it isn't sitting on the empty state until the first new
+  // qualifying event happens to occur. Newest first, capped at TICKER_MAX_ITEMS.
+  tickerBuffer = data.filter(r => isChannelStatusEvent(r)).slice(0, TICKER_MAX_ITEMS);
   renderTicker();
 }
 
@@ -6136,7 +5900,8 @@ function subscribeRealtime() {
 // subscription. Deliberately not scrolling: a continuous scroll has no
 // natural speed that works for both short and long messages, and was hard
 // to read in practice. A brief flash-highlight marks each update instead.
-let tickerBuffer = []; // holds at most one item — the latest channel status change
+let tickerBuffer = []; // holds the most recent channel status changes, newest first (index 0)
+const TICKER_MAX_ITEMS = 12; // enough to fill the ticker width on most screens without unbounded growth
 
 function loadTickerHiddenState() {
   try { return localStorage.getItem('rfTickerHidden') === '1'; } catch(e) { return false; }
@@ -6160,7 +5925,8 @@ function isChannelStatusEvent(row) {
 
 function pushTickerItem(row) {
   if (!isChannelStatusEvent(row)) return;
-  tickerBuffer = [row]; // static display — only ever holds the single latest item
+  tickerBuffer.unshift(row); // newest goes to the front (left side)
+  if (tickerBuffer.length > TICKER_MAX_ITEMS) tickerBuffer.length = TICKER_MAX_ITEMS;
   renderTicker(true);
 }
 
@@ -6173,21 +5939,16 @@ function renderTicker(flash) {
     return;
   }
 
-  const r = tickerBuffer[0];
-  const ts = new Date(r.created_at).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
   const chip = syslogCategoryChip('channel'); // always shown as a channel event, regardless of which table logged it
-  // r.action is always a short fixed label ("Status Change", "Activated", "In Use") —
-  // the actual descriptive text ("CMD-1 → In Use") lives in r.detail. Fall back to
-  // r.message (which includes the label prefix) only if detail is somehow missing.
-  const text = (r.detail || r.message || r.action || '').replace(/<[^>]+>/g, '');
-  track.innerHTML = `<span class="ticker-item">${chip}<span style="color:var(--text-dim);">${ts}</span> ${escHtml(text)}${r.actor ? ` <span style="color:var(--text-dim);">— ${escHtml(r.actor)}</span>` : ''}</span>`;
 
-  if (flash) {
-    track.classList.remove('flash');
-    // restart the animation even if it's already mid-flash from a rapid second update
-    void track.offsetWidth;
-    track.classList.add('flash');
-  }
+  track.innerHTML = tickerBuffer.map((r, i) => {
+    const ts = new Date(r.created_at).toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+    // r.action is always a short fixed label ("Status Change", "Activated", "In Use") —
+    // the actual descriptive text ("CMD-1 → In Use") lives in r.detail. Fall back to
+    // r.message (which includes the label prefix) only if detail is somehow missing.
+    const text = (r.detail || r.message || r.action || '').replace(/<[^>]+>/g, '');
+    return `<span class="ticker-item${i===0 && flash ? ' flash' : ''}">${chip}<span style="color:var(--text-dim);">${ts}</span> ${escHtml(text)}${r.actor ? ` <span style="color:var(--text-dim);">— ${escHtml(r.actor)}</span>` : ''}</span>`;
+  }).join('<span class="ticker-sep">|</span>');
 }
 
 function hideTicker() {
@@ -8890,25 +8651,17 @@ async function confirmIcrDeny() {
 // THEME SWITCHER
 // ─────────────────────────────────────────────
 const THEMES = {
-  midnight: { icon: '🌑', label: 'Midnight'       },
-  contrast: { icon: '⬛', label: 'Hi-Contrast'    },
-  day:      { icon: '☀️',  label: 'Day Mode'       },
-  amber:    { icon: '🟡', label: 'Amber Tactical'  },
-  forest:   { icon: '🌿', label: 'Forest Ops'      },
-  dispatch: { icon: '🔵', label: 'Dispatch Blue'   },
-  dispgray: { icon: '🔲', label: 'Dispatch Gray'   },
-  hiviz:    { icon: '🟠', label: 'Hi-Viz Orange'   },
-  redops:   { icon: '🔴', label: 'Red Ops'         },
-  bigboard: { icon: '📺', label: 'Big Board'       },
-  bigboard2:{ icon: '🖥',  label: 'Big Board +'    },
+  night:       { icon: '🌙', label: 'Night Mode'   },
+  day:         { icon: '☀️',  label: 'Day Mode'     },
+  nightvision: { icon: '🟢', label: 'Night Vision' },
 };
 
-let currentTheme = 'midnight';
+let currentTheme = 'night';
 
 function setTheme(name, el) {
   // Remove old theme attr
   document.documentElement.removeAttribute('data-theme');
-  if (name !== 'midnight') document.documentElement.setAttribute('data-theme', name);
+  if (name !== 'night') document.documentElement.setAttribute('data-theme', name);
 
   // Update checkmarks
   Object.keys(THEMES).forEach(t => {
@@ -9087,17 +8840,10 @@ async function onLoginSuccess() {
   }
 
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  const viewModeTag = match.viewMode === 'dispatcher'
-    ? `<span style="font-family:var(--font-data);font-size:11px;padding:1px 5px;border-radius:2px;background:rgba(255,196,0,0.12);color:var(--status-reserved);border:1px solid rgba(255,196,0,0.3);">DISPATCHER</span>`
-    : `<span style="font-family:var(--font-data);font-size:11px;padding:1px 5px;border-radius:2px;background:rgba(30,136,229,0.12);color:var(--accent);border:1px solid rgba(30,136,229,0.3);">COML</span>`;
-  const superBadge = match.superAdmin
-    ? `<span style="font-family:var(--font-data);font-size:11px;padding:1px 5px;border-radius:2px;background:rgba(255,82,82,0.12);color:var(--status-active);border:1px solid rgba(255,82,82,0.3);margin-left:4px;">SUPER ADMIN</span>`
-    : '';
   document.getElementById('topbarUser').innerHTML = `
     <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;">${initials}</div>
     <div>
-      <div style="color:var(--text-primary);font-size:14px;display:flex;align-items:center;gap:6px;">${match.name} ${viewModeTag}${superBadge}</div>
-      <div style="font-size:12px;color:var(--text-dim);">${match.roleLabel}${currentAgency ? ' · ' + currentAgency.name : ''}</div>
+      <div style="color:var(--text-primary);font-size:14px;">${match.name}</div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign Out</button>
   `;
@@ -9107,7 +8853,7 @@ async function onLoginSuccess() {
     mUserRow.style.display = 'flex';
     mUserRow.innerHTML = `
       <div class="avatar" style="background:${match.color}22;color:${match.color};border:1px solid ${match.color}44;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">${initials}</div>
-      <div style="font-size:15px;color:var(--text-primary);">${match.name} <span style="color:var(--text-dim);font-size:13px;">· ${match.roleLabel}</span></div>
+      <div style="font-size:15px;color:var(--text-primary);">${match.name}</div>
     `;
   }
 
@@ -9668,24 +9414,27 @@ function updateBigBoardClock() {
 }
 
 function renderBigBoard() {
-  const theme = currentTheme || 'midnight';
+  const theme = currentTheme || 'night';
   const themeVars = {
-    midnight: { bgDeep:'#0a0d12', bgPanel:'#111620', bgCard:'#161d2b', border:'#1f2d44', borderLit:'#2b3f62', textPrimary:'#e8edf5', textSecondary:'#7a8fac', textDim:'#3e5272', accent:'#1e88e5' },
-    contrast: { bgDeep:'#000000', bgPanel:'#0a0a0a', bgCard:'#111111', border:'#2a2a2a', borderLit:'#444444', textPrimary:'#ffffff', textSecondary:'#aaaaaa', textDim:'#555555', accent:'#00aaff' },
-    day:      { bgDeep:'#f0f2f5', bgPanel:'#ffffff',  bgCard:'#f7f9fc', border:'#d0d8e4', borderLit:'#aab8cc', textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8', accent:'#1565c0' },
-    amber:    { bgDeep:'#0d0900', bgPanel:'#161000',  bgCard:'#1e1600', border:'#332600', borderLit:'#4d3900', textPrimary:'#ffe082', textSecondary:'#b8922a', textDim:'#5c4400', accent:'#ffb300' },
-    forest:   { bgDeep:'#060d06', bgPanel:'#0c160c',  bgCard:'#111d11', border:'#1e2e1e', borderLit:'#2e4a2e', textPrimary:'#c8e6c9', textSecondary:'#6a9b6a', textDim:'#2e4a2e', accent:'#4caf50' },
+    night:       { bgDeep:'#0b0e13', bgPanel:'#12161e', bgCard:'#181d28', border:'#232c3d', borderLit:'#34415c', textPrimary:'#e3eaf5', textSecondary:'#7e94b3', textDim:'#44546e', accent:'#3b8fdc' },
+    day:         { bgDeep:'#f0f2f5', bgPanel:'#ffffff', bgCard:'#f7f9fc', border:'#d0d8e4', borderLit:'#aab8cc', textPrimary:'#1a2332', textSecondary:'#4a5f7a', textDim:'#8fa0b8', accent:'#1565c0' },
+    nightvision: { bgDeep:'#000000', bgPanel:'#030a03', bgCard:'#061206', border:'#133313', borderLit:'#1f5c1f', textPrimary:'#4dff7a', textSecondary:'#2eb84f', textDim:'#1a5c2a', accent:'#00ff66' },
   };
-  const t = themeVars[theme] || themeVars.midnight;
+  const t = themeVars[theme] || themeVars.night;
 
   const SC = {
     active:    { color:'#ff5252', bg:'rgba(255,82,82,0.10)',   border:'rgba(255,82,82,0.28)',   label:'IN USE' },
-    reserved:  { color:'#ffc400', bg:'rgba(255,196,0,0.10)',   border:'rgba(255,196,0,0.28)',   label:'RESERVED' },
-    available: { color:'#00e676', bg:'rgba(0,230,118,0.10)',   border:'rgba(0,230,118,0.28)',   label:'AVAILABLE' },
+    reserved:  { color:'#ffb300', bg:'rgba(255,179,0,0.10)',   border:'rgba(255,179,0,0.28)',   label:'RESERVED' },
+    available: { color:'#00e5aa', bg:'rgba(0,229,170,0.10)',   border:'rgba(0,229,170,0.28)',   label:'AVAILABLE' },
   };
   if (theme === 'day') {
     SC.active.color='#d63031';   SC.reserved.color='#b8860b';
     SC.available.color='#00875a';
+  }
+  if (theme === 'nightvision') {
+    SC.active.color='#ff3b3b';   SC.active.bg='rgba(255,59,59,0.10)';   SC.active.border='rgba(255,59,59,0.3)';
+    SC.reserved.color='#d4ff39'; SC.reserved.bg='rgba(212,255,57,0.10)'; SC.reserved.border='rgba(212,255,57,0.3)';
+    SC.available.color='#39ff6a';SC.available.bg='rgba(57,255,106,0.10)';SC.available.border='rgba(57,255,106,0.3)';
   }
 
   const groups = { active:[], reserved:[], available:[] };
@@ -16353,12 +16102,16 @@ function initPresence() {
       const state = presenceChannel.presenceState();
       const users = Object.values(state).flat();
       const count = users.length;
-      const el = document.getElementById('presenceCount');
-      const ind = document.getElementById('presenceIndicator');
-      if (el) el.textContent = `${count} online`;
-      if (ind) {
-        const names = users.map(u => u.name || 'Unknown').filter((n,i,a) => a.indexOf(n) === i).slice(0, 5).join(', ');
-        ind.title = `Online: ${names || 'Unknown'}`;
+      const uniqueNames = users.map(u => u.name || 'Unknown').filter((n,i,a) => a.indexOf(n) === i);
+
+      // Admin-only card in System settings — full names list, visible only there now
+      const elAdmin = document.getElementById('presenceCountAdmin');
+      const listAdmin = document.getElementById('presenceListAdmin');
+      if (elAdmin) elAdmin.textContent = `${count} online`;
+      if (listAdmin) {
+        listAdmin.innerHTML = uniqueNames.length
+          ? uniqueNames.map(n => `<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:12px;font-size:13px;">${escHtml(n)}</span>`).join('')
+          : '<span style="color:var(--text-dim);">No one else online</span>';
       }
     })
     .subscribe(async status => {
