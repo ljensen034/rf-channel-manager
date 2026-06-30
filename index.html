@@ -2348,20 +2348,21 @@
 
   .channel-warning-badge {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 4px;
     font-family: var(--font-data);
     font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.02em;
     padding: 2px 6px;
     border-radius: 2px;
     background: rgba(255,152,0,0.15);
     color: #ff9800;
     border: 1px solid rgba(255,152,0,0.35);
-    white-space: nowrap;
-    cursor: help;
+    white-space: normal;
+    line-height: 1.4;
+    cursor: default;
   }
 
   /* ── LOW AVAILABILITY BANNER ── */
@@ -5885,10 +5886,13 @@ function subscribeRealtime() {
       renderChannels();
       if (selectedId) {
         const still = channels.find(c => c.id === selectedId);
-        if (still) selectChannel(selectedId); else {
+        // If the channel detail modal is open, refresh it in place
+        const modalOpen = document.getElementById('channelDetailModal')?.classList.contains('open');
+        if (still && modalOpen) {
+          openChannelDetailModal(selectedId);
+        } else if (!still) {
           selectedId = null;
-          document.getElementById('sideContent').innerHTML = `<div class="side-empty"><span class="icon">📻</span>Select a channel to view details and actions</div>`;
-          document.getElementById('selectedBadge').style.display = 'none';
+          document.getElementById('channelDetailModal')?.classList.remove('open');
         }
       }
     })
@@ -7398,7 +7402,7 @@ function renderChannels() {
           <div class="ch-designator-wrap">
             <span class="ch-designator">${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict">⚠ CONFLICT</span>` : ''}
-            ${ch.warning ? `<span class="channel-warning-badge" title="${escHtml(ch.warning)}">⚠ WARNING</span>` : ''}
+            ${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : ''}
           </div>
           <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
@@ -7415,7 +7419,7 @@ function renderChannels() {
           <div class="ch-designator-wrap">
             <span class="ch-designator">${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
-            ${ch.warning ? `<span class="channel-warning-badge" title="${escHtml(ch.warning)}">⚠ WARNING</span>` : ''}
+            ${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : ''}
           </div>
           <div class="ch-freq">${ch.freq} MHz</div>
           <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
@@ -7603,51 +7607,12 @@ function selectChannel(id) {
   selectedId = id;
   const ch = channels.find(c => c.id === id);
   if (!ch) return;
-  renderChannels();
+  renderChannels(); // update selected highlight in list
 
   const rxNote = (ch.rxFreq && ch.rxFreq !== ch.freq) ? ch.rxFreq + ' MHz' : 'Same as TX';
 
-  const detailHTML = `
-    <div class="detail-section">
-      <div class="detail-label">Designator</div>
-      <div class="detail-value" style="font-size:18px;letter-spacing:0.04em;">${ch.designator}</div>
-    </div>
-    ${ch.warning ? `<div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);border-radius:var(--radius);padding:9px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
-      <span style="font-size:16px;flex-shrink:0;">⚠</span>
-      <div style="font-size:12.5px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
-    </div>` : ''}
-    <div class="detail-section">
-      <div class="detail-label">Frequency</div>
-      <div class="detail-value freq">${ch.freq} MHz</div>
-      <div style="font-size:13px;color:var(--text-dim);margin-top:3px;">RX: ${rxNote}</div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Tone / NAC</div>
-      <div class="detail-value" style="font-size:15px;">${ch.tone || '—'}</div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Function</div>
-      <div class="detail-value" style="font-size:15px;">${ch.function || '—'}</div>
-    </div>
-    ${ch.activeFor ? `<div class="detail-section">
-      <div class="detail-label">${ch.status === 'reserved' ? 'Reserved For' : 'In Use For'}</div>
-      <div class="detail-value" style="font-size:15px;color:var(--accent);font-weight:600;">${escHtml(ch.activeFor)}</div>
-    </div>` : ''}
-    <div class="detail-section">
-      <div class="detail-label">Agency</div>
-      <div class="detail-value" style="font-size:15px;">${ch.agency || '—'}</div>
-    </div>
-    ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:14px;color:var(--text-secondary);line-height:1.5;">${ch.notes}</div></div>` : ''}
-    <div class="side-actions">
-      <button class="btn-primary" onclick="openEditModal(${ch.id})">✏ Edit Channel</button>
-      ${ch.status !== 'available' ? `<button class="btn-success" onclick="releaseChannel(${ch.id})">✓ Mark Available</button>` : ''}
-      ${ch.status === 'available' ? `<button class="btn-warning" onclick="quickDeploy(${ch.id})">⚡ Quick Deploy</button>` : ''}
-      <button class="btn-secondary" onclick="switchSideTab('history')">🕐 View History</button>
-      <button class="btn-danger" onclick="deleteChannel(${ch.id})">✕ Remove Channel</button>
-    </div>
-  `;
-
   if (isMobile()) {
+    // Mobile: bottom sheet (unchanged)
     document.getElementById('sheetTitle').innerHTML = `
       <span style="font-family:var(--font-data);font-size:16px;font-weight:700;">${ch.designator}</span>
       <span class="status-pill ${ch.status}" style="margin-left:8px;">${statusLabels[ch.status]}</span>`;
@@ -7655,7 +7620,7 @@ function selectChannel(id) {
       <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:0;">
         ${ch.warning ? `<div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);border-radius:var(--radius);padding:9px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
           <span style="font-size:16px;flex-shrink:0;">⚠</span>
-          <div style="font-size:12.5px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
+          <div style="font-size:13px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
         </div>` : ''}
         <div class="detail-section">
           <div class="detail-label">Frequency</div>
@@ -7679,27 +7644,87 @@ function selectChannel(id) {
       </div>`;
     openMobileSheet();
   } else {
-    // Always write content first
-    const sideContent = document.getElementById('sideContent');
-    if (sideContent) sideContent.innerHTML = detailHTML;
-    const badge = document.getElementById('selectedBadge');
-    if (badge) {
-      badge.style.display = 'inline-block';
-      badge.innerHTML = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
-    }
-    // Force panel open and on detail tab unconditionally
-    const layout = document.querySelector('.layout');
-    const btn = document.getElementById('panelToggleBtn');
-    sidePanelOpen = true;
-    activeSideTab = 'detail';
-    if (layout) layout.classList.add('panel-open');
-    if (btn) btn.classList.add('active');
-    // Activate the detail tab content
-    document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.side-tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-detail')?.classList.add('active');
-    document.getElementById('tabcontent-detail')?.classList.add('active');
+    // Desktop: popup modal
+    openChannelDetailModal(id);
   }
+}
+
+function openChannelDetailModal(id) {
+  const ch = channels.find(c => c.id === id);
+  if (!ch) return;
+  const rxNote = (ch.rxFreq && ch.rxFreq !== ch.freq) ? ch.rxFreq + ' MHz' : 'Same as TX';
+
+  document.getElementById('chDetailModalDesignator').textContent  = ch.designator;
+  document.getElementById('chDetailModalStatus').innerHTML        = `<span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span>`;
+
+  document.getElementById('chDetailModalBody').innerHTML = `
+    ${ch.warning ? `<div style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.35);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
+      <span style="font-size:18px;flex-shrink:0;">⚠</span>
+      <div style="font-size:14px;color:#ff9800;line-height:1.5;font-weight:500;">${escHtml(ch.warning)}</div>
+    </div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+      <div class="detail-section">
+        <div class="detail-label">TX Frequency</div>
+        <div class="detail-value freq">${ch.freq} MHz</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">RX Frequency</div>
+        <div class="detail-value" style="font-size:15px;">${rxNote}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Tone / NAC</div>
+        <div class="detail-value" style="font-size:15px;">${ch.tone || '—'}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Band / Mode</div>
+        <div class="detail-value" style="font-size:15px;">${ch.band || '—'} · ${ch.bandwidth || 'W'}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Function</div>
+        <div class="detail-value" style="font-size:15px;">${ch.function || '—'}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Agency</div>
+        <div class="detail-value" style="font-size:15px;">${ch.agency || '—'}</div>
+      </div>
+      ${ch.activeFor ? `
+      <div class="detail-section" style="grid-column:span 2;">
+        <div class="detail-label">${ch.status === 'reserved' ? 'Reserved For' : 'In Use For'}</div>
+        <div class="detail-value" style="font-size:16px;color:var(--accent);font-weight:600;">${escHtml(ch.activeFor)}</div>
+      </div>` : ''}
+    </div>
+    ${ch.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:14px;color:var(--text-secondary);line-height:1.6;padding-top:4px;">${escHtml(ch.notes)}</div></div>` : ''}
+  `;
+
+  // Wire action buttons
+  document.getElementById('chDetailEditBtn').onclick       = () => { closeChannelDetailModal(); openEditModal(id); };
+  document.getElementById('chDetailDeployBtn').onclick     = () => { closeChannelDetailModal(); quickDeploy(id); };
+  document.getElementById('chDetailReleaseBtn').onclick    = () => { closeChannelDetailModal(); releaseChannel(id); };
+  document.getElementById('chDetailHistoryBtn').onclick    = () => { closeChannelDetailModal(); openSidePanelForChannel(id, 'history'); };
+  document.getElementById('chDetailDeleteBtn').onclick     = () => { closeChannelDetailModal(); deleteChannel(id); };
+
+  // Show/hide deploy vs release buttons based on status
+  document.getElementById('chDetailDeployBtn').style.display  = ch.status === 'available' ? 'inline-flex' : 'none';
+  document.getElementById('chDetailReleaseBtn').style.display = ch.status !== 'available' ? 'inline-flex' : 'none';
+
+  document.getElementById('channelDetailModal').classList.add('open');
+}
+
+function closeChannelDetailModal() {
+  document.getElementById('channelDetailModal').classList.remove('open');
+}
+
+// Open the side panel directly to a specific tab (History, Log, Notes) for a channel.
+// Used from the channel detail modal's "View History" button.
+function openSidePanelForChannel(id, tab) {
+  selectedId = id;
+  const layout = document.querySelector('.layout');
+  const btn    = document.getElementById('panelToggleBtn');
+  sidePanelOpen  = true;
+  activeSideTab  = tab || 'history';
+  if (layout) layout.classList.add('panel-open');
+  if (btn)    btn.classList.add('active');
+  switchSideTab(activeSideTab);
 }
 
 async function releaseChannel(id) {
@@ -7747,8 +7772,7 @@ async function deleteChannel(id) {
   if (error) { alert('Error deleting channel: ' + error.message); return; }
   logActivity(`<span class="log-ch">${ch.designator}</span> removed by ${who}`);
   selectedId = null;
-  document.getElementById('sideContent').innerHTML = `<div class="side-empty"><span class="icon">📻</span>Select a channel to view details and actions</div>`;
-  document.getElementById('selectedBadge').style.display = 'none';
+  closeChannelDetailModal();
   if (activeMainTab === 'admin') { await loadChannels(); renderAdminChannels(); }
 }
 
@@ -10388,6 +10412,22 @@ function toggleChecklistItem(selectId, containerId, index) {
   sel.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+// Filter the visible checklist items by query string without touching the
+// underlying <select> data model — selected items always remain visible so
+// you don't lose track of what's already checked.
+function filterChecklistDisplay(selectId, containerId, query) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const q = (query || '').toLowerCase();
+  box.querySelectorAll('.checklist-item').forEach(row => {
+    const label = (row.querySelector('.checklist-label')?.textContent || '').toLowerCase();
+    const isChecked = row.classList.contains('checked');
+    // Always show checked (selected) items so users can deselect them;
+    // show others only if they match the filter.
+    row.style.display = (!q || isChecked || label.includes(q)) ? '' : 'none';
+  });
+}
+
 function openReleaseNoteEditor(id) {
   editingNoteId = id;
   const modal = document.getElementById('releaseNoteModal');
@@ -11842,7 +11882,7 @@ function openSchedModal(id) {
     document.getElementById('sr-end').value   = `${ds}T17:00`;
     if (deleteBtn) deleteBtn.style.display = 'none';
   }
-  renderChecklistFromSelect('sr-channel', 'sr-channel-checklist');
+  renderChecklistFromSelect('sr-channel', 'sr-channel-checklist'); const _srS = document.getElementById('sr-channel-search'); if (_srS) _srS.value = '';
   clearRisk();
   showOnboardingIfNeeded('conflict');
   document.getElementById('schedModal').classList.add('open');
@@ -15455,7 +15495,7 @@ function openIncidentForm(id) {
     if (incMap) { incMap.remove(); incMap = null; incMarker = null; }
   }
 
-  renderChecklistFromSelect('inc-channels', 'inc-channels-checklist');
+  renderChecklistFromSelect('inc-channels', 'inc-channels-checklist'); const _incS = document.getElementById('inc-channels-search'); if (_incS) _incS.value = '';
   renderChecklistFromSelect('inc-talkgroups', 'inc-talkgroups-checklist');
 
   // Notes panel only applies to existing incidents — new ones must be saved first
@@ -17209,6 +17249,7 @@ if ('serviceWorker' in navigator) {
       <div class="form-row single">
         <div class="form-field">
           <label class="form-label">Channels * <span style="font-weight:400;color:var(--text-dim);">(click to select multiple)</span></label>
+          <input class="search-input" id="sr-channel-search" placeholder="Filter channels…" oninput="filterChecklistDisplay('sr-channel','sr-channel-checklist',this.value)" style="margin-bottom:6px;width:100%;box-sizing:border-box;font-size:14px;">
           <select class="form-select" id="sr-channel" multiple style="height:100px;font-family:var(--font-data);font-size:14px;display:none;" onchange="onSchedChannelChange()"></select>
           <div class="checklist-box" id="sr-channel-checklist" style="max-height:150px;"></div>
         </div>
@@ -18003,7 +18044,8 @@ if ('serviceWorker' in navigator) {
 
       <!-- Resource assignment sections -->
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
-        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Assign Channels</div>
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Assign Channels</div>
+        <input class="search-input" id="inc-channels-search" placeholder="Filter channels…" oninput="filterChecklistDisplay('inc-channels','inc-channels-checklist',this.value)" style="margin-bottom:6px;width:100%;box-sizing:border-box;font-size:14px;">
         <select class="form-select" id="inc-channels" multiple style="height:90px;font-family:var(--font-data);font-size:14px;display:none;">
         </select>
         <div class="checklist-box" id="inc-channels-checklist" style="max-height:140px;"></div>
@@ -18093,6 +18135,27 @@ if ('serviceWorker' in navigator) {
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeBulkAssignIncident()">Cancel</button>
       <button class="btn-primary" onclick="confirmBulkAssignIncident()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CHANNEL DETAIL MODAL ── -->
+<div class="modal-overlay" id="channelDetailModal" onclick="if(event.target===this)closeChannelDetailModal()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header" style="align-items:flex-start;gap:12px;">
+      <div>
+        <div class="modal-title" id="chDetailModalDesignator" style="font-family:var(--font-data);letter-spacing:0.06em;"></div>
+        <div id="chDetailModalStatus" style="margin-top:6px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeChannelDetailModal()" style="flex-shrink:0;">✕</button>
+    </div>
+    <div class="modal-body" id="chDetailModalBody" style="padding:0;"></div>
+    <div class="modal-footer" style="flex-wrap:wrap;gap:8px;">
+      <button class="btn-primary"   id="chDetailEditBtn">✏ Edit</button>
+      <button class="btn-warning"   id="chDetailDeployBtn">⚡ Deploy</button>
+      <button class="btn-success"   id="chDetailReleaseBtn">✓ Mark Available</button>
+      <button class="btn-secondary" id="chDetailHistoryBtn">🕐 History</button>
+      <button class="btn-danger"    id="chDetailDeleteBtn" style="margin-left:auto;">✕ Remove</button>
     </div>
   </div>
 </div>
