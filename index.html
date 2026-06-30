@@ -4324,7 +4324,8 @@
       </div>
 
       <button class="main-view-tab" id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
-      <button class="main-view-tab" id="mvtab-uas" onclick="switchMainTab('uas')">🛸 UAS Manager</button>
+      <button class="main-view-tab" id="mvtab-uas" onclick="switchMainTab('uas')" style="display:none;">🛸 UAS Manager</button>
+      <button class="main-view-tab" id="mvtab-personnel" onclick="switchMainTab('personnel')" style="display:none;">👥 Personnel</button>
       <button class="main-view-tab" id="mvtab-resources" onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
       <button class="main-view-tab" id="mvtab-admin" onclick="switchMainTab('admin')" style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
 
@@ -4901,6 +4902,75 @@
           <div style="font-size:32px;margin-bottom:10px;">📋</div>
           <div style="font-size:15px;color:var(--text-secondary);">No missions logged yet</div>
           <div style="font-size:14px;margin-top:4px;">Click + New Mission to log a call-out or planned flight</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PERSONNEL MANAGER VIEW ── -->
+    <div id="view-personnel" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">Personnel</div>
+          <div class="tab-page-subtitle">Team rosters, certifications, and contact information</div>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <button class="admin-sub-tab active" id="pertab-roster" onclick="switchPersonnelTab('roster')">👥 Roster</button>
+        <button class="admin-sub-tab"        id="pertab-teams"  onclick="switchPersonnelTab('teams')">🏷 Teams</button>
+      </div>
+
+      <!-- ── ROSTER PANEL ── -->
+      <div id="per-roster-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="perSearch" type="text" placeholder="Search name, cert, phone…" oninput="renderPersonnelRoster()" style="width:240px;">
+            <select class="form-select" id="perTeamFilter" onchange="renderPersonnelRoster()" style="width:160px;font-size:14px;padding:5px 8px;">
+              <option value="all">All Teams</option>
+            </select>
+            <select class="form-select" id="perStatusFilter" onchange="renderPersonnelRoster()" style="width:140px;font-size:14px;padding:5px 8px;">
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="leave">On Leave</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="position:relative;">
+              <button class="btn-secondary" id="perExportBtn" style="font-size:14px;" onclick="togglePersonnelExportMenu()">⬇ Export</button>
+              <div id="perExportMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:50;min-width:140px;overflow:hidden;">
+                <div style="padding:9px 14px;font-size:14px;color:var(--text-primary);cursor:pointer;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="exportPersonnelCSV();closePersonnelExportMenu();">⬇ CSV</div>
+                <div style="padding:9px 14px;font-size:14px;color:var(--text-primary);cursor:pointer;border-top:1px solid var(--border);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="exportPersonnelPDF();closePersonnelExportMenu();">⬇ PDF</div>
+              </div>
+            </div>
+            <button class="btn-primary" id="perAddBtn" style="font-size:14px;" onclick="openUasPersonnelForm(null)">+ Add Person</button>
+          </div>
+        </div>
+
+        <div id="perCurrencyBanner" style="display:none;margin-bottom:12px;"></div>
+
+        <div style="display:grid;grid-template-columns:4px 1fr 130px 140px 130px 110px;gap:10px;padding:4px 12px 8px;font-family:var(--font-data);font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;">
+          <span></span><span>Name</span><span>Team</span><span>Certification</span><span>Cert Expires</span><span>Status</span>
+        </div>
+        <div id="personnelGrid"></div>
+        <div id="personnelEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">👥</div>
+          <div style="font-size:15px;color:var(--text-secondary);">No personnel on the roster yet</div>
+          <div style="font-size:14px;margin-top:4px;">Click + Add Person to get started</div>
+        </div>
+      </div>
+
+      <!-- ── TEAMS PANEL ── -->
+      <div id="per-teams-panel" style="display:none;">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+          <button class="btn-primary" id="teamAddBtn" style="font-size:14px;" onclick="openTeamForm(null)">+ Add Team</button>
+        </div>
+        <div id="teamsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
+        <div id="teamsEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">🏷</div>
+          <div style="font-size:15px;color:var(--text-secondary);">No teams set up yet</div>
+          <div style="font-size:14px;margin-top:4px;">Click + Add Team to create your first team (e.g. Field Comm, UAS)</div>
         </div>
       </div>
     </div>
@@ -5963,6 +6033,7 @@ async function refreshAllAfterReconnect() {
       loadChannels(), loadTalkgroups(), loadReservations(),
       loadIncidents(), loadCommPlanReqs(), loadInternalChannelRequests(),
       loadUasFleet(), loadUasPersonnel(), loadUasMissions(),
+      loadPersonnelTeams(), loadPersonnelRoster(),
     ]);
     renderChannels();
     if (activeMainTab === 'talkgroups') renderTalkgroups();
@@ -5970,6 +6041,7 @@ async function refreshAllAfterReconnect() {
     if (activeMainTab === 'incidents')  renderIncidents();
     if (activeMainTab === 'commreq')    renderCommPlanReqs();
     if (activeMainTab === 'uas')        renderUasTab();
+    if (activeMainTab === 'personnel')  renderPersonnelTab();
     updateIcrBadge();
     pushNotification('available', '🔄 Reconnected — data refreshed after a brief connection interruption');
   } catch(e) { console.warn('refreshAllAfterReconnect:', e.message); }
@@ -8937,6 +9009,9 @@ async function doLogin() {
     canVehicles:      profile.can_vehicles  === true   || profile.role === 'admin',
     canEquipment:     profile.can_equipment === true   || profile.role === 'admin',
     canAdmin:         profile.can_admin     === true   || profile.role === 'admin',
+    canUas:           profile.can_uas        === true  || profile.role === 'admin',
+    canPersonnel:     profile.can_personnel  === true  || profile.role === 'admin',
+    canPersonnelEdit: profile.can_personnel_edit === true || profile.role === 'admin',
     canViewResources: profile.can_vehicles === true || profile.can_equipment === true || profile.role === 'admin',
     viewMode:         profile.view_mode || 'coml',
   };
@@ -8987,8 +9062,20 @@ async function onLoginSuccess() {
   // Show/hide tabs based on per-user module permissions
   const resTab   = document.getElementById('mvtab-resources');
   const adminTab = document.getElementById('mvtab-admin');
+  const uasTab   = document.getElementById('mvtab-uas');
+  const personnelTab = document.getElementById('mvtab-personnel');
   if (resTab)   resTab.style.display   = match.canViewResources ? '' : 'none';
   if (adminTab) adminTab.style.display = (match.canAdmin || match.role === 'admin') ? '' : 'none';
+
+  const agencyMods = getAgencyModules();
+  if (uasTab) {
+    const allowed = match.canUas === true || match.role === 'admin';
+    uasTab.style.display = (agencyMods.has('uas') && allowed) ? '' : 'none';
+  }
+  if (personnelTab) {
+    const allowed = match.canPersonnel === true || match.canPersonnelEdit === true || match.role === 'admin';
+    personnelTab.style.display = (agencyMods.has('personnel') && allowed) ? '' : 'none';
+  }
 
   const initials = match.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const viewModeTag = match.viewMode === 'dispatcher'
@@ -9111,6 +9198,10 @@ function showLandingPage() {
       stats:()=>{ const v=resources.filter(r=>r.category==='Vehicle'); return `<span class="module-stat"><strong>${v.length}</strong> vehicles</span>`; } } : null,
     u.canViewResources ? { id:'equipment', icon:'📦', title:'Equipment & Cache', desc:'Cache units, portable radios, and support equipment.', accent:'#4caf50',
       stats:()=>{ const e=resources.filter(r=>r.category!=='Vehicle'); return `<span class="module-stat"><strong>${e.length}</strong> items</span>`; } } : null,
+    (u.canUas || u.role === 'admin') ? { id:'uas', icon:'🛸', title:'UAS Manager', desc:'Drone fleet, pilot roster, and mission call-out tracking.', accent:'#00bcd4',
+      stats:()=>{ const dep=uasFleet.filter(a=>a.status==='deployed').length; return `<span class="module-stat"><strong>${uasFleet.length}</strong> aircraft</span><span class="module-stat"><strong>${dep}</strong> deployed</span>`; } } : null,
+    (u.canPersonnel || u.canPersonnelEdit || u.role === 'admin') ? { id:'personnel', icon:'👥', title:'Personnel', desc:'Team rosters, certifications, and contact information.', accent:'#7e57c2',
+      stats:()=>{ const active=personnelRoster.filter(p=>p.status==='active').length; return `<span class="module-stat"><strong>${active}</strong> active</span><span class="module-stat"><strong>${personnelTeams.length}</strong> teams</span>`; } } : null,
     (u.role === 'admin' || u.canAdmin) ? { id:'admin', icon:'⚙', title:'Administration', desc:'User management, audit trail, imports, radio config.', accent:'var(--status-active)',
       stats:()=>`<span class="module-stat"><strong>${allProfiles.length}</strong> users</span>` } : null,
   ].filter(Boolean).filter(m => enabledMods.has(m.id) || m.id === 'admin');
@@ -9164,6 +9255,10 @@ function openModule(id) {
     }, 50);
   } else if (id === 'admin') {
     switchMainTab('admin');
+  } else if (id === 'uas') {
+    switchMainTab('uas');
+  } else if (id === 'personnel') {
+    switchMainTab('personnel');
   }
 }
 
@@ -9199,6 +9294,9 @@ async function checkExistingSession() {
     canVehicles:      profile.can_vehicles  === true   || profile.role === 'admin',
     canEquipment:     profile.can_equipment === true   || profile.role === 'admin',
     canAdmin:         profile.can_admin     === true   || profile.role === 'admin',
+    canUas:           profile.can_uas        === true  || profile.role === 'admin',
+    canPersonnel:     profile.can_personnel  === true  || profile.role === 'admin',
+    canPersonnelEdit: profile.can_personnel_edit === true || profile.role === 'admin',
     canViewResources: profile.can_vehicles === true || profile.can_equipment === true || profile.role === 'admin',
     viewMode:         profile.view_mode || 'coml',
   };
@@ -9300,6 +9398,9 @@ function openUserForm(userId) {
     document.getElementById('uf-can-vehicles').checked   = u.canVehicles  === true  || u.role === 'admin';
     document.getElementById('uf-can-equipment').checked  = u.canEquipment === true  || u.role === 'admin';
     document.getElementById('uf-can-admin').checked      = u.canAdmin     === true  || u.role === 'admin';
+    if (document.getElementById('uf-can-uas'))            document.getElementById('uf-can-uas').checked            = u.canUas === true || u.role === 'admin';
+    if (document.getElementById('uf-can-personnel'))      document.getElementById('uf-can-personnel').checked      = u.canPersonnel === true || u.role === 'admin';
+    if (document.getElementById('uf-can-personnel-edit'))  document.getElementById('uf-can-personnel-edit').checked = u.canPersonnelEdit === true || u.role === 'admin';
     document.getElementById('userFormTitle').textContent = 'Edit User';
     document.getElementById('uf-username').readOnly = true;
     document.getElementById('uf-username').style.opacity = '0.5';
@@ -9314,6 +9415,9 @@ function openUserForm(userId) {
     document.getElementById('uf-can-vehicles').checked   = false;
     document.getElementById('uf-can-equipment').checked  = false;
     document.getElementById('uf-can-admin').checked      = false;
+    if (document.getElementById('uf-can-uas'))            document.getElementById('uf-can-uas').checked = false;
+    if (document.getElementById('uf-can-personnel'))      document.getElementById('uf-can-personnel').checked = false;
+    if (document.getElementById('uf-can-personnel-edit'))  document.getElementById('uf-can-personnel-edit').checked = false;
     if (document.getElementById('uf-uuid')) document.getElementById('uf-uuid').value = '';
     document.getElementById('userFormTitle').textContent = 'Add New User';
     document.getElementById('uf-username').readOnly = false;
@@ -9354,8 +9458,12 @@ async function saveUserForm() {
       const canVehicles  = document.getElementById('uf-can-vehicles').checked;
       const canEquipment = document.getElementById('uf-can-equipment').checked;
       const canAdmin     = document.getElementById('uf-can-admin').checked;
+      const canUas       = document.getElementById('uf-can-uas')?.checked || false;
+      const canPersonnel     = document.getElementById('uf-can-personnel')?.checked || false;
+      const canPersonnelEdit = document.getElementById('uf-can-personnel-edit')?.checked || false;
       const updates = { name, role, color,
         can_freq: canFreq, can_vehicles: canVehicles, can_equipment: canEquipment, can_admin: canAdmin,
+        can_uas: canUas, can_personnel: canPersonnel, can_personnel_edit: canPersonnelEdit,
         can_view_resources: canVehicles || canEquipment };
       const { error: profErr } = await sb.from('profiles').update(updates).eq('id', userEditingId);
       if (profErr) { errEl.textContent = 'Error: ' + profErr.message; return; }
@@ -9410,8 +9518,12 @@ async function saveUserForm() {
       const canVehiclesN  = document.getElementById('uf-can-vehicles').checked;
       const canEquipmentN = document.getElementById('uf-can-equipment').checked;
       const canAdminN     = document.getElementById('uf-can-admin').checked;
+      const canUasN       = document.getElementById('uf-can-uas')?.checked || false;
+      const canPersonnelN     = document.getElementById('uf-can-personnel')?.checked || false;
+      const canPersonnelEditN = document.getElementById('uf-can-personnel-edit')?.checked || false;
       const { error: profErr } = await sb.from('profiles').insert({ id: userId, name, role, color, email, active: true,
         can_freq: canFreqN, can_vehicles: canVehiclesN, can_equipment: canEquipmentN, can_admin: canAdminN,
+        can_uas: canUasN, can_personnel: canPersonnelN, can_personnel_edit: canPersonnelEditN,
         can_view_resources: canVehiclesN || canEquipmentN });
       if (profErr) { errEl.textContent = 'Profile save failed: ' + profErr.message; return; }
 
@@ -10637,7 +10749,7 @@ function switchMainTab(tab) {
   }
 
   activeMainTab = tab;
-  ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin','uas'].forEach(t => {
+  ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin','uas','personnel'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     document.getElementById(`navitem-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
@@ -10661,6 +10773,7 @@ function switchMainTab(tab) {
   if (tab === 'resources')   renderResources();
   if (tab === 'admin')       renderAdminView();
   if (tab === 'uas')         renderUasTab();
+  if (tab === 'personnel')   renderPersonnelTab();
 }
 
 // ── Grouped nav dropdown interaction ──
@@ -15287,6 +15400,401 @@ async function deleteUasMission(id) {
   renderUasMissions();
 }
 
+// ═══════════════════════════════════════════════
+// PERSONNEL MANAGER — Teams & Roster
+// ═══════════════════════════════════════════════
+let personnelRoster   = [];
+let personnelTeams    = [];
+let activePersonnelTab = 'roster';
+let personTeamEditingId = null;
+let personEditingId     = null;
+
+const PERSON_STATUS_LABELS = { active: 'Active', inactive: 'Inactive', leave: 'On Leave' };
+
+function canEditPersonnel() {
+  return currentUser?.canPersonnelEdit === true || currentUser?.role === 'admin';
+}
+
+// ── Data loading ──
+async function loadPersonnelTeams() {
+  try {
+    const { data, error } = await sb.from('personnel_teams').select('*').order('name', { ascending: true });
+    if (error) { console.warn('loadPersonnelTeams:', error.message); return; }
+    personnelTeams = data || [];
+  } catch(e) {}
+}
+
+async function loadPersonnelRoster() {
+  try {
+    const { data, error } = await sb.from('personnel').select('*').order('name', { ascending: true });
+    if (error) { console.warn('loadPersonnelRoster:', error.message); return; }
+    personnelRoster = data || [];
+  } catch(e) {}
+}
+
+// ── Tab switching ──
+function switchPersonnelTab(tab) {
+  activePersonnelTab = tab;
+  ['roster','teams'].forEach(t => {
+    document.getElementById(`pertab-${t}`)?.classList.toggle('active', t === tab);
+    const panel = document.getElementById(`per-${t}-panel`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+  });
+  renderPersonnelTab();
+}
+
+function renderPersonnelTab() {
+  // Hide Add/Edit affordances entirely for view-only users
+  const editAllowed = canEditPersonnel();
+  ['perAddBtn','teamAddBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = editAllowed ? '' : 'none';
+  });
+  if (activePersonnelTab === 'roster') renderPersonnelRoster();
+  if (activePersonnelTab === 'teams')  renderPersonnelTeams();
+}
+
+// ── ROSTER ──
+function renderPersonnelRoster() {
+  const query    = (document.getElementById('perSearch')?.value || '').toLowerCase();
+  const teamFilt = document.getElementById('perTeamFilter')?.value || 'all';
+  const statFilt = document.getElementById('perStatusFilter')?.value || 'all';
+  const grid     = document.getElementById('personnelGrid');
+  const empty    = document.getElementById('personnelEmpty');
+  if (!grid) return;
+
+  // Populate team filter dropdown
+  const teamSel = document.getElementById('perTeamFilter');
+  if (teamSel) {
+    const existing = [...teamSel.options].map(o => o.value);
+    personnelTeams.forEach(t => {
+      if (!existing.includes(String(t.id))) {
+        const o = document.createElement('option'); o.value = t.id; o.textContent = t.name;
+        teamSel.appendChild(o);
+      }
+    });
+  }
+
+  const filtered = personnelRoster.filter(p => {
+    if (teamFilt !== 'all' && String(p.team_id) !== String(teamFilt)) return false;
+    if (statFilt !== 'all' && p.status !== statFilt) return false;
+    if (query) return [p.name, p.cert_number, p.phone, p.email].some(f => (f||'').toLowerCase().includes(query));
+    return true;
+  });
+
+  // Currency banner
+  const banner = document.getElementById('perCurrencyBanner');
+  if (banner) {
+    const flagged = personnelRoster.filter(p => ['expired','expiring'].includes(certStatusOf(p.cert_expires)));
+    if (flagged.length) {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div style="background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:18px;flex-shrink:0;">⚠</span>
+        <div style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+          <strong style="color:var(--status-active);">${flagged.length} ${flagged.length!==1?'people':'person'} need attention:</strong>
+          ${flagged.map(p => `${escHtml(p.name)} (${certStatusOf(p.cert_expires)==='expired'?'expired':'expires soon'} ${p.cert_expires ? new Date(p.cert_expires+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''})`).join(' · ')}
+        </div>
+      </div>`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const CERT_COLOR = { current:'var(--status-available)', expiring:'#ff9800', expired:'var(--status-active)', none:'var(--text-dim)' };
+  const editAllowed = canEditPersonnel();
+
+  grid.innerHTML = filtered.map(p => {
+    const team = personnelTeams.find(t => String(t.id) === String(p.team_id));
+    const cs = certStatusOf(p.cert_expires);
+    return `
+    <div style="display:grid;grid-template-columns:4px 1fr 130px 140px 130px 110px;gap:10px;align-items:center;padding:9px 12px;background:var(--bg-card);border:1px solid transparent;border-radius:var(--radius);cursor:${editAllowed?'pointer':'default'};margin-bottom:4px;" onmouseover="this.style.borderColor='var(--border-lit)'" onmouseout="this.style.borderColor='transparent'" ${editAllowed ? `onclick="openUasPersonnelForm('${p.id}')"` : ''}>
+      <div style="width:4px;height:30px;border-radius:2px;background:${p.status==='active'?'var(--status-available)':'var(--text-dim)'};"></div>
+      <div style="min-width:0;display:flex;align-items:center;gap:8px;">
+        ${team?.logo_url ? `<img src="${escHtml(team.logo_url)}" style="width:22px;height:22px;border-radius:4px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.name||'—')}</div>
+          ${p.role_title ? `<div style="font-size:12px;color:var(--text-dim);">${escHtml(p.role_title)}</div>` : ''}
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${team ? escHtml(team.name) : '—'}</div>
+      <div style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.cert_number||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:13px;color:${CERT_COLOR[cs]};">${p.cert_expires ? new Date(p.cert_expires+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}${cs==='expired'?' ⚠':cs==='expiring'?' !':''}</div>
+      <div><span style="font-family:var(--font-data);font-size:12px;font-weight:600;padding:3px 8px;border-radius:2px;background:${p.status==='active'?'rgba(0,230,118,0.12)':'rgba(120,120,120,0.12)'};color:${p.status==='active'?'var(--status-available)':'var(--text-dim)'};border:1px solid ${p.status==='active'?'rgba(0,230,118,0.25)':'var(--border)'};white-space:nowrap;">${PERSON_STATUS_LABELS[p.status]||p.status}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function certStatusOf(expiryDate) {
+  if (!expiryDate) return 'none';
+  const days = (new Date(expiryDate + 'T12:00:00').getTime() - Date.now()) / 86400000;
+  if (days < 0)  return 'expired';
+  if (days < 30) return 'expiring';
+  return 'current';
+}
+
+function togglePersonnelExportMenu() {
+  const m = document.getElementById('perExportMenu');
+  if (m) m.style.display = m.style.display === 'block' ? 'none' : 'block';
+}
+function closePersonnelExportMenu() {
+  const m = document.getElementById('perExportMenu');
+  if (m) m.style.display = 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#perExportBtn') && !e.target.closest('#perExportMenu')) closePersonnelExportMenu();
+});
+
+function exportPersonnelCSV() {
+  if (!personnelRoster.length) { alert('No personnel to export.'); return; }
+  const header = ['Name','Role / Title','Team','Phone','Email','Certification #','Cert Expires','Status','Notes'];
+  const rows = personnelRoster.map(p => {
+    const team = personnelTeams.find(t => String(t.id) === String(p.team_id));
+    return [
+      p.name||'', p.role_title||'', team?.name||'', p.phone||'', p.email||'',
+      p.cert_number||'', p.cert_expires||'', PERSON_STATUS_LABELS[p.status]||p.status||'', p.notes||''
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = [header.join(','), ...rows].join('\n');
+  const a = Object.assign(document.createElement('a'), { href:'data:text/csv;charset=utf-8,'+encodeURIComponent(csv), download:`personnel-roster-${new Date().toLocaleDateString('en-CA')}.csv` });
+  a.click();
+}
+
+function exportPersonnelPDF() {
+  if (!personnelRoster.length) { alert('No personnel to export.'); return; }
+  const agencyName = currentAgency?.name || currentUser?.agencyName || 'COMM CENTER';
+  const rows = personnelRoster.map(p => {
+    const team = personnelTeams.find(t => String(t.id) === String(p.team_id));
+    const cs = certStatusOf(p.cert_expires);
+    const certColor = cs === 'expired' ? '#c62828' : cs === 'expiring' ? '#e65100' : '#333';
+    return `<tr>
+      <td style="padding:7px 10px;border:1px solid #ccc;font-weight:600;">${escHtml(p.name||'')}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;">${escHtml(team?.name||'—')}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;font-size:12px;">${escHtml(p.role_title||'—')}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;">${escHtml(p.phone||'')}${p.phone&&p.email?'<br>':''}${escHtml(p.email||'')}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;">${escHtml(p.cert_number||'—')}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;color:${certColor};font-size:12px;">${p.cert_expires ? new Date(p.cert_expires+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</td>
+      <td style="padding:7px 10px;border:1px solid #ccc;font-size:12px;">${PERSON_STATUS_LABELS[p.status]||p.status}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Personnel Roster — ${agencyName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 13px; margin: 24px; color: #111; }
+    h1   { font-size: 18px; margin: 0 0 2px; }
+    .sub { font-size: 12px; color: #555; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th   { background: #1a237e; color: #fff; padding: 8px 10px; text-align: left; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid #1a237e; }
+    tr:nth-child(even) td { background: #f5f5f5; }
+  </style></head><body>
+  <h1>${agencyName} — Personnel Roster</h1>
+  <div class="sub">Generated ${new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true})} PT · ${personnelRoster.length} personnel</div>
+  <table>
+    <thead><tr><th>Name</th><th>Team</th><th>Role / Title</th><th>Contact</th><th>Cert #</th><th>Cert Expires</th><th>Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload = () => window.print();<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
+async function openUasPersonnelForm(id) {
+  if (!canEditPersonnel()) return; // view-only users cannot open the edit form
+  personEditingId = id || null;
+
+  const teamSel = document.getElementById('per-p-team');
+  teamSel.innerHTML = '<option value="">— Unassigned —</option>' + personnelTeams.map(t => `<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+
+  if (id) {
+    const p = personnelRoster.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById('personModalTitle').textContent = 'Edit Person';
+    document.getElementById('per-p-name').value     = p.name || '';
+    document.getElementById('per-p-roletitle').value = p.role_title || '';
+    document.getElementById('per-p-team').value     = p.team_id || '';
+    document.getElementById('per-p-phone').value    = p.phone || '';
+    document.getElementById('per-p-email').value    = p.email || '';
+    document.getElementById('per-p-certnum').value  = p.cert_number || '';
+    document.getElementById('per-p-certexp').value  = p.cert_expires || '';
+    document.getElementById('per-p-status').value   = p.status || 'active';
+    document.getElementById('per-p-notes').value    = p.notes || '';
+    document.getElementById('personDeleteBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('personModalTitle').textContent = 'Add Person';
+    ['per-p-name','per-p-roletitle','per-p-phone','per-p-email','per-p-certnum','per-p-certexp','per-p-notes'].forEach(fid => document.getElementById(fid).value = '');
+    document.getElementById('per-p-team').value   = '';
+    document.getElementById('per-p-status').value = 'active';
+    document.getElementById('personDeleteBtn').style.display = 'none';
+  }
+  document.getElementById('personModal').classList.add('open');
+}
+
+function closePersonForm() {
+  document.getElementById('personModal').classList.remove('open');
+  personEditingId = null;
+}
+
+async function savePerson() {
+  if (!canEditPersonnel()) return;
+  const name = document.getElementById('per-p-name').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+  const row = {
+    name,
+    role_title:   document.getElementById('per-p-roletitle').value.trim() || null,
+    team_id:      document.getElementById('per-p-team').value || null,
+    phone:        document.getElementById('per-p-phone').value.trim()    || null,
+    email:        document.getElementById('per-p-email').value.trim()    || null,
+    cert_number:  document.getElementById('per-p-certnum').value.trim()  || null,
+    cert_expires: document.getElementById('per-p-certexp').value         || null,
+    status:       document.getElementById('per-p-status').value,
+    notes:        document.getElementById('per-p-notes').value.trim()    || null,
+    updated_by:   who,
+    updated_at:   new Date().toISOString(),
+  };
+
+  if (personEditingId) {
+    const { error } = await sb.from('personnel').update(row).eq('id', personEditingId);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('personnel', 'Person Updated', name, { name });
+  } else {
+    const { error } = await sb.from('personnel').insert(row);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('personnel', 'Person Added', name, { name });
+  }
+  await loadPersonnelRoster();
+  closePersonForm();
+  renderPersonnelRoster();
+}
+
+async function deletePerson(id) {
+  if (!canEditPersonnel()) return;
+  const p = personnelRoster.find(x => String(x.id) === String(id || personEditingId));
+  if (!p || !confirm(`Remove "${p.name}" from the roster?`)) return;
+  const { error } = await sb.from('personnel').delete().eq('id', p.id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  logEvent('personnel', 'Person Removed', p.name, { name: p.name });
+  await loadPersonnelRoster();
+  closePersonForm();
+  renderPersonnelRoster();
+}
+
+// ── TEAMS ──
+function renderPersonnelTeams() {
+  const grid  = document.getElementById('teamsGrid');
+  const empty = document.getElementById('teamsEmpty');
+  if (!grid) return;
+
+  if (!personnelTeams.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const editAllowed = canEditPersonnel();
+  grid.innerHTML = personnelTeams.map(t => {
+    const count = personnelRoster.filter(p => String(p.team_id) === String(t.id)).length;
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;${editAllowed?'cursor:pointer;':''}" ${editAllowed?`onclick="openTeamForm('${t.id}')"`:''}>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${t.logo_url
+          ? `<img src="${escHtml(t.logo_url)}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">`
+          : `<div style="width:40px;height:40px;border-radius:6px;background:${t.color||'#1e88e5'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏷</div>`}
+        <div style="min-width:0;">
+          <div style="font-size:15px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.name)}</div>
+          ${t.description ? `<div style="font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.description)}</div>` : ''}
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);">${count} member${count!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function openTeamForm(id) {
+  if (!canEditPersonnel()) return;
+  personTeamEditingId = id || null;
+  if (id) {
+    const t = personnelTeams.find(x => String(x.id) === String(id));
+    if (!t) return;
+    document.getElementById('teamModalTitle').textContent = 'Edit Team';
+    document.getElementById('per-t-name').value  = t.name || '';
+    document.getElementById('per-t-desc').value  = t.description || '';
+    document.getElementById('per-t-color').value = t.color || '#1e88e5';
+    document.getElementById('per-t-logo').value  = t.logo_url || '';
+    document.getElementById('teamDeleteBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('teamModalTitle').textContent = 'Add Team';
+    document.getElementById('per-t-name').value  = '';
+    document.getElementById('per-t-desc').value  = '';
+    document.getElementById('per-t-color').value = '#1e88e5';
+    document.getElementById('per-t-logo').value  = '';
+    document.getElementById('teamDeleteBtn').style.display = 'none';
+  }
+  document.getElementById('teamModal').classList.add('open');
+}
+
+function closeTeamForm() {
+  document.getElementById('teamModal').classList.remove('open');
+  personTeamEditingId = null;
+}
+
+async function saveTeam() {
+  if (!canEditPersonnel()) return;
+  const name = document.getElementById('per-t-name').value.trim();
+  if (!name) { alert('Team name is required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+  const row = {
+    name,
+    description: document.getElementById('per-t-desc').value.trim()  || null,
+    color:       document.getElementById('per-t-color').value        || '#1e88e5',
+    logo_url:    document.getElementById('per-t-logo').value.trim()  || null,
+    updated_by:  who,
+    updated_at:  new Date().toISOString(),
+  };
+
+  if (personTeamEditingId) {
+    const { error } = await sb.from('personnel_teams').update(row).eq('id', personTeamEditingId);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('personnel', 'Team Updated', name, { name });
+  } else {
+    const { error } = await sb.from('personnel_teams').insert(row);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('personnel', 'Team Added', name, { name });
+  }
+  await loadPersonnelTeams();
+  closeTeamForm();
+  renderPersonnelTeams();
+  renderPersonnelRoster();
+}
+
+async function deleteTeam(id) {
+  if (!canEditPersonnel()) return;
+  const t = personnelTeams.find(x => String(x.id) === String(id || personTeamEditingId));
+  if (!t) return;
+  const memberCount = personnelRoster.filter(p => String(p.team_id) === String(t.id)).length;
+  const msg = memberCount > 0
+    ? `"${t.name}" has ${memberCount} member(s) assigned. Delete the team anyway? They'll become unassigned.`
+    : `Delete team "${t.name}"?`;
+  if (!confirm(msg)) return;
+  const { error } = await sb.from('personnel_teams').delete().eq('id', t.id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  logEvent('personnel', 'Team Deleted', t.name, { name: t.name });
+  await loadPersonnelTeams();
+  await loadPersonnelRoster(); // team_id FK likely set null by DB, refresh to reflect
+  closeTeamForm();
+  renderPersonnelTeams();
+  renderPersonnelRoster();
+}
+
 function switchInventoryTab(tab) {
   ['list','custody','log'].forEach(t => {
     document.getElementById(`invtab-${t}`)?.classList.toggle('active', t === tab);
@@ -16671,6 +17179,8 @@ const ALL_MODULES = [
   { key: 'incidents',  label: 'Incident Management',   icon: '🚨', desc: 'Named incidents tying all resources together' },
   { key: 'commreq',    label: 'Comm Plan Req',         icon: '📝', desc: 'Public communications plan request intake' },
   { key: 'resources',  label: 'Resources',             icon: '🚒', desc: 'Vehicles, equipment, cache tracking' },
+  { key: 'uas',        label: 'UAS Manager',           icon: '🛸', desc: 'Drone fleet, pilot roster, mission call-outs' },
+  { key: 'personnel',  label: 'Personnel',             icon: '👥', desc: 'Team rosters, certifications, contact info' },
   { key: 'admin',      label: 'Administration',        icon: '⚙',  desc: 'Users, system log, import, radio config' },
 ];
 
@@ -16797,6 +17307,8 @@ async function loadAllData() {
     loadUasFleet(),
     loadUasPersonnel(),
     loadUasMissions(),
+    loadPersonnelTeams(),
+    loadPersonnelRoster(),
   ]);
 }
 
@@ -17822,6 +18334,27 @@ if ('serviceWorker' in navigator) {
                 <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">Users, audit, system settings</div>
               </div>
               <label class="toggle-switch"><input type="checkbox" id="uf-can-admin" onchange=""><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+              <div>
+                <div style="font-size:14px;color:var(--text-primary);font-weight:500;">🛸 UAS Manager</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">Drone fleet, pilots, missions</div>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="uf-can-uas" onchange=""><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);grid-column:span 2;">
+              <div>
+                <div style="font-size:14px;color:var(--text-primary);font-weight:500;">👥 Personnel</div>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:1px;">Team rosters, certifications, contact info</div>
+              </div>
+              <div style="display:flex;gap:14px;align-items:center;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="uf-can-personnel" onchange="if(!this.checked)document.getElementById('uf-can-personnel-edit').checked=false;"> View
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);cursor:pointer;">
+                  <input type="checkbox" id="uf-can-personnel-edit" onchange="if(this.checked)document.getElementById('uf-can-personnel').checked=true;"> Editor
+                </label>
+              </div>
             </div>
           </div>
           <div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Note: Dispatch Admin role automatically has access to all modules.</div>
@@ -19237,6 +19770,123 @@ if ('serviceWorker' in navigator) {
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-secondary" onclick="closeUasMissionForm()">Cancel</button>
         <button class="btn-primary" onclick="saveUasMission()">Save Mission</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PERSONNEL: PERSON MODAL ── -->
+<div class="modal-overlay" id="personModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="personModalTitle">Add Person</div>
+      <button class="modal-close" onclick="closePersonForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Name *</label>
+          <input class="form-input" id="per-p-name" placeholder="Full name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Role / Title</label>
+          <input class="form-input" id="per-p-roletitle" placeholder="e.g. COML, Dispatcher, Crew Chief">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Team</label>
+          <select class="form-select" id="per-p-team"></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="per-p-status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="leave">On Leave</option>
+          </select>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Contact Info</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Phone</label>
+            <input class="form-input" id="per-p-phone" placeholder="(xxx) xxx-xxxx">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="per-p-email" type="email" placeholder="name@agency.gov">
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Certification</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Certification / License #</label>
+            <input class="form-input" id="per-p-certnum" style="font-family:var(--font-data);" placeholder="e.g. COML cert #, Part 107 #">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Expires</label>
+            <input class="form-input" id="per-p-certexp" type="date">
+          </div>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="per-p-notes" style="height:60px;" placeholder="Specialized training, availability, endorsements…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="personDeleteBtn" style="display:none;" onclick="deletePerson()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closePersonForm()">Cancel</button>
+        <button class="btn-primary" onclick="savePerson()">Save Person</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PERSONNEL: TEAM MODAL ── -->
+<div class="modal-overlay" id="teamModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title" id="teamModalTitle">Add Team</div>
+      <button class="modal-close" onclick="closeTeamForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Team Name *</label>
+          <input class="form-input" id="per-t-name" placeholder="e.g. Field Comm, UAS, Logistics">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="per-t-desc" placeholder="Short description of this team's role">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Accent Color</label>
+          <input class="form-input" id="per-t-color" type="color" value="#1e88e5" style="height:38px;padding:4px;">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Logo URL <span style="font-weight:400;color:var(--text-dim);">optional</span></label>
+          <input class="form-input" id="per-t-logo" placeholder="https://…/logo.png">
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">Paste a direct image URL (PNG/JPG/SVG hosted elsewhere). Shown next to team members on the roster and on the team card.</div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="teamDeleteBtn" style="display:none;" onclick="deleteTeam()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeTeamForm()">Cancel</button>
+        <button class="btn-primary" onclick="saveTeam()">Save Team</button>
       </div>
     </div>
   </div>
