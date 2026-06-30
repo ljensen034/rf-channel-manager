@@ -1483,6 +1483,40 @@
     flex-direction: column;
   }
 
+  #troDashboardOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg-deep);
+    flex-direction: column;
+  }
+  #troDashboardOverlay .bb-close-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 10000;
+    pointer-events: none;
+  }
+  #troDashboardCloseBtn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    pointer-events: auto;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-family: var(--font-data);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #troDashboardCloseBtn:hover { color: var(--text-primary); border-color: var(--border-lit); }
+
   #bigBoardOverlay .bb-close-bar {
     position: absolute;
     top: 0;
@@ -3639,6 +3673,14 @@
   <div id="bigBoardContent" style="width:100%;flex:1;overflow-y:auto;display:flex;flex-direction:column;"></div>
 </div>
 
+<!-- ── TRO OPERATIONAL DASHBOARD — fullscreen, decision-maker glance view ── -->
+<div id="troDashboardOverlay">
+  <div class="bb-close-bar">
+    <button id="troDashboardCloseBtn" onclick="closeTroDashboard()" title="Close (Esc)">✕ Close</button>
+  </div>
+  <div id="troDashboardContent" style="width:100%;height:100%;display:flex;flex-direction:column;"></div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-bg-grid"></div>
@@ -4100,6 +4142,7 @@
           <div class="tab-page-subtitle">Live status across channels, talkgroups, reservations, and incidents</div>
         </div>
         <div class="tab-page-actions">
+          <button class="btn-secondary" onclick="openTroDashboard()">🛰 Operational Dashboard</button>
           <button class="btn-secondary" onclick="openImpactDashboard()">⚡ Operational Impact</button>
         </div>
       </div>
@@ -5323,6 +5366,23 @@
           <input class="form-input" id="f-agency" placeholder="LAFD, LAPD, CalFire…">
         </div>
       </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">TRO Assignment<span class="form-label-hint">optional — used by the Operational Dashboard</span></label>
+          <select class="form-select" id="f-tro">
+            <option value="">— None —</option>
+            <option value="SOUTH">SOUTH</option>
+            <option value="CENTRAL">CENTRAL</option>
+            <option value="SGV">SGV</option>
+            <option value="NORTH">NORTH</option>
+            <option value="COUNTYWIDE UHF">COUNTYWIDE UHF</option>
+            <option value="COUNTYWIDE VHF">COUNTYWIDE VHF</option>
+            <option value="LARTCS UHF">LARTCS UHF</option>
+            <option value="LARTCS VHF">LARTCS VHF</option>
+            <option value="LARTCS 800">LARTCS 800</option>
+          </select>
+        </div>
+      </div>
       <div class="form-row single" id="f-activefor-row" style="display:none;">
         <div class="form-field">
           <label class="form-label">In Use / Reserved For<span class="form-label-hint">event or incident name</span></label>
@@ -5703,6 +5763,7 @@ function rowToChannel(row) {
     power:         row.power       || '',
     function:      row.function    || '—',
     agency:        row.agency      || '—',
+    troAssignment: row.tro_assignment || '',
     group:         row.group       || '',
     activeFor:     row.active_for  || '',
     warning:       row.warning     || '',
@@ -5728,6 +5789,7 @@ function channelToRow(ch, userName) {
     power:       ch.power     || '',
     function:    ch.function,
     agency:      ch.agency,
+    tro_assignment: ch.troAssignment || null,
     notes:       ch.notes,
     updated_by:  userName || '',
     updated_at:  new Date().toISOString(),
@@ -7635,6 +7697,11 @@ function openChannelDetailModal(id) {
         <div class="detail-label">Agency</div>
         <div class="detail-value" style="font-size:15px;">${ch.agency || '—'}</div>
       </div>
+      ${ch.troAssignment ? `
+      <div class="detail-section">
+        <div class="detail-label">TRO Assignment</div>
+        <div class="detail-value" style="font-size:15px;color:var(--accent);font-weight:600;">${escHtml(ch.troAssignment)}</div>
+      </div>` : ''}
       ${ch.activeFor ? `
       <div class="detail-section" style="grid-column:span 2;">
         <div class="detail-label">${ch.status === 'reserved' ? 'Reserved For' : 'In Use For'}</div>
@@ -7743,6 +7810,7 @@ function openAddModal() {
   document.getElementById('f-band').value   = 'VHF';
   document.getElementById('f-bw').value     = 'W';
   document.getElementById('f-adm').value    = 'A';
+  document.getElementById('f-tro').value    = '';
   const cc = document.getElementById('f-conflict-check');
   if (cc) cc.checked = true;
   document.getElementById('conflictWarning')?.remove();
@@ -7762,6 +7830,7 @@ function openEditModal(id) {
   document.getElementById('f-bw').value          = ch.bandwidth || 'W';
   document.getElementById('f-adm').value         = ch.adm || 'A';
   document.getElementById('f-power').value       = ch.power || '';
+  document.getElementById('f-tro').value         = ch.troAssignment || '';
   populateChannelFunctionDropdown(ch.function !== '—' ? ch.function : '');
   document.getElementById('f-agency').value      = ch.agency !== '—' ? ch.agency : '';
   document.getElementById('f-activefor').value   = ch.activeFor || '';
@@ -7809,6 +7878,7 @@ async function saveChannel() {
     power:           document.getElementById('f-power').value.trim()     || '',
     function:        document.getElementById('f-function').value.trim()  || '—',
     agency:          document.getElementById('f-agency').value.trim()    || '—',
+    tro_assignment:  document.getElementById('f-tro').value               || null,
     // Only meaningful while In Use or Reserved — cleared automatically if the
     // channel is being set back to Available, so a stale event/incident name
     // never lingers on a channel that's free again.
@@ -9600,6 +9670,113 @@ function closeBigBoard() {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
+// ── TRO Operational Dashboard — single-glance available-channel-by-zone view ──
+const TRO_ZONES = [
+  'COUNTYWIDE UHF', 'COUNTYWIDE VHF', 'SOUTH', 'CENTRAL', 'SGV', 'NORTH',
+  'LARTCS UHF', 'LARTCS VHF', 'LARTCS 800',
+];
+
+let troDashboardInterval = null;
+
+function openTroDashboard() {
+  renderTroDashboard();
+  const overlay = document.getElementById('troDashboardOverlay');
+  overlay.style.display = 'flex';
+  if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+
+  // Auto-refresh every 30s, same cadence as Big Board
+  clearInterval(troDashboardInterval);
+  troDashboardInterval = setInterval(renderTroDashboard, 30000);
+}
+
+function closeTroDashboard() {
+  clearInterval(troDashboardInterval);
+  troDashboardInterval = null;
+  const overlay = document.getElementById('troDashboardOverlay');
+  overlay.style.display = 'none';
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+function renderTroDashboard() {
+  const content = document.getElementById('troDashboardContent');
+  if (!content) return;
+
+  // Group available channels by TRO zone. Channels with no TRO assignment
+  // are excluded from zone rows but counted separately so nothing silently vanishes.
+  const byZone = {};
+  TRO_ZONES.forEach(z => byZone[z] = []);
+  let unassignedCount = 0;
+
+  channels.forEach(ch => {
+    if (ch.status !== 'available') return;
+    if (ch.troAssignment && byZone[ch.troAssignment]) {
+      byZone[ch.troAssignment].push(ch);
+    } else if (!ch.troAssignment) {
+      unassignedCount++;
+    }
+  });
+
+  // LARTCS is requested as a single combined total on the left summary,
+  // even though UHF/VHF/800 are tracked and displayed as distinct rows.
+  const lartcsTotal = byZone['LARTCS UHF'].length + byZone['LARTCS VHF'].length + byZone['LARTCS 800'].length;
+  const grandTotal  = TRO_ZONES.reduce((sum, z) => sum + byZone[z].length, 0);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { timeZone:'America/Los_Angeles', weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:false });
+
+  const zoneRow = (label, count) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--font-data);font-size:1.6vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">${label}</span>
+      <span style="font-family:var(--font-data);font-size:1.9vw;font-weight:700;color:${count > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${count}</span>
+    </div>`;
+
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;height:100%;padding:1.4vw 2vw;box-sizing:border-box;">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1vw;flex-shrink:0;">
+        <div>
+          <div style="font-family:var(--font-data);font-size:1.8vw;font-weight:700;color:var(--text-primary);letter-spacing:0.03em;">🛰 OPERATIONAL DASHBOARD</div>
+          <div style="font-family:var(--font-data);font-size:0.95vw;color:var(--text-dim);margin-top:2px;">TRO Channel Availability — ${dateStr} · ${timeStr} PT</div>
+        </div>
+        ${unassignedCount > 0 ? `<div style="font-family:var(--font-data);font-size:0.95vw;color:var(--text-dim);">${unassignedCount} available channel${unassignedCount!==1?'s':''} not assigned to a TRO zone</div>` : ''}
+      </div>
+
+      <!-- Main grid: grand total on the left, zone rows on the right -->
+      <div style="flex:1;display:grid;grid-template-columns:1fr 2fr;gap:1.4vw;min-height:0;">
+
+        <!-- Left: grand total + LARTCS combined -->
+        <div style="display:flex;flex-direction:column;gap:1vw;min-height:0;">
+          <div style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-family:var(--font-data);font-size:1.1vw;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.3vw;">Total Available</div>
+            <div style="font-family:var(--font-data);font-size:6.5vw;font-weight:700;line-height:1;color:var(--status-available);">${grandTotal}</div>
+            <div style="font-family:var(--font-data);font-size:1vw;color:var(--text-dim);margin-top:0.3vw;">across all TRO zones</div>
+          </div>
+          <div style="flex:0 0 auto;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1vw 1.2vw;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--font-data);font-size:1.2vw;font-weight:700;color:var(--text-primary);">LARTCS (Combined)</span>
+            <span style="font-family:var(--font-data);font-size:2.2vw;font-weight:700;color:${lartcsTotal > 0 ? 'var(--status-available)' : 'var(--text-dim)'};">${lartcsTotal}</span>
+          </div>
+        </div>
+
+        <!-- Right: per-zone rows -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:0;">
+          ${zoneRow('COUNTYWIDE UHF', byZone['COUNTYWIDE UHF'].length)}
+          ${zoneRow('COUNTYWIDE VHF', byZone['COUNTYWIDE VHF'].length)}
+          ${zoneRow('SOUTH',          byZone['SOUTH'].length)}
+          ${zoneRow('CENTRAL',        byZone['CENTRAL'].length)}
+          ${zoneRow('SGV',            byZone['SGV'].length)}
+          ${zoneRow('NORTH',          byZone['NORTH'].length)}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;">
+            <span style="font-family:var(--font-data);font-size:1.6vw;font-weight:700;letter-spacing:0.04em;color:var(--text-primary);">LARTCS UHF / VHF / 800</span>
+            <span style="font-family:var(--font-data);font-size:1.5vw;font-weight:600;color:var(--text-secondary);">${byZone['LARTCS UHF'].length} / ${byZone['LARTCS VHF'].length} / ${byZone['LARTCS 800'].length}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ─────────────────────────────────────────────
 // KEYBOARD SHORTCUTS
 // ─────────────────────────────────────────────
@@ -9634,6 +9811,8 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     const bigBoard = document.getElementById('bigBoardOverlay');
     if (bigBoard && bigBoard.style.display !== 'none') { closeBigBoard(); return; }
+    const troBoard = document.getElementById('troDashboardOverlay');
+    if (troBoard && troBoard.style.display !== 'none') { closeTroDashboard(); return; }
     const openModal = document.querySelector('.modal-overlay.open');
     if (openModal) { openModal.classList.remove('open'); return; }
     return;
