@@ -11,7 +11,7 @@
 
 <!-- iOS-specific install behavior — Safari ignores manifest.json display
      mode and needs these to launch standalone (no address bar) from the
-     home screen, and to use a proper icon instead of a screenshot thumbnail. -->
+     home screen, and to use a proper icon instead of a screenshot thumbnaila. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="COMM CENTER">
@@ -626,7 +626,7 @@
 
   .channel-row {
     display: grid;
-    grid-template-columns: 22px 6px 110px 105px 1fr 130px 115px 100px;
+    grid-template-columns: 22px 6px 110px 105px 1fr 220px 130px 115px;
     align-items: center;
     gap: 12px;
     padding: 9px 12px;
@@ -772,7 +772,7 @@
   /* grid header */
   .channel-grid-header {
     display: grid;
-    grid-template-columns: 22px 6px 110px 105px 1fr 130px 115px 100px 80px;
+    grid-template-columns: 22px 6px 110px 105px 1fr 220px 130px 115px;
     gap: 12px;
     padding: 4px 12px 8px;
     font-family: var(--font-data);
@@ -2347,20 +2347,17 @@
   }
 
   .channel-warning-badge {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 4px;
+    display: inline-block;
     font-family: var(--font-data);
     font-size: 11px;
     font-weight: 600;
-    text-transform: none;
-    letter-spacing: 0.02em;
     padding: 2px 6px;
     border-radius: 2px;
     background: rgba(255,152,0,0.15);
     color: #ff9800;
     border: 1px solid rgba(255,152,0,0.35);
     white-space: normal;
+    word-break: break-word;
     line-height: 1.4;
     cursor: default;
   }
@@ -4482,6 +4479,7 @@
             📥 Pending Requests <span class="nav-badge" id="icrPendingBadge" style="display:none;margin-left:4px;">0</span>
           </button>
           <button class="btn-secondary" style="font-size:14px;padding:5px 14px;" onclick="openIcrForm()">📝 Request Channel</button>
+          <button class="btn-secondary" id="svbtn-printday" style="font-size:14px;padding:5px 14px;" onclick="printScheduleDay()">🖨 Print Day</button>
           <button class="btn-primary" style="font-size:14px;padding:5px 14px;" onclick="openSchedModal(null)">+ New Reservation</button>
         </div>
       </div>
@@ -7338,6 +7336,12 @@ function setFilter(filter, btn) {
 
 function renderChannels() {
   const query = document.getElementById('searchBox').value.toLowerCase();
+  // Build a set of channel IDs that are designated command channels for active incidents
+  const commandChannelIds = new Set(
+    incidents.filter(i => i.status !== 'closed' && i.command_channel_id)
+             .map(i => String(i.command_channel_id))
+  );
+
   let filtered = channels.filter(c => {
     if (currentFilter !== 'all' && c.status !== currentFilter) return false;
     if (query) {
@@ -7381,12 +7385,12 @@ function renderChannels() {
     const hdr = document.getElementById('channelGridHeader');
     if (hdr) {
       hdr.innerHTML = isDispatcher
-        ? `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Channel</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Notes</span><span></span><span></span>`
-        : `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Designator</span><span>Frequency</span><span>Function / Assignment</span><span>Status</span><span>Agency</span><span>Tone / NAC</span><span>Mode</span>`;
+        ? `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Channel</span><span>Function / Assignment</span><span>Warning</span><span>Status</span><span>Agency</span><span>Notes</span>`
+        : `<span><input type="checkbox" id="chBulkSelectAll" onclick="toggleAllChannelSelect(this)" title="Select all"></span><span></span><span>Designator</span><span>Frequency</span><span>Function / Assignment</span><span>Warning</span><span>Status</span><span>Agency</span>`;
       // Sync grid-template-columns to match channel-row for this view mode
       hdr.style.gridTemplateColumns = isDispatcher
-        ? '22px 6px 110px 1fr 130px 115px 1fr 80px 80px'
-        : '22px 6px 110px 105px 1fr 130px 115px 100px 80px';
+        ? '22px 6px 110px 1fr 220px 130px 115px 1fr'
+        : '22px 6px 110px 105px 1fr 220px 130px 115px';
     }
 
     grid.innerHTML = filtered.map(ch => {
@@ -7396,19 +7400,18 @@ function renderChannels() {
       if (isDispatcher) {
         // Dispatcher view: no frequency, tone, mode — operational fields only
         return `
-        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" style="grid-template-columns:22px 6px 110px 1fr 130px 115px 1fr 80px 80px;" onclick="selectChannel(${ch.id})">
+        <div class="channel-row ${selectedId === ch.id ? 'selected' : ''}" style="grid-template-columns:22px 6px 110px 1fr 220px 130px 115px 1fr;" onclick="selectChannel(${ch.id})">
           <input type="checkbox" class="ch-bulk-checkbox" data-id="${ch.id}" onclick="event.stopPropagation();toggleChannelSelect(${ch.id},this)" ${bulkSelectedChannels.has(ch.id)?'checked':''}>
           <div class="status-bar ${ch.status}"></div>
           <div class="ch-designator-wrap">
-            <span class="ch-designator">${ch.designator}</span>
+            <span class="ch-designator">${commandChannelIds.has(String(ch.id)) ? '⭐ ' : ''}${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict">⚠ CONFLICT</span>` : ''}
-            ${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : ''}
           </div>
           <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
+          <div>${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : '<span style="color:var(--text-dim);font-size:13px;">—</span>'}</div>
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
           <div class="ch-agency" style="font-size:14px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
           <div style="font-size:13px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.notes || '—'}</div>
-          <div></div><div></div>
         </div>`;
       } else {
         // COML view: full technical detail
@@ -7417,15 +7420,14 @@ function renderChannels() {
           <input type="checkbox" class="ch-bulk-checkbox" data-id="${ch.id}" onclick="event.stopPropagation();toggleChannelSelect(${ch.id},this)" ${bulkSelectedChannels.has(ch.id)?'checked':''}>
           <div class="status-bar ${ch.status}"></div>
           <div class="ch-designator-wrap">
-            <span class="ch-designator">${ch.designator}</span>
+            <span class="ch-designator">${commandChannelIds.has(String(ch.id)) ? '⭐ ' : ''}${ch.designator}</span>
             ${conflicts.length ? `<span class="conflict-badge" title="Frequency conflict with: ${conflicts.map(c=>c.designator).join(', ')}">⚠ CONFLICT</span>` : ''}
-            ${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : ''}
           </div>
           <div class="ch-freq">${ch.freq} MHz</div>
           <div class="ch-assignment">${ch.function || '<span style="color:var(--text-dim)">—</span>'}${ch.activeFor ? ` <span style="color:var(--accent);font-weight:600;">· ${escHtml(ch.activeFor)}</span>` : ''}</div>
+          <div>${ch.warning ? `<span class="channel-warning-badge">⚠ ${escHtml(ch.warning)}</span>` : '<span style="color:var(--text-dim);font-size:13px;">—</span>'}</div>
           <div><span class="status-pill ${ch.status}">${statusLabels[ch.status]}</span></div>
           <div class="ch-agency" style="font-size:14px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ch.agency || '—'}</div>
-          <div class="ch-tone">${ch.tone || '—'}</div>
         </div>`;
       }
     }).join('');
@@ -10403,13 +10405,34 @@ function toggleChecklistItem(selectId, containerId, index) {
   if (!opt) return;
   opt.selected = !opt.selected;
 
-  // Re-render just the toggled row's visual state (cheap, avoids full re-render)
   const box = document.getElementById(containerId);
   const row = box?.querySelector(`[data-opt-index="${index}"]`);
   if (row) row.classList.toggle('checked', opt.selected);
 
-  // Fire the native select's change event so any existing onchange handler still runs
   sel.dispatchEvent(new Event('change', { bubbles: true }));
+
+  // Keep command channel dropdown in sync when incident channel checklist changes
+  if (selectId === 'inc-channels') syncCommandChannelDropdown();
+}
+
+// Rebuild the Command Channel dropdown to match currently-selected channels
+function syncCommandChannelDropdown(currentValue) {
+  const sel    = document.getElementById('inc-channels');
+  const cmdSel = document.getElementById('inc-command-ch');
+  const wrap   = document.getElementById('inc-command-ch-wrap');
+  if (!sel || !cmdSel || !wrap) return;
+
+  const selected = [...sel.options].filter(o => o.selected);
+  wrap.style.display = selected.length > 0 ? 'block' : 'none';
+
+  const prev = currentValue !== undefined ? currentValue : cmdSel.value;
+  cmdSel.innerHTML = '<option value="">— None designated —</option>' +
+    selected.map(o => {
+      const ch = channels.find(c => String(c.id) === String(o.value));
+      const label = ch ? `${ch.designator} — ${ch.freq} MHz` : o.text;
+      return `<option value="${o.value}">${label}</option>`;
+    }).join('');
+  if (prev) cmdSel.value = prev;
 }
 
 // Filter the visible checklist items by query string without touching the
@@ -11563,12 +11586,14 @@ function rowToReservation(row) {
   // channel_ids stored as jsonb array
   const channelIds = Array.isArray(row.channel_ids) ? row.channel_ids.map(String)
     : (row.channel_id ? [String(row.channel_id)] : []);
+  const talkgroupIds = Array.isArray(row.talkgroup_ids) ? row.talkgroup_ids.map(String) : [];
   return {
     id:                String(row.id),
     title:             row.title              || '',
     channelIds,
     channelId:         channelIds[0]          || '',
     channelDesignator: row.channel_designator || '',
+    talkgroupIds,
     start:             row.start,
     end:               row.end_time,
     requestor:         row.requestor          || '',
@@ -11595,6 +11620,7 @@ function reservationToRow(data) {
     channel_ids:        data.channelIds,
     channel_id:         data.channelIds?.[0]  || null,
     channel_designator: data.channelDesignator || '',
+    talkgroup_ids:      data.talkgroupIds      || [],
     start:              data.start,
     end_time:           data.end,
     requestor:          data.requestor        || '',
@@ -11613,6 +11639,7 @@ function reservationToRow(data) {
     city:               data.city             || '',
     updated_by:         who,
     updated_at:         new Date().toISOString(),
+    recur_group_id:     data.recurGroupId || null,
   };
 }
 
@@ -11814,6 +11841,84 @@ function isActiveNow(r) {
   return new Date(r.start).getTime() <= now && new Date(r.end).getTime() >= now;
 }
 
+function printScheduleDay() {
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+  const todayLabel = new Date().toLocaleDateString('en-US', {
+    timeZone:'America/Los_Angeles', weekday:'long', month:'long', day:'numeric', year:'numeric'
+  });
+
+  const todays = reservations
+    .filter(r => {
+      const ds = new Date(r.start).toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
+      return ds === todayStr;
+    })
+    .sort((a,b) => new Date(a.start) - new Date(b.start));
+
+  const fmtT = dt => new Date(dt).toLocaleTimeString('en-US', {
+    timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true
+  });
+
+  const rows = todays.length ? todays.map(r => {
+    const chNames = (r.channelIds || []).map(id => {
+      const ch = channels.find(c => String(c.id) === String(id));
+      return ch ? ch.designator : id;
+    }).join(', ');
+    const tgNames = (r.talkgroupIds || []).map(id => {
+      const tg = talkgroups.find(t => String(t.id) === String(id));
+      return tg ? tg.tgId : id;
+    }).join(', ');
+    const resources = [chNames, tgNames].filter(Boolean).join(' · ');
+    const meta = [
+      r.requestor ? 'Req: ' + r.requestor : '',
+      r.agency    ? r.agency               : '',
+      r.coml      ? 'COML: ' + r.coml      : '',
+      r.priority && r.priority !== 'Normal' ? r.priority : '',
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <tr>
+        <td style="padding:7px 10px;border:1px solid #ccc;font-family:monospace;white-space:nowrap;">${fmtT(r.start)}<br><span style="color:#666;">→ ${fmtT(r.end)}</span></td>
+        <td style="padding:7px 10px;border:1px solid #ccc;font-weight:600;">${r.title}</td>
+        <td style="padding:7px 10px;border:1px solid #ccc;font-family:monospace;">${resources || '—'}</td>
+        <td style="padding:7px 10px;border:1px solid #ccc;color:#444;font-size:12px;">${meta || ''}</td>
+        <td style="padding:7px 10px;border:1px solid #ccc;color:#666;font-size:12px;">${r.notes || ''}</td>
+      </tr>`;
+  }).join('') : `<tr><td colspan="5" style="padding:20px;text-align:center;color:#888;border:1px solid #ccc;">No reservations scheduled for today.</td></tr>`;
+
+  const agencyName = currentUser?.agencyName || 'COMM CENTER';
+  const printedBy  = currentUser?.name ? ` · Printed by ${currentUser.name}` : '';
+  const printTime  = new Date().toLocaleTimeString('en-US', { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', hour12:true });
+
+  const html = `<!DOCTYPE html><html><head><title>Schedule — ${todayLabel}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 13px; margin: 24px; color: #111; }
+    h1   { font-size: 18px; margin: 0 0 2px; }
+    .sub { font-size: 12px; color: #555; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th   { background: #1a237e; color: #fff; padding: 8px 10px; text-align: left; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid #1a237e; }
+    tr:nth-child(even) td { background: #f5f5f5; }
+    @media print {
+      body { margin: 12px; }
+      button { display: none; }
+    }
+  </style></head><body>
+  <h1>${agencyName} — Daily Schedule</h1>
+  <div class="sub">${todayLabel}${printedBy} · Generated ${printTime} PT</div>
+  <table>
+    <thead><tr>
+      <th>Time</th><th>Title / Event</th><th>Channels / TGs</th><th>Requestor · Agency · COML</th><th>Notes</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="margin-top:16px;font-size:11px;color:#888;">Total: ${todays.length} reservation${todays.length!==1?'s':''} · ${agencyName} COMM CENTER</div>
+  <script>window.onload = () => window.print();<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
 function openSchedModal(id) {
   schedEditingId = id;
   const deleteBtn = document.getElementById('sr-delete-btn');
@@ -11824,6 +11929,12 @@ function openSchedModal(id) {
     const band = c.band || detectBand(c.freq || '');
     return `<option value="${c.id}" data-designator="${c.designator}" data-freq="${c.freq}" data-band="${band}">${c.designator} — ${c.freq} MHz [${band}]</option>`;
   }).join('');
+
+  // Populate talkgroup select
+  const tgSel = document.getElementById('sr-talkgroup');
+  tgSel.innerHTML = talkgroups.map(t =>
+    `<option value="${t.id}">${t.tgId} — ${t.name}${t.system ? ' [' + t.system + ']' : ''}</option>`
+  ).join('');
 
   const clearRisk = () => {
     document.getElementById('sr-risk-panel').style.display = 'none';
@@ -11854,6 +11965,8 @@ function openSchedModal(id) {
     document.getElementById('sr-city').value                 = r.city   || '';
     const ids = r.channelIds || (r.channelId ? [r.channelId] : []);
     [...sel.options].forEach(o => { o.selected = ids.includes(o.value); });
+    const tgIds = r.talkgroupIds || [];
+    [...tgSel.options].forEach(o => { o.selected = tgIds.map(String).includes(String(o.value)); });
     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
   } else {
     document.getElementById('schedModalTitle').textContent   = 'New Reservation';
@@ -11875,6 +11988,7 @@ function openSchedModal(id) {
     const labelEl = document.getElementById('sr-band-label');
     if (labelEl) labelEl.innerHTML = `Primary Band <span style="font-weight:400;color:var(--text-dim);">auto-detected from channels</span>`;
     [...sel.options].forEach(o => { o.selected = false; });
+    [...tgSel.options].forEach(o => { o.selected = false; });
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const ds = tomorrow.toLocaleDateString('en-CA', { timeZone:'America/Los_Angeles' });
@@ -11883,6 +11997,16 @@ function openSchedModal(id) {
     if (deleteBtn) deleteBtn.style.display = 'none';
   }
   renderChecklistFromSelect('sr-channel', 'sr-channel-checklist'); const _srS = document.getElementById('sr-channel-search'); if (_srS) _srS.value = '';
+  renderChecklistFromSelect('sr-talkgroup', 'sr-talkgroup-checklist'); const _srTgS = document.getElementById('sr-talkgroup-search'); if (_srTgS) _srTgS.value = '';
+  // Recurrence — only for new reservations; hide for edits
+  const recurWrap = document.getElementById('sr-recurrence-wrap');
+  if (recurWrap) recurWrap.style.display = id ? 'none' : 'block';
+  document.getElementById('sr-recur-type').value = 'none';
+  document.getElementById('sr-recur-until').value = '';
+  document.getElementById('sr-recur-until-wrap').style.display = 'none';
+  document.getElementById('sr-recur-days-wrap').style.display  = 'none';
+  document.getElementById('sr-recur-info').style.display       = 'none';
+  document.querySelectorAll('input[name="sr-recur-day"]').forEach(cb => cb.checked = false);
   clearRisk();
   showOnboardingIfNeeded('conflict');
   document.getElementById('schedModal').classList.add('open');
@@ -12097,6 +12221,57 @@ function onSchedChannelChange() {
 
   // Now run the risk engine (it will also read the updated band)
   runSimplexRiskEngine();
+}
+
+function onRecurTypeChange() {
+  const v = document.getElementById('sr-recur-type').value;
+  document.getElementById('sr-recur-until-wrap').style.display = v !== 'none' ? 'flex' : 'none';
+  document.getElementById('sr-recur-days-wrap').style.display  = v === 'custom' ? 'block' : 'none';
+  updateRecurInfo();
+}
+
+function updateRecurInfo() {
+  const type    = document.getElementById('sr-recur-type').value;
+  const until   = document.getElementById('sr-recur-until').value;
+  const infoEl  = document.getElementById('sr-recur-info');
+  const startV  = document.getElementById('sr-start').value;
+  if (!infoEl) return;
+  if (type === 'none' || !until || !startV) { infoEl.style.display = 'none'; return; }
+
+  const occurrences = buildRecurDates(startV, document.getElementById('sr-end').value, type, until);
+  infoEl.style.display = 'block';
+  infoEl.textContent = `Will create ${occurrences.length} reservation${occurrences.length !== 1 ? 's' : ''} (${occurrences.length ? new Date(occurrences[0].start).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' → ' + new Date(occurrences[occurrences.length-1].start).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'none'}).`;
+}
+
+// Returns array of {start, end} ISO strings for each occurrence
+function buildRecurDates(startV, endV, type, untilDate) {
+  const startISO = ptInputToISO(startV);
+  const endISO   = ptInputToISO(endV);
+  const duration = new Date(endISO) - new Date(startISO); // ms
+  const until    = new Date(untilDate + 'T23:59:59');
+  const results  = [];
+
+  let cur = new Date(startISO);
+  const selectedDays = type === 'custom'
+    ? [...document.querySelectorAll('input[name="sr-recur-day"]:checked')].map(cb => Number(cb.value))
+    : null;
+
+  while (cur <= until && results.length < 365) {
+    const dayOfWeek = new Date(cur.toLocaleString('en-US', { timeZone:'America/Los_Angeles' })).getDay();
+    let include = false;
+    if (type === 'daily')  include = true;
+    if (type === 'weekly') include = dayOfWeek === new Date(new Date(startISO).toLocaleString('en-US', { timeZone:'America/Los_Angeles' })).getDay();
+    if (type === 'custom') include = selectedDays.includes(dayOfWeek);
+
+    if (include) {
+      results.push({
+        start: cur.toISOString(),
+        end:   new Date(cur.getTime() + duration).toISOString(),
+      });
+    }
+    cur = new Date(cur.getTime() + 24 * 60 * 60 * 1000); // advance 1 day
+  }
+  return results;
 }
 
 function closeSchedModal() {
@@ -12605,6 +12780,7 @@ async function saveReservation() {
   const startV  = document.getElementById('sr-start').value;
   const endV    = document.getElementById('sr-end').value;
   const sel     = document.getElementById('sr-channel');
+  const tgSel   = document.getElementById('sr-talkgroup');
   const errEl   = document.getElementById('sr-conflict-warn');
   errEl.style.display = 'none';
 
@@ -12613,10 +12789,15 @@ async function saveReservation() {
   const channelIds   = selectedOpts.map(o => o.value);
   const channelDesignators = selectedOpts.map(o => o.dataset.designator || o.text.split(' — ')[0]);
 
-  if (!title)             { errEl.textContent = '⚠ Title is required.';             errEl.style.display='block'; return; }
-  if (!channelIds.length) { errEl.textContent = '⚠ Select at least one channel.';   errEl.style.display='block'; return; }
-  if (!startV)            { errEl.textContent = '⚠ Start date/time is required.';   errEl.style.display='block'; return; }
-  if (!endV)              { errEl.textContent = '⚠ End date/time is required.';     errEl.style.display='block'; return; }
+  // Gather selected talkgroup IDs
+  const selectedTgOpts = [...tgSel.options].filter(o => o.selected);
+  const talkgroupIds   = selectedTgOpts.map(o => o.value);
+  const talkgroupLabels = selectedTgOpts.map(o => o.text.split(' — ')[0]);
+
+  if (!title)                                     { errEl.textContent = '⚠ Title is required.';                         errEl.style.display='block'; return; }
+  if (!channelIds.length && !talkgroupIds.length) { errEl.textContent = '⚠ Select at least one channel or talkgroup.'; errEl.style.display='block'; return; }
+  if (!startV)                                    { errEl.textContent = '⚠ Start date/time is required.';              errEl.style.display='block'; return; }
+  if (!endV)                                      { errEl.textContent = '⚠ End date/time is required.';                errEl.style.display='block'; return; }
 
   const startISO = ptInputToISO(startV);
   const endISO   = ptInputToISO(endV);
@@ -12625,10 +12806,14 @@ async function saveReservation() {
     errEl.textContent = '⚠ End time must be after start time.'; errEl.style.display='block'; return;
   }
 
-  // Conflict check — unified engine checks reservations, incidents, and pending/approved
-  // internal channel requests for the same channel(s) during this window
-  const conflicts = checkResourceConflicts(channelIds, 'channel', startISO, endISO, schedEditingId, 'reservation')
-    .filter(c => c.severity === 'hard');
+  // Conflict check channels + talkgroups via unified engine
+  const chConflicts = channelIds.length
+    ? checkResourceConflicts(channelIds, 'channel', startISO, endISO, schedEditingId, 'reservation').filter(c => c.severity === 'hard')
+    : [];
+  const tgConflicts = talkgroupIds.length
+    ? checkResourceConflicts(talkgroupIds, 'talkgroup', startISO, endISO, schedEditingId, 'reservation').filter(c => c.severity === 'hard')
+    : [];
+  const conflicts = [...chConflicts, ...tgConflicts];
   if (conflicts.length) {
     errEl.textContent = '⚠ Conflicts: ' + formatConflictMessages(conflicts).join(' · ');
     errEl.style.display = 'block';
@@ -12636,11 +12821,17 @@ async function saveReservation() {
     return;
   }
 
+  const resourceLabel = [
+    channelDesignators.length ? channelDesignators.join(', ') : null,
+    talkgroupLabels.length    ? talkgroupLabels.join(', ')    : null,
+  ].filter(Boolean).join(' · ');
+
   const data = {
     title,
     channelIds,
     channelId: channelIds[0] || '',
     channelDesignator: channelDesignators.join(', '),
+    talkgroupIds,
     start:          startISO,
     end:            endISO,
     requestor:      document.getElementById('sr-requestor').value.trim(),
@@ -12664,17 +12855,35 @@ async function saveReservation() {
   if (schedEditingId) {
     const { error } = await sb.from('reservations').update(row).eq('id', schedEditingId);
     if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
-    logEvent('reservation', 'Updated', `"${title}" · ${channelDesignators.join(', ')} · ${data.start} → ${data.end}`, {
-      channels: channelDesignators, requestor: data.requestor, agency: data.agency,
+    logEvent('reservation', 'Updated', `"${title}" · ${resourceLabel} · ${data.start} → ${data.end}`, {
+      channels: channelDesignators, talkgroups: talkgroupLabels, requestor: data.requestor, agency: data.agency,
       priority: data.priority, lat: data.lat, lon: data.lon, city: data.city
     });
   } else {
-    const { error } = await sb.from('reservations').insert(row);
-    if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
-    logEvent('reservation', 'Created', `"${title}" · ${channelDesignators.join(', ')} · ${data.start} → ${data.end}`, {
-      channels: channelDesignators, requestor: data.requestor, agency: data.agency,
-      priority: data.priority, lat: data.lat, lon: data.lon, city: data.city, coml: data.coml
-    });
+    const recurType  = document.getElementById('sr-recur-type').value;
+    const recurUntil = document.getElementById('sr-recur-until').value;
+
+    if (recurType !== 'none' && recurUntil) {
+      const occurrences = buildRecurDates(startV, endV, recurType, recurUntil);
+      if (!occurrences.length) {
+        errEl.textContent = '⚠ No occurrences found — check your repeat settings and "until" date.';
+        errEl.style.display = 'block'; return;
+      }
+      const recurGroupId = crypto.randomUUID();
+      const rows = occurrences.map(occ => reservationToRow({ ...data, start: occ.start, end: occ.end, recurGroupId }));
+      const { error } = await sb.from('reservations').insert(rows);
+      if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
+      logEvent('reservation', 'Created (Recurring)', `"${title}" · ${occurrences.length} occurrences · ${recurType} until ${recurUntil}`, {
+        channels: channelDesignators, talkgroups: talkgroupLabels, count: occurrences.length, recurType
+      });
+    } else {
+      const { error } = await sb.from('reservations').insert(row);
+      if (error) { errEl.textContent = '⚠ Error saving: ' + error.message; errEl.style.display='block'; return; }
+      logEvent('reservation', 'Created', `"${title}" · ${resourceLabel} · ${data.start} → ${data.end}`, {
+        channels: channelDesignators, talkgroups: talkgroupLabels, requestor: data.requestor, agency: data.agency,
+        priority: data.priority, lat: data.lat, lon: data.lon, city: data.city, coml: data.coml
+      });
+    }
   }
 
   await loadReservations();
@@ -15408,6 +15617,7 @@ function renderIncidents() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-family:var(--font-data);font-size:11px;font-weight:700;padding:3px 8px;border-radius:2px;background:${st.chip};color:${st.color};border:1px solid ${st.color}44;">${st.label}</span>
+          ${(() => { const cmdCh = inc.command_channel_id ? channels.find(c=>String(c.id)===String(inc.command_channel_id)) : null; return cmdCh ? `<span style="font-family:var(--font-data);font-size:12px;font-weight:700;padding:2px 7px;border-radius:2px;background:rgba(255,196,0,0.15);color:#ffc400;border:1px solid rgba(255,196,0,0.4);">⭐ ${escHtml(cmdCh.designator)}</span>` : ''; })()}
           ${chCount  ?`<span style="font-size:13px;color:var(--text-dim);">📻 ${chCount} ch</span>`:''}
           ${tgCount  ?`<span style="font-size:13px;color:var(--text-dim);">🔢 ${tgCount} tg</span>`:''}
           <button onclick="event.stopPropagation();openIncidentForm('${inc.id}')" class="btn-secondary" style="font-size:13px;padding:3px 10px;">✏ Edit</button>
@@ -15496,6 +15706,7 @@ function openIncidentForm(id) {
   }
 
   renderChecklistFromSelect('inc-channels', 'inc-channels-checklist'); const _incS = document.getElementById('inc-channels-search'); if (_incS) _incS.value = '';
+  syncCommandChannelDropdown(id ? (incidents.find(x=>String(x.id)===String(id))?.command_channel_id || '') : '');
   renderChecklistFromSelect('inc-talkgroups', 'inc-talkgroups-checklist');
 
   // Notes panel only applies to existing incidents — new ones must be saved first
@@ -15649,6 +15860,7 @@ async function saveIncident() {
     coml:             document.getElementById('inc-coml').value.trim()      || null,
     channel_ids:      chIds,
     talkgroup_ids:    tgIds,
+    command_channel_id: document.getElementById('inc-command-ch')?.value || null,
     updated_by:       currentUser?.name || 'Unknown',
     updated_at:       new Date().toISOString(),
     agency_id:        agencyId(),
@@ -17248,22 +17460,31 @@ if ('serviceWorker' in navigator) {
       </div>
       <div class="form-row single">
         <div class="form-field">
-          <label class="form-label">Channels * <span style="font-weight:400;color:var(--text-dim);">(click to select multiple)</span></label>
+          <label class="form-label">Channels <span style="font-weight:400;color:var(--text-dim);">(click to select multiple)</span></label>
           <input class="search-input" id="sr-channel-search" placeholder="Filter channels…" oninput="filterChecklistDisplay('sr-channel','sr-channel-checklist',this.value)" style="margin-bottom:6px;width:100%;box-sizing:border-box;font-size:14px;">
           <select class="form-select" id="sr-channel" multiple style="height:100px;font-family:var(--font-data);font-size:14px;display:none;" onchange="onSchedChannelChange()"></select>
           <div class="checklist-box" id="sr-channel-checklist" style="max-height:150px;"></div>
         </div>
       </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Talkgroups <span style="font-weight:400;color:var(--text-dim);">(click to select multiple)</span></label>
+          <input class="search-input" id="sr-talkgroup-search" placeholder="Filter talkgroups…" oninput="filterChecklistDisplay('sr-talkgroup','sr-talkgroup-checklist',this.value)" style="margin-bottom:6px;width:100%;box-sizing:border-box;font-size:14px;">
+          <select class="form-select" id="sr-talkgroup" multiple style="height:80px;font-family:var(--font-data);font-size:14px;display:none;"></select>
+          <div class="checklist-box" id="sr-talkgroup-checklist" style="max-height:120px;"></div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-dim);margin:-6px 0 10px;">* Select at least one channel or talkgroup.</p>
 
       <!-- Dates -->
       <div class="form-row">
         <div class="form-field">
           <label class="form-label">Start Date &amp; Time *</label>
-          <input class="form-input" id="sr-start" type="datetime-local" onchange="checkTimeConflicts()">
+          <input class="form-input" id="sr-start" type="datetime-local" onchange="checkTimeConflicts();updateRecurInfo()">
         </div>
         <div class="form-field">
           <label class="form-label">End Date &amp; Time *</label>
-          <input class="form-input" id="sr-end" type="datetime-local" onchange="checkTimeConflicts()">
+          <input class="form-input" id="sr-end" type="datetime-local" onchange="checkTimeConflicts();updateRecurInfo()">
         </div>
       </div>
 
@@ -17377,6 +17598,36 @@ if ('serviceWorker' in navigator) {
             <div style="font-size:13px;color:var(--text-dim);">Fire Command &amp; Control notified</div>
           </div>
         </label>
+      </div>
+
+      <!-- Recurrence -->
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;" id="sr-recurrence-wrap">
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">🔁 Recurrence</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Repeat</label>
+            <select class="form-select" id="sr-recur-type" onchange="onRecurTypeChange()">
+              <option value="none">Does not repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly (same day)</option>
+              <option value="custom">Custom days of week</option>
+            </select>
+          </div>
+          <div class="form-field" id="sr-recur-until-wrap" style="display:none;">
+            <label class="form-label">Repeat until *</label>
+            <input class="form-input" id="sr-recur-until" type="date" onchange="updateRecurInfo()">
+          </div>
+        </div>
+        <div id="sr-recur-days-wrap" style="display:none;margin-top:6px;">
+          <label class="form-label" style="margin-bottom:6px;">Days</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=>`
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-data);font-size:13px;">
+              <input type="checkbox" name="sr-recur-day" value="${i}" onchange="updateRecurInfo()"> ${d}
+            </label>`).join('')}
+          </div>
+        </div>
+        <div id="sr-recur-info" style="display:none;font-size:13px;color:var(--text-dim);margin-top:8px;font-family:var(--font-data);"></div>
       </div>
 
       <!-- Comments -->
@@ -18049,6 +18300,12 @@ if ('serviceWorker' in navigator) {
         <select class="form-select" id="inc-channels" multiple style="height:90px;font-family:var(--font-data);font-size:14px;display:none;">
         </select>
         <div class="checklist-box" id="inc-channels-checklist" style="max-height:140px;"></div>
+        <div id="inc-command-ch-wrap" style="display:none;margin-top:8px;padding:8px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:var(--radius);">
+          <label style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:6px;">⭐ Command Channel</label>
+          <select class="form-select" id="inc-command-ch" style="font-family:var(--font-data);font-size:14px;">
+            <option value="">— None designated —</option>
+          </select>
+        </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:10px;">
         <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Assign Talkgroups</div>
