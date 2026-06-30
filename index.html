@@ -11,7 +11,7 @@
 
 <!-- iOS-specific install behavior — Safari ignores manifest.json display
      mode and needs these to launch standalone (no address bar) from the
-     home screen, and to use a proper icon instead of a screenshot thumbnaila. -->
+     home screen, and to use a proper icon instead of a screenshot thumbnail. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="COMM CENTER">
@@ -4324,6 +4324,7 @@
       </div>
 
       <button class="main-view-tab" id="mvtab-rfanalyzer" onclick="switchMainTab('rfanalyzer')">📡 RF Deconflicter</button>
+      <button class="main-view-tab" id="mvtab-uas" onclick="switchMainTab('uas')">🛸 UAS Manager</button>
       <button class="main-view-tab" id="mvtab-resources" onclick="switchMainTab('resources')" style="display:none;">🚒 Resources</button>
       <button class="main-view-tab" id="mvtab-admin" onclick="switchMainTab('admin')" style="display:none;border-color:transparent;color:var(--status-active);">⚙ Admin</button>
 
@@ -4799,6 +4800,107 @@
             <span>Timestamp</span><span>Serial</span><span>Event</span><span>Actor</span>
           </div>
           <div id="invLogBody" style="max-height:520px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── UAS MANAGER VIEW ── -->
+    <div id="view-uas" style="display:none;">
+      <div class="tab-page-header">
+        <div>
+          <div class="tab-page-title">UAS Manager</div>
+          <div class="tab-page-subtitle">Drone fleet, pilot/crew roster, and mission call-out tracking</div>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <button class="admin-sub-tab active" id="uastab-fleet"     onclick="switchUasTab('fleet')">🛸 Fleet</button>
+        <button class="admin-sub-tab"        id="uastab-personnel" onclick="switchUasTab('personnel')">👤 Personnel</button>
+        <button class="admin-sub-tab"        id="uastab-missions"  onclick="switchUasTab('missions')">📋 Missions</button>
+      </div>
+
+      <!-- ── FLEET PANEL ── -->
+      <div id="uas-fleet-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="uasFleetSearch" type="text" placeholder="Search tail number, model, serial…" oninput="renderUasFleet()" style="width:260px;">
+            <select class="form-select" id="uasFleetStatusFilter" onchange="renderUasFleet()" style="width:160px;font-size:14px;padding:5px 8px;">
+              <option value="all">All Statuses</option>
+              <option value="available">Available</option>
+              <option value="deployed">Deployed</option>
+              <option value="maintenance">In Maintenance</option>
+              <option value="grounded">Grounded</option>
+              <option value="retired">Retired</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="font-size:14px;" onclick="openUasAircraftForm(null)">+ Add Aircraft</button>
+        </div>
+
+        <!-- Summary strip -->
+        <div id="uasFleetSummaryStrip" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+
+        <div style="display:grid;grid-template-columns:4px 110px 1fr 110px 130px 100px 110px;gap:10px;padding:4px 12px 8px;font-family:var(--font-data);font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;">
+          <span></span><span>Tail #</span><span>Make / Model</span><span>Status</span><span>Flight Hours</span><span>Battery</span><span>Next Maint.</span>
+        </div>
+        <div id="uasFleetGrid"></div>
+        <div id="uasFleetEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">🛸</div>
+          <div style="font-size:15px;color:var(--text-secondary);">No aircraft in the fleet yet</div>
+          <div style="font-size:14px;margin-top:4px;">Click + Add Aircraft to get started</div>
+        </div>
+      </div>
+
+      <!-- ── PERSONNEL PANEL ── -->
+      <div id="uas-personnel-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="uasPersonnelSearch" type="text" placeholder="Search name, cert, unit…" oninput="renderUasPersonnel()" style="width:260px;">
+            <select class="form-select" id="uasPersonnelRoleFilter" onchange="renderUasPersonnel()" style="width:160px;font-size:14px;padding:5px 8px;">
+              <option value="all">All Roles</option>
+              <option value="pilot">Pilot (PIC)</option>
+              <option value="visual-observer">Visual Observer</option>
+              <option value="payload-operator">Payload Operator</option>
+              <option value="program-manager">Program Manager</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="font-size:14px;" onclick="openUasPersonForm(null)">+ Add Person</button>
+        </div>
+
+        <div id="uasCurrencyBanner" style="display:none;margin-bottom:12px;"></div>
+
+        <div style="display:grid;grid-template-columns:4px 1fr 130px 120px 130px 110px;gap:10px;padding:4px 12px 8px;font-family:var(--font-data);font-size:13px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;">
+          <span></span><span>Name</span><span>Role</span><span>Cert / Part 107</span><span>Cert Expires</span><span>Status</span>
+        </div>
+        <div id="uasPersonnelGrid"></div>
+        <div id="uasPersonnelEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">👤</div>
+          <div style="font-size:15px;color:var(--text-secondary);">No personnel on the roster yet</div>
+          <div style="font-size:14px;margin-top:4px;">Click + Add Person to get started</div>
+        </div>
+      </div>
+
+      <!-- ── MISSIONS PANEL ── -->
+      <div id="uas-missions-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input class="search-input" id="uasMissionSearch" type="text" placeholder="Search title, location, incident…" oninput="renderUasMissions()" style="width:260px;">
+            <select class="form-select" id="uasMissionStatusFilter" onchange="renderUasMissions()" style="width:160px;font-size:14px;padding:5px 8px;">
+              <option value="all">All Statuses</option>
+              <option value="requested">Requested</option>
+              <option value="active">Active / Airborne</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="font-size:14px;" onclick="openUasMissionForm(null)">+ New Mission</button>
+        </div>
+
+        <div id="uasMissionGrid"></div>
+        <div id="uasMissionEmpty" style="display:none;text-align:center;padding:48px 24px;color:var(--text-dim);">
+          <div style="font-size:32px;margin-bottom:10px;">📋</div>
+          <div style="font-size:15px;color:var(--text-secondary);">No missions logged yet</div>
+          <div style="font-size:14px;margin-top:4px;">Click + New Mission to log a call-out or planned flight</div>
         </div>
       </div>
     </div>
@@ -5860,12 +5962,14 @@ async function refreshAllAfterReconnect() {
     await Promise.all([
       loadChannels(), loadTalkgroups(), loadReservations(),
       loadIncidents(), loadCommPlanReqs(), loadInternalChannelRequests(),
+      loadUasFleet(), loadUasPersonnel(), loadUasMissions(),
     ]);
     renderChannels();
     if (activeMainTab === 'talkgroups') renderTalkgroups();
     if (activeMainTab === 'schedule')   renderSchedule();
     if (activeMainTab === 'incidents')  renderIncidents();
     if (activeMainTab === 'commreq')    renderCommPlanReqs();
+    if (activeMainTab === 'uas')        renderUasTab();
     updateIcrBadge();
     pushNotification('available', '🔄 Reconnected — data refreshed after a brief connection interruption');
   } catch(e) { console.warn('refreshAllAfterReconnect:', e.message); }
@@ -10533,7 +10637,7 @@ function switchMainTab(tab) {
   }
 
   activeMainTab = tab;
-  ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin'].forEach(t => {
+  ['overview','channels','talkgroups','schedule','rfanalyzer','triggers','inventory','incidents','commreq','resources','admin','uas'].forEach(t => {
     document.getElementById(`mvtab-${t}`)?.classList.toggle('active', t === tab);
     document.getElementById(`navitem-${t}`)?.classList.toggle('active', t === tab);
     const v = document.getElementById(`view-${t}`);
@@ -10556,6 +10660,7 @@ function switchMainTab(tab) {
   if (tab === 'commreq')     renderCommPlanReqs();
   if (tab === 'resources')   renderResources();
   if (tab === 'admin')       renderAdminView();
+  if (tab === 'uas')         renderUasTab();
 }
 
 // ── Grouped nav dropdown interaction ──
@@ -14690,6 +14795,498 @@ async function loadInventory() {
   } catch(e) { console.warn('loadInventory:', e.message); }
 }
 
+// ═══════════════════════════════════════════════
+// UAS MANAGER — Fleet, Personnel, Missions
+// ═══════════════════════════════════════════════
+let uasFleet      = [];
+let uasPersonnel  = [];
+let uasMissions   = [];
+let activeUasTab  = 'fleet';
+
+const UAS_FLEET_STATUS_LABELS = {
+  available:   'Available',
+  deployed:    'Deployed',
+  maintenance: 'In Maintenance',
+  grounded:    'Grounded',
+  retired:     'Retired',
+};
+const UAS_FLEET_STATUS_COLOR = {
+  available:   'var(--status-available)',
+  deployed:    'var(--status-active)',
+  maintenance: '#ff9800',
+  grounded:    '#ff5252',
+  retired:     '#555',
+};
+const UAS_ROLE_LABELS = {
+  'pilot':            'Pilot (PIC)',
+  'visual-observer':  'Visual Observer',
+  'payload-operator': 'Payload Operator',
+  'program-manager':  'Program Manager',
+};
+const UAS_PERSON_STATUS_LABELS = { active: 'Active', inactive: 'Inactive', leave: 'On Leave' };
+const UAS_MISSION_STATUS_LABELS = {
+  requested: 'Requested', active: 'Active / Airborne', completed: 'Completed', cancelled: 'Cancelled',
+};
+const UAS_MISSION_STATUS_COLOR = {
+  requested: 'var(--status-reserved)', active: 'var(--status-active)',
+  completed: 'var(--status-available)', cancelled: 'var(--text-dim)',
+};
+
+// ── Data loading ──
+async function loadUasFleet() {
+  try {
+    const { data, error } = await sb.from('uas_aircraft').select('*').order('tail_number', { ascending: true });
+    if (error) { console.warn('loadUasFleet:', error.message); return; }
+    uasFleet = data || [];
+  } catch(e) {}
+}
+
+async function loadUasPersonnel() {
+  try {
+    const { data, error } = await sb.from('uas_personnel').select('*').order('name', { ascending: true });
+    if (error) { console.warn('loadUasPersonnel:', error.message); return; }
+    uasPersonnel = data || [];
+  } catch(e) {}
+}
+
+async function loadUasMissions() {
+  try {
+    const { data, error } = await sb.from('uas_missions').select('*').order('start_time', { ascending: false });
+    if (error) { console.warn('loadUasMissions:', error.message); return; }
+    uasMissions = data || [];
+  } catch(e) {}
+}
+
+// ── Tab switching ──
+function switchUasTab(tab) {
+  activeUasTab = tab;
+  ['fleet','personnel','missions'].forEach(t => {
+    document.getElementById(`uastab-${t}`)?.classList.toggle('active', t === tab);
+    const panel = document.getElementById(`uas-${t}-panel`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+  });
+  renderUasTab();
+}
+
+function renderUasTab() {
+  if (activeUasTab === 'fleet')      renderUasFleet();
+  if (activeUasTab === 'personnel')  renderUasPersonnel();
+  if (activeUasTab === 'missions')   renderUasMissions();
+}
+
+// ── FLEET ──
+function renderUasFleet() {
+  const query  = (document.getElementById('uasFleetSearch')?.value || '').toLowerCase();
+  const status = document.getElementById('uasFleetStatusFilter')?.value || 'all';
+  const grid   = document.getElementById('uasFleetGrid');
+  const empty  = document.getElementById('uasFleetEmpty');
+  if (!grid) return;
+
+  const filtered = uasFleet.filter(a => {
+    if (status !== 'all' && a.status !== status) return false;
+    if (query) return [a.tail_number, a.make, a.model, a.serial_number]
+      .some(f => (f||'').toLowerCase().includes(query));
+    return true;
+  });
+
+  // Summary strip
+  const strip = document.getElementById('uasFleetSummaryStrip');
+  if (strip) {
+    const counts = {};
+    Object.keys(UAS_FLEET_STATUS_LABELS).forEach(k => { counts[k] = uasFleet.filter(a => a.status === k).length; });
+    strip.innerHTML = Object.keys(UAS_FLEET_STATUS_LABELS).filter(k => counts[k] > 0).map(k => `
+      <div style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-data);font-size:13px;padding:4px 10px;border-radius:var(--radius);background:${UAS_FLEET_STATUS_COLOR[k]}1a;color:${UAS_FLEET_STATUS_COLOR[k]};border:1px solid ${UAS_FLEET_STATUS_COLOR[k]}44;">
+        <span style="font-size:15px;font-weight:700;">${counts[k]}</span> ${UAS_FLEET_STATUS_LABELS[k]}
+      </div>`).join('');
+  }
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const todayMs = Date.now();
+  grid.innerHTML = filtered.map(a => {
+    const maintDate = a.next_maintenance_date ? new Date(a.next_maintenance_date + 'T12:00:00') : null;
+    const maintSoon = maintDate && (maintDate.getTime() - todayMs) < (14 * 86400000);
+    const maintOverdue = maintDate && maintDate.getTime() < todayMs;
+    const battPct = a.battery_pct != null ? a.battery_pct : null;
+    return `
+    <div style="display:grid;grid-template-columns:4px 110px 1fr 110px 130px 100px 110px;gap:10px;align-items:center;padding:9px 12px;background:var(--bg-card);border:1px solid transparent;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--border-lit)'" onmouseout="this.style.borderColor='transparent'" onclick="openUasAircraftForm('${a.id}')">
+      <div style="width:4px;height:30px;border-radius:2px;background:${UAS_FLEET_STATUS_COLOR[a.status]||'var(--border)'};"></div>
+      <div style="font-family:var(--font-data);font-size:15px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(a.tail_number||'—')}</div>
+      <div style="min-width:0;">
+        <div style="font-size:14px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(a.make||'')} ${escHtml(a.model||'')}</div>
+        <div style="font-size:12px;color:var(--text-dim);font-family:var(--font-data);">${escHtml(a.serial_number||'—')}</div>
+      </div>
+      <div><span style="font-family:var(--font-data);font-size:12px;font-weight:600;padding:3px 8px;border-radius:2px;background:${UAS_FLEET_STATUS_COLOR[a.status]}1a;color:${UAS_FLEET_STATUS_COLOR[a.status]};border:1px solid ${UAS_FLEET_STATUS_COLOR[a.status]}44;white-space:nowrap;">${UAS_FLEET_STATUS_LABELS[a.status]||a.status}</span></div>
+      <div style="font-family:var(--font-data);font-size:14px;color:var(--text-secondary);">${a.flight_hours != null ? a.flight_hours.toFixed(1)+' hrs' : '—'}</div>
+      <div style="font-family:var(--font-data);font-size:14px;color:${battPct!=null && battPct<30 ? 'var(--status-active)' : 'var(--text-secondary)'};">${battPct!=null ? battPct+'%' : '—'}</div>
+      <div style="font-family:var(--font-data);font-size:13px;color:${maintOverdue?'var(--status-active)':maintSoon?'#ff9800':'var(--text-dim)'};">${a.next_maintenance_date ? new Date(a.next_maintenance_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'}${maintOverdue?' ⚠':maintSoon?' !':''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function openUasAircraftForm(id) {
+  uasFleetEditingId = id || null;
+  if (id) {
+    const a = uasFleet.find(x => String(x.id) === String(id));
+    if (!a) return;
+    document.getElementById('uasAircraftModalTitle').textContent = 'Edit Aircraft';
+    document.getElementById('uas-tail').value          = a.tail_number || '';
+    document.getElementById('uas-make').value           = a.make || '';
+    document.getElementById('uas-model').value          = a.model || '';
+    document.getElementById('uas-serial').value         = a.serial_number || '';
+    document.getElementById('uas-status').value         = a.status || 'available';
+    document.getElementById('uas-flighthours').value    = a.flight_hours != null ? a.flight_hours : '';
+    document.getElementById('uas-battpct').value        = a.battery_pct != null ? a.battery_pct : '';
+    document.getElementById('uas-nextmaint').value      = a.next_maintenance_date || '';
+    document.getElementById('uas-payload').value        = a.payload || '';
+    document.getElementById('uas-acnotes').value        = a.notes || '';
+    document.getElementById('uasAircraftDeleteBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('uasAircraftModalTitle').textContent = 'Add Aircraft';
+    ['uas-tail','uas-make','uas-model','uas-serial','uas-flighthours','uas-battpct','uas-nextmaint','uas-payload','uas-acnotes'].forEach(fid => document.getElementById(fid).value = '');
+    document.getElementById('uas-status').value = 'available';
+    document.getElementById('uasAircraftDeleteBtn').style.display = 'none';
+  }
+  document.getElementById('uasAircraftModal').classList.add('open');
+}
+
+function closeUasAircraftForm() {
+  document.getElementById('uasAircraftModal').classList.remove('open');
+  uasFleetEditingId = null;
+}
+
+async function saveUasAircraft() {
+  const tail = document.getElementById('uas-tail').value.trim();
+  if (!tail) { alert('Tail number / registration is required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+  const row = {
+    tail_number:           tail,
+    make:                  document.getElementById('uas-make').value.trim()   || null,
+    model:                 document.getElementById('uas-model').value.trim()  || null,
+    serial_number:         document.getElementById('uas-serial').value.trim()|| null,
+    status:                document.getElementById('uas-status').value,
+    flight_hours:          parseFloat(document.getElementById('uas-flighthours').value) || 0,
+    battery_pct:           document.getElementById('uas-battpct').value !== '' ? parseInt(document.getElementById('uas-battpct').value) : null,
+    next_maintenance_date: document.getElementById('uas-nextmaint').value || null,
+    payload:               document.getElementById('uas-payload').value.trim() || null,
+    notes:                 document.getElementById('uas-acnotes').value.trim() || null,
+    updated_by:            who,
+    updated_at:            new Date().toISOString(),
+  };
+
+  if (uasFleetEditingId) {
+    const { error } = await sb.from('uas_aircraft').update(row).eq('id', uasFleetEditingId);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Aircraft Updated', `${tail}`, { tail });
+  } else {
+    const { error } = await sb.from('uas_aircraft').insert(row);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Aircraft Added', `${tail}`, { tail });
+  }
+  await loadUasFleet();
+  closeUasAircraftForm();
+  renderUasFleet();
+}
+
+async function deleteUasAircraft(id) {
+  const a = uasFleet.find(x => String(x.id) === String(id || uasFleetEditingId));
+  if (!a || !confirm(`Remove aircraft "${a.tail_number}" from the fleet?`)) return;
+  const { error } = await sb.from('uas_aircraft').delete().eq('id', a.id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  logEvent('uas', 'Aircraft Removed', `${a.tail_number}`, { tail: a.tail_number });
+  await loadUasFleet();
+  closeUasAircraftForm();
+  renderUasFleet();
+}
+
+// ── PERSONNEL ──
+function uasCertStatus(expiryDate) {
+  if (!expiryDate) return 'none';
+  const days = (new Date(expiryDate + 'T12:00:00').getTime() - Date.now()) / 86400000;
+  if (days < 0)  return 'expired';
+  if (days < 30) return 'expiring';
+  return 'current';
+}
+
+function renderUasPersonnel() {
+  const query = (document.getElementById('uasPersonnelSearch')?.value || '').toLowerCase();
+  const role  = document.getElementById('uasPersonnelRoleFilter')?.value || 'all';
+  const grid  = document.getElementById('uasPersonnelGrid');
+  const empty = document.getElementById('uasPersonnelEmpty');
+  if (!grid) return;
+
+  const filtered = uasPersonnel.filter(p => {
+    if (role !== 'all' && p.role !== role) return false;
+    if (query) return [p.name, p.cert_number, p.unit].some(f => (f||'').toLowerCase().includes(query));
+    return true;
+  });
+
+  // Currency banner — anyone expired or expiring within 30 days
+  const banner = document.getElementById('uasCurrencyBanner');
+  if (banner) {
+    const flagged = uasPersonnel.filter(p => ['expired','expiring'].includes(uasCertStatus(p.cert_expires)));
+    if (flagged.length) {
+      banner.style.display = 'block';
+      banner.innerHTML = `<div style="background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.3);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:18px;flex-shrink:0;">⚠</span>
+        <div style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+          <strong style="color:var(--status-active);">${flagged.length} pilot${flagged.length!==1?'s':''} need attention:</strong>
+          ${flagged.map(p => `${escHtml(p.name)} (Part 107 ${uasCertStatus(p.cert_expires)==='expired'?'expired':'expires soon'} ${p.cert_expires ? new Date(p.cert_expires+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''})`).join(' · ')}
+        </div>
+      </div>`;
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const CERT_COLOR = { current:'var(--status-available)', expiring:'#ff9800', expired:'var(--status-active)', none:'var(--text-dim)' };
+
+  grid.innerHTML = filtered.map(p => {
+    const cs = uasCertStatus(p.cert_expires);
+    return `
+    <div style="display:grid;grid-template-columns:4px 1fr 130px 120px 130px 110px;gap:10px;align-items:center;padding:9px 12px;background:var(--bg-card);border:1px solid transparent;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;" onmouseover="this.style.borderColor='var(--border-lit)'" onmouseout="this.style.borderColor='transparent'" onclick="openUasPersonForm('${p.id}')">
+      <div style="width:4px;height:30px;border-radius:2px;background:${p.status==='active'?'var(--status-available)':'var(--text-dim)'};"></div>
+      <div style="min-width:0;">
+        <div style="font-size:15px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.name||'—')}</div>
+        ${p.unit ? `<div style="font-size:12px;color:var(--text-dim);font-family:var(--font-data);">${escHtml(p.unit)}</div>` : ''}
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);">${UAS_ROLE_LABELS[p.role]||p.role||'—'}</div>
+      <div style="font-family:var(--font-data);font-size:13px;color:var(--text-secondary);">${escHtml(p.cert_number||'—')}</div>
+      <div style="font-family:var(--font-data);font-size:13px;color:${CERT_COLOR[cs]};">${p.cert_expires ? new Date(p.cert_expires+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}${cs==='expired'?' ⚠':cs==='expiring'?' !':''}</div>
+      <div><span style="font-family:var(--font-data);font-size:12px;font-weight:600;padding:3px 8px;border-radius:2px;background:${p.status==='active'?'rgba(0,230,118,0.12)':'rgba(120,120,120,0.12)'};color:${p.status==='active'?'var(--status-available)':'var(--text-dim)'};border:1px solid ${p.status==='active'?'rgba(0,230,118,0.25)':'var(--border)'};white-space:nowrap;">${UAS_PERSON_STATUS_LABELS[p.status]||p.status}</span></div>
+    </div>`;
+  }).join('');
+}
+
+async function openUasPersonForm(id) {
+  uasPersonEditingId = id || null;
+  if (id) {
+    const p = uasPersonnel.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById('uasPersonModalTitle').textContent = 'Edit Person';
+    document.getElementById('uas-p-name').value     = p.name || '';
+    document.getElementById('uas-p-role').value      = p.role || 'pilot';
+    document.getElementById('uas-p-unit').value      = p.unit || '';
+    document.getElementById('uas-p-certnum').value   = p.cert_number || '';
+    document.getElementById('uas-p-certexp').value   = p.cert_expires || '';
+    document.getElementById('uas-p-medical').value   = p.medical_expires || '';
+    document.getElementById('uas-p-status').value    = p.status || 'active';
+    document.getElementById('uas-p-phone').value     = p.phone || '';
+    document.getElementById('uas-p-notes').value     = p.notes || '';
+    document.getElementById('uasPersonDeleteBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('uasPersonModalTitle').textContent = 'Add Person';
+    ['uas-p-name','uas-p-unit','uas-p-certnum','uas-p-certexp','uas-p-medical','uas-p-phone','uas-p-notes'].forEach(fid => document.getElementById(fid).value = '');
+    document.getElementById('uas-p-role').value   = 'pilot';
+    document.getElementById('uas-p-status').value = 'active';
+    document.getElementById('uasPersonDeleteBtn').style.display = 'none';
+  }
+  document.getElementById('uasPersonModal').classList.add('open');
+}
+
+function closeUasPersonForm() {
+  document.getElementById('uasPersonModal').classList.remove('open');
+  uasPersonEditingId = null;
+}
+
+async function saveUasPerson() {
+  const name = document.getElementById('uas-p-name').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+  const row = {
+    name,
+    role:            document.getElementById('uas-p-role').value,
+    unit:            document.getElementById('uas-p-unit').value.trim()    || null,
+    cert_number:     document.getElementById('uas-p-certnum').value.trim()|| null,
+    cert_expires:    document.getElementById('uas-p-certexp').value       || null,
+    medical_expires: document.getElementById('uas-p-medical').value       || null,
+    status:          document.getElementById('uas-p-status').value,
+    phone:           document.getElementById('uas-p-phone').value.trim()  || null,
+    notes:           document.getElementById('uas-p-notes').value.trim()  || null,
+    updated_by:      who,
+    updated_at:      new Date().toISOString(),
+  };
+
+  if (uasPersonEditingId) {
+    const { error } = await sb.from('uas_personnel').update(row).eq('id', uasPersonEditingId);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Personnel Updated', name, { name });
+  } else {
+    const { error } = await sb.from('uas_personnel').insert(row);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Personnel Added', name, { name });
+  }
+  await loadUasPersonnel();
+  closeUasPersonForm();
+  renderUasPersonnel();
+}
+
+async function deleteUasPerson(id) {
+  const p = uasPersonnel.find(x => String(x.id) === String(id || uasPersonEditingId));
+  if (!p || !confirm(`Remove "${p.name}" from the roster?`)) return;
+  const { error } = await sb.from('uas_personnel').delete().eq('id', p.id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  logEvent('uas', 'Personnel Removed', p.name, { name: p.name });
+  await loadUasPersonnel();
+  closeUasPersonForm();
+  renderUasPersonnel();
+}
+
+// ── MISSIONS ──
+function renderUasMissions() {
+  const query  = (document.getElementById('uasMissionSearch')?.value || '').toLowerCase();
+  const status = document.getElementById('uasMissionStatusFilter')?.value || 'all';
+  const grid   = document.getElementById('uasMissionGrid');
+  const empty  = document.getElementById('uasMissionEmpty');
+  if (!grid) return;
+
+  const filtered = uasMissions.filter(m => {
+    if (status !== 'all' && m.status !== status) return false;
+    if (query) return [m.title, m.location, m.incident_name].some(f => (f||'').toLowerCase().includes(query));
+    return true;
+  }).sort((a,b) => new Date(b.start_time||0) - new Date(a.start_time||0));
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(m => {
+    const aircraft = uasFleet.find(a => String(a.id) === String(m.aircraft_id));
+    const pic      = uasPersonnel.find(p => String(p.id) === String(m.pic_id));
+    const startStr = m.start_time ? new Date(m.start_time).toLocaleString('en-US', { timeZone:'America/Los_Angeles', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }) : '—';
+    const col = UAS_MISSION_STATUS_COLOR[m.status] || 'var(--text-dim)';
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;cursor:pointer;" onclick="openUasMissionForm('${m.id}')">
+      <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:22px;">🛸</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--text-primary);">${escHtml(m.title||'Untitled Mission')}</div>
+            <div style="font-size:13px;color:var(--text-dim);font-family:var(--font-data);">${startStr}${m.location?' · '+escHtml(m.location):''}${m.incident_name?' · 🚨 '+escHtml(m.incident_name):''}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-family:var(--font-data);font-size:11px;font-weight:700;padding:3px 8px;border-radius:2px;background:${col}1a;color:${col};border:1px solid ${col}44;">${(UAS_MISSION_STATUS_LABELS[m.status]||m.status).toUpperCase()}</span>
+          ${aircraft ? `<span style="font-size:13px;color:var(--text-dim);">🛸 ${escHtml(aircraft.tail_number)}</span>` : ''}
+          ${pic ? `<span style="font-size:13px;color:var(--text-dim);">👤 ${escHtml(pic.name)}</span>` : ''}
+        </div>
+      </div>
+      ${m.objective ? `<div style="padding:0 16px 12px;font-size:13px;color:var(--text-secondary);">${escHtml(m.objective)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function openUasMissionForm(id) {
+  uasMissionEditingId = id || null;
+
+  // Populate aircraft/personnel/incident dropdowns
+  const acSel  = document.getElementById('uas-m-aircraft');
+  const picSel = document.getElementById('uas-m-pic');
+  const voSel  = document.getElementById('uas-m-vo');
+  const incSel = document.getElementById('uas-m-incident');
+  acSel.innerHTML  = '<option value="">— Not specified —</option>' + uasFleet.filter(a=>a.status!=='retired').map(a => `<option value="${a.id}">${escHtml(a.tail_number)} — ${escHtml(a.make||'')} ${escHtml(a.model||'')}</option>`).join('');
+  picSel.innerHTML = '<option value="">— Not specified —</option>' + uasPersonnel.filter(p=>p.status==='active').map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  voSel.innerHTML  = '<option value="">— Not specified —</option>' + uasPersonnel.filter(p=>p.status==='active').map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  incSel.innerHTML = '<option value="">— None / standalone —</option>' + incidents.filter(i=>i.status!=='closed').map(i => `<option value="${i.id}">${escHtml(i.name)}${i.number?' — '+escHtml(i.number):''}</option>`).join('');
+
+  if (id) {
+    const m = uasMissions.find(x => String(x.id) === String(id));
+    if (!m) return;
+    document.getElementById('uasMissionModalTitle').textContent = 'Edit Mission';
+    document.getElementById('uas-m-title').value     = m.title || '';
+    document.getElementById('uas-m-status').value    = m.status || 'requested';
+    document.getElementById('uas-m-start').value     = m.start_time ? toLocalDatetimeInput(m.start_time) : '';
+    document.getElementById('uas-m-end').value       = m.end_time ? toLocalDatetimeInput(m.end_time) : '';
+    document.getElementById('uas-m-location').value  = m.location || '';
+    document.getElementById('uas-m-objective').value = m.objective || '';
+    document.getElementById('uas-m-aircraft').value  = m.aircraft_id || '';
+    document.getElementById('uas-m-pic').value       = m.pic_id || '';
+    document.getElementById('uas-m-vo').value        = m.vo_id || '';
+    document.getElementById('uas-m-incident').value  = m.incident_id || '';
+    document.getElementById('uas-m-notes').value     = m.notes || '';
+    document.getElementById('uasMissionDeleteBtn').style.display = 'inline-flex';
+  } else {
+    document.getElementById('uasMissionModalTitle').textContent = 'New Mission';
+    ['uas-m-title','uas-m-start','uas-m-end','uas-m-location','uas-m-objective','uas-m-notes'].forEach(fid => document.getElementById(fid).value = '');
+    document.getElementById('uas-m-status').value   = 'requested';
+    document.getElementById('uas-m-aircraft').value = '';
+    document.getElementById('uas-m-pic').value      = '';
+    document.getElementById('uas-m-vo').value       = '';
+    document.getElementById('uas-m-incident').value = '';
+    document.getElementById('uasMissionDeleteBtn').style.display = 'none';
+  }
+  document.getElementById('uasMissionModal').classList.add('open');
+}
+
+function closeUasMissionForm() {
+  document.getElementById('uasMissionModal').classList.remove('open');
+  uasMissionEditingId = null;
+}
+
+async function saveUasMission() {
+  const title = document.getElementById('uas-m-title').value.trim();
+  if (!title) { alert('Mission title is required.'); return; }
+  const who = currentUser?.name || 'Unknown';
+
+  const incId = document.getElementById('uas-m-incident').value || null;
+  const inc   = incId ? incidents.find(i => String(i.id) === String(incId)) : null;
+
+  const row = {
+    title,
+    status:        document.getElementById('uas-m-status').value,
+    start_time:    document.getElementById('uas-m-start').value ? ptInputToISO(document.getElementById('uas-m-start').value) : null,
+    end_time:      document.getElementById('uas-m-end').value   ? ptInputToISO(document.getElementById('uas-m-end').value)   : null,
+    location:      document.getElementById('uas-m-location').value.trim()  || null,
+    objective:     document.getElementById('uas-m-objective').value.trim()|| null,
+    aircraft_id:   document.getElementById('uas-m-aircraft').value || null,
+    pic_id:        document.getElementById('uas-m-pic').value      || null,
+    vo_id:         document.getElementById('uas-m-vo').value       || null,
+    incident_id:   incId,
+    incident_name: inc ? inc.name : null,
+    notes:         document.getElementById('uas-m-notes').value.trim() || null,
+    updated_by:    who,
+    updated_at:    new Date().toISOString(),
+  };
+
+  if (uasMissionEditingId) {
+    const { error } = await sb.from('uas_missions').update(row).eq('id', uasMissionEditingId);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Mission Updated', title, { title, status: row.status });
+  } else {
+    const { error } = await sb.from('uas_missions').insert(row);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    logEvent('uas', 'Mission Created', title, { title, status: row.status });
+  }
+  await loadUasMissions();
+  closeUasMissionForm();
+  renderUasMissions();
+}
+
+async function deleteUasMission(id) {
+  const m = uasMissions.find(x => String(x.id) === String(id || uasMissionEditingId));
+  if (!m || !confirm(`Delete mission "${m.title}"?`)) return;
+  const { error } = await sb.from('uas_missions').delete().eq('id', m.id);
+  if (error) { alert('Error deleting: ' + error.message); return; }
+  logEvent('uas', 'Mission Deleted', m.title, { title: m.title });
+  await loadUasMissions();
+  closeUasMissionForm();
+  renderUasMissions();
+}
+
 function switchInventoryTab(tab) {
   ['list','custody','log'].forEach(t => {
     document.getElementById(`invtab-${t}`)?.classList.toggle('active', t === tab);
@@ -15567,6 +16164,9 @@ async function importCSV(type) {
 // ─────────────────────────────────────────────
 let incidents        = [];
 let incidentEditingId = null;
+let uasFleetEditingId = null;
+let uasPersonEditingId = null;
+let uasMissionEditingId = null;
 
 async function loadIncidents() {
   try {
@@ -16194,6 +16794,9 @@ async function loadAllData() {
     loadReservations(),
     loadCommPlanReqs(),
     loadInternalChannelRequests(),
+    loadUasFleet(),
+    loadUasPersonnel(),
+    loadUasMissions(),
   ]);
 }
 
@@ -18392,6 +18995,249 @@ if ('serviceWorker' in navigator) {
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeBulkAssignIncident()">Cancel</button>
       <button class="btn-primary" onclick="confirmBulkAssignIncident()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── UAS AIRCRAFT MODAL ── -->
+<div class="modal-overlay" id="uasAircraftModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="uasAircraftModalTitle">Add Aircraft</div>
+      <button class="modal-close" onclick="closeUasAircraftForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Tail Number / Registration *</label>
+          <input class="form-input" id="uas-tail" placeholder="e.g. N123FD" style="font-family:var(--font-data);">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="uas-status">
+            <option value="available">Available</option>
+            <option value="deployed">Deployed</option>
+            <option value="maintenance">In Maintenance</option>
+            <option value="grounded">Grounded</option>
+            <option value="retired">Retired</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Make</label>
+          <input class="form-input" id="uas-make" placeholder="e.g. DJI">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Model</label>
+          <input class="form-input" id="uas-model" placeholder="e.g. Matrice 30T">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Serial Number</label>
+          <input class="form-input" id="uas-serial" style="font-family:var(--font-data);">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Flight Hours</label>
+          <input class="form-input" id="uas-flighthours" type="number" step="0.1" min="0" placeholder="0.0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Battery <span style="font-weight:400;color:var(--text-dim);">%</span></label>
+          <input class="form-input" id="uas-battpct" type="number" min="0" max="100" placeholder="e.g. 85">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Next Maintenance Due</label>
+          <input class="form-input" id="uas-nextmaint" type="date">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Payload / Sensors</label>
+          <input class="form-input" id="uas-payload" placeholder="e.g. Thermal, Zoom camera, Spotlight">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="uas-acnotes" style="height:60px;" placeholder="Maintenance history, known issues, accessories…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="uasAircraftDeleteBtn" style="display:none;" onclick="deleteUasAircraft()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeUasAircraftForm()">Cancel</button>
+        <button class="btn-primary" onclick="saveUasAircraft()">Save Aircraft</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── UAS PERSONNEL MODAL ── -->
+<div class="modal-overlay" id="uasPersonModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="uasPersonModalTitle">Add Person</div>
+      <button class="modal-close" onclick="closeUasPersonForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Name *</label>
+          <input class="form-input" id="uas-p-name" placeholder="Full name">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Role</label>
+          <select class="form-select" id="uas-p-role">
+            <option value="pilot">Pilot (PIC)</option>
+            <option value="visual-observer">Visual Observer</option>
+            <option value="payload-operator">Payload Operator</option>
+            <option value="program-manager">Program Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Unit / Station</label>
+          <input class="form-input" id="uas-p-unit" placeholder="e.g. Air Ops, Station 12">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="uas-p-status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="leave">On Leave</option>
+          </select>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">FAA Part 107 Certification</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Certificate Number</label>
+            <input class="form-input" id="uas-p-certnum" style="font-family:var(--font-data);" placeholder="e.g. 4729384729">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Certificate Expires</label>
+            <input class="form-input" id="uas-p-certexp" type="date">
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-field">
+            <label class="form-label">Medical / Recurrent Training Expires <span style="font-weight:400;color:var(--text-dim);">(if applicable)</span></label>
+            <input class="form-input" id="uas-p-medical" type="date">
+          </div>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="uas-p-phone" placeholder="(xxx) xxx-xxxx">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <textarea class="form-textarea" id="uas-p-notes" style="height:60px;" placeholder="Endorsements, specialized training, availability…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="uasPersonDeleteBtn" style="display:none;" onclick="deleteUasPerson()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeUasPersonForm()">Cancel</button>
+        <button class="btn-primary" onclick="saveUasPerson()">Save Person</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── UAS MISSION MODAL ── -->
+<div class="modal-overlay" id="uasMissionModal">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title" id="uasMissionModalTitle">New Mission</div>
+      <button class="modal-close" onclick="closeUasMissionForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Mission Title *</label>
+          <input class="form-input" id="uas-m-title" placeholder="e.g. Search Grid Alpha, Structure Fire Overwatch">
+        </div>
+        <div class="form-field">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="uas-m-status">
+            <option value="requested">Requested</option>
+            <option value="active">Active / Airborne</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Start Date &amp; Time</label>
+          <input class="form-input" id="uas-m-start" type="datetime-local">
+        </div>
+        <div class="form-field">
+          <label class="form-label">End Date &amp; Time</label>
+          <input class="form-input" id="uas-m-end" type="datetime-local">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Location <span style="font-weight:400;color:var(--text-dim);">address or cross streets</span></label>
+          <input class="form-input" id="uas-m-location" placeholder="1234 Malibu Canyon Rd  or  Sunset & Highland">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Linked Incident <span style="font-weight:400;color:var(--text-dim);">optional</span></label>
+          <select class="form-select" id="uas-m-incident"></select>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+        <div style="font-family:var(--font-data);font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Crew &amp; Equipment</div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Aircraft</label>
+            <select class="form-select" id="uas-m-aircraft"></select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Pilot (PIC)</label>
+            <select class="form-select" id="uas-m-pic"></select>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-field">
+            <label class="form-label">Visual Observer</label>
+            <select class="form-select" id="uas-m-vo"></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Mission Objective</label>
+          <textarea class="form-textarea" id="uas-m-objective" style="height:50px;" placeholder="What is this flight for — search, overwatch, mapping, damage assessment…"></textarea>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label class="form-label">Notes / Debrief</label>
+          <textarea class="form-textarea" id="uas-m-notes" style="height:60px;" placeholder="Findings, issues encountered, follow-up actions…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-danger" id="uasMissionDeleteBtn" style="display:none;" onclick="deleteUasMission()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeUasMissionForm()">Cancel</button>
+        <button class="btn-primary" onclick="saveUasMission()">Save Mission</button>
+      </div>
     </div>
   </div>
 </div>
